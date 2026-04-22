@@ -1,14 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from './src/screens/HomeScreen';
 import CardDetailScreen from './src/screens/CardDetailScreen';
 import PortfolioScreen from './src/screens/PortfolioScreen';
 import SellScreen from './src/screens/SellScreen';
+import WalletScreen from './src/screens/WalletScreen';
+import CheckoutScreen from './src/screens/CheckoutScreen';
+import OrderStatusScreen from './src/screens/OrderStatusScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -43,29 +45,22 @@ const HomeTabs = () => (
     <Tab.Screen
       name="HomeTab"
       component={HomeScreen}
-      options={{
-        tabBarIcon: ({ focused }) => (
-          <TabIcon icon="🏠" focused={focused} label="市場" />
-        ),
-      }}
+      options={{ tabBarIcon: ({ focused }) => <TabIcon icon="🏠" focused={focused} label="市場" /> }}
+    />
+    <Tab.Screen
+      name="WalletTab"
+      component={WalletScreen}
+      options={{ tabBarIcon: ({ focused }) => <TabIcon icon="💰" focused={focused} label="錢包" /> }}
     />
     <Tab.Screen
       name="PortfolioTab"
       component={PortfolioScreen}
-      options={{
-        tabBarIcon: ({ focused }) => (
-          <TabIcon icon="💼" focused={focused} label="收藏" />
-        ),
-      }}
+      options={{ tabBarIcon: ({ focused }) => <TabIcon icon="💼" focused={focused} label="收藏" /> }}
     />
     <Tab.Screen
       name="SellTab"
       component={SellScreen}
-      options={{
-        tabBarIcon: ({ focused }) => (
-          <TabIcon icon="📦" focused={focused} label="放售" />
-        ),
-      }}
+      options={{ tabBarIcon: ({ focused }) => <TabIcon icon="📦" focused={focused} label="放售" /> }}
     />
   </Tab.Navigator>
 );
@@ -85,6 +80,16 @@ export default function App() {
           name="CardDetail"
           component={CardDetailScreen}
           options={{ animation: 'slide_from_bottom' }}
+        />
+        <Stack.Screen
+          name="Checkout"
+          component={CheckoutScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="OrderStatus"
+          component={OrderStatusScreen}
+          options={{ animation: 'slide_from_right' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
