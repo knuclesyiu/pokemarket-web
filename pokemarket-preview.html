@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PokeMarket — App Preview</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+HK:wght@300;400;500;600;700&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #12121F;
+  --card: #1E1E2E;
+  --card2: #2A2A3E;
+  --red: #FF3C3C;
+  --green: #00C864;
+  --gold: #FFB800;
+  --text: #FFFFFF;
+  --muted: #8888AA;
+  --dim: #6666AA;
+}
+
+body {
+  background: #08060F;
+  font-family: 'Noto Sans HK', sans-serif;
+  min-height: 100vh;
+  padding: 40px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.header h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 36px;
+  color: white;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+.header h1 em {
+  color: var(--red);
+  font-style: italic;
+}
+.header p {
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.header .badge {
+  display: inline-block;
+  background: rgba(255,60,60,0.15);
+  color: var(--red);
+  font-size: 10px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-top: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.row {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  max-width: 1600px;
+}
+
+.col-label {
+  color: rgba(255,255,255,0.3);
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 10px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.phone {
+  width: 320px;
+  height: 700px;
+  border-radius: 40px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+
+.status-bar {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 40px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding: 0 24px 8px;
+  z-index: 100;
+}
+.status-time { font-size: 12px; font-weight: 600; color: white; }
+.status-icons { display: flex; gap: 3px; color: white; font-size: 12px; }
+
+/* ── HOME SCREEN ── */
+.s-home {
+  height: 100%;
+  background: var(--bg);
+  padding-top: 40px;
+  display: flex;
+  flex-direction: column;
+}
+.sh-header {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0 16px 12px;
+}
+.sh-greeting { color: var(--muted); font-size: 11px; }
+.sh-title { color: white; font-size: 22px; font-weight: 800; }
+.sh-bell {
+  width: 38px; height: 38px;
+  background: var(--card);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  position: relative;
+}
+.sh-bell::after {
+  content: '';
+  position: absolute; top: 9px; right: 9px;
+  width: 7px; height: 7px;
+  background: var(--red);
+  border-radius: 50%;
+}
+.sh-stats {
+  flex-direction: row;
+  background: var(--card);
+  margin: 0 16px 14px;
+  border-radius: 14px;
+  padding: 12px;
+  gap: 0;
+}
+.sh-stat {
+  flex: 1;
+  text-align: center;
+}
+.sh-stat-label { color: var(--dim); font-size: 9px; margin-bottom: 4px; }
+.sh-stat-val { color: white; font-size: 13px; font-weight: 700; }
+.sh-stat-val.gain { color: var(--green); }
+.sh-stat-val.loss { color: var(--red); }
+.sh-stat-div {
+  width: 1px;
+  background: var(--card2);
+  margin: 0 8px;
+}
+.sh-search {
+  flex-direction: row;
+  align-items: center;
+  background: var(--card);
+  margin: 0 16px 12px;
+  border-radius: 12px;
+  padding: 0 12px;
+  border: 1px solid var(--card2);
+}
+.sh-search-icon { font-size: 14px; margin-right: 8px; }
+.sh-search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: white;
+  font-size: 13px;
+  padding: 12px 0;
+  font-family: 'Noto Sans HK', sans-serif;
+}
+.sh-search input::placeholder { color: var(--dim); }
+.sh-filters {
+  flex-direction: row;
+  padding: 0 16px 12px;
+  gap: 6px;
+}
+.sh-filter {
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: var(--card);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.sh-filter.active {
+  background: var(--red);
+  color: white;
+}
+.sh-scroll {
+  flex-direction: row;
+  padding: 0 16px 16px;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sh-scroll::-webkit-scrollbar { display: none; }
+.sh-card-mini {
+  width: 100px;
+  background: var(--card);
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--card2);
+}
+.sh-card-mini-img {
+  width: 100%;
+  height: 80px;
+  background: var(--card2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+}
+.sh-card-mini-name {
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 6px 8px 2px;
+  line-height: 1.3;
+}
+.sh-card-mini-price {
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 8px 6px;
+}
+.sh-card-mini-badge {
+  font-size: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin: 0 8px 6px;
+  display: inline-block;
+}
+.sh-card-mini-badge.up { background: rgba(0,200,100,0.15); color: var(--green); }
+.sh-card-mini-badge.down { background: rgba(255,60,60,0.15); color: var(--red); }
+.sh-section-title {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px 8px;
+}
+.sh-section-title span { color: white; font-size: 13px; font-weight: 700; }
+.sh-section-title a { color: var(--red); font-size: 10px; font-weight: 600; }
+.sh-list {
+  padding: 0 16px;
+  gap: 8px;
+  display: flex;
+  flex-direction: column;
+}
+.sh-list-item {
+  flex-direction: row;
+  background: var(--card);
+  border-radius: 14px;
+  overflow: hidden;
+  align-items: center;
+  border: 1px solid var(--card2);
+}
+.sh-list-img {
+  width: 70px;
+  height: 98px;
+  background: var(--card2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  flex-shrink: 0;
+}
+.sh-list-info {
+  flex: 1;
+  padding: 10px 12px;
+}
+.sh-list-name { color: white; font-size: 13px; font-weight: 700; }
+.sh-list-set { color: var(--muted); font-size: 10px; margin-top: 2px; }
+.sh-list-price { color: white; font-size: 15px; font-weight: 800; margin-top: 6px; }
+.sh-list-meta { flex-direction: row; align-items: center; gap: 6px; margin-top: 4px; }
+.sh-list-badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.sh-list-badge.up { background: rgba(0,200,100,0.15); color: var(--green); }
+.sh-list-badge.down { background: rgba(255,60,60,0.15); color: var(--red); }
+.sh-list-listings { color: var(--dim); font-size: 9px; }
+.sh-bottom-nav {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 70px;
+  background: #1A1A2E;
+  border-top: 1px solid var(--card2);
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 8px;
+  padding-bottom: 8px;
+}
+.nav-item {
+  align-items: center;
+  gap: 3px;
+}
+.nav-item-icon { font-size: 20px; opacity: 0.4; }
+.nav-item-icon.active { opacity: 1; }
+.nav-item-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--dim);
+}
+.nav-item-label.active { color: var(--red); }
+.nav-item-center {
+  width: 46px; height: 46px;
+  background: var(--red);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  transform: translateY(-8px);
+  box-shadow: 0 4px 16px rgba(255,60,60,0.4);
+}
+
+/* ── WALLET SCREEN ── */
+.s-wallet {
+  height: 100%;
+  background: var(--bg);
+  padding-top: 40px;
+}
+.sw-header {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px 12px;
+}
+.sw-title { color: white; font-size: 22px; font-weight: 800; }
+.sw-settings {
+  width: 38px; height: 38px;
+  background: var(--card);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.sw-balance {
+  background: var(--card);
+  margin: 0 16px 12px;
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid rgba(255,60,60,0.2);
+}
+.sw-balance-top {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.sw-balance-label { color: var(--muted); font-size: 11px; }
+.sw-balance-val { color: white; font-size: 28px; font-weight: 800; margin-top: 4px; }
+.sw-withdraw {
+  background: var(--red);
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+}
+.sw-balance-div {
+  height: 1px;
+  background: var(--card2);
+  margin: 14px 0;
+}
+.sw-balance-sub {
+  flex-direction: row;
+  gap: 20px;
+}
+.sw-balance-sub-item {}
+.sw-balance-sub-label { color: var(--muted); font-size: 10px; }
+.sw-balance-sub-val { color: white; font-size: 13px; font-weight: 700; margin-top: 2px; }
+.sw-fps-badge {
+  background: rgba(0,150,255,0.15);
+  padding: 4px 10px;
+  border-radius: 8px;
+  align-self: flex-start;
+  margin-top: 10px;
+}
+.sw-fps-badge span { color: #0096FF; font-size: 10px; font-weight: 600; }
+.sw-escrow-info {
+  flex-direction: row;
+  align-items: center;
+  background: rgba(255,184,0,0.08);
+  margin: 0 16px 14px;
+  border-radius: 12px;
+  padding: 12px;
+  gap: 10px;
+  border: 1px solid rgba(255,184,0,0.2);
+}
+.sw-escrow-icon { font-size: 22px; }
+.sw-escrow-title { color: var(--gold); font-size: 12px; font-weight: 700; }
+.sw-escrow-desc { color: var(--muted); font-size: 10px; margin-top: 2px; line-height: 1.5; }
+.sw-tabs {
+  flex-direction: row;
+  padding: 0 16px 12px;
+  gap: 5px;
+}
+.sw-tab {
+  flex: 1;
+  padding: 7px 4px;
+  border-radius: 10px;
+  background: var(--card);
+  align-items: center;
+  flex-direction: row;
+  justify-content: center;
+  gap: 3px;
+}
+.sw-tab.active { background: var(--red); }
+.sw-tab-label { color: var(--muted); font-size: 10px; font-weight: 600; }
+.sw-tab-label.active { color: white; }
+.sw-tab-count {
+  width: 14px; height: 14px;
+  border-radius: 7px;
+  background: var(--card2);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--muted);
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+.sw-tab-count.active { background: rgba(255,255,255,0.2); color: white; }
+.sw-tx-list { padding: 0 16px; gap: 7px; display: flex; flex-direction: column; }
+.sw-tx {
+  flex-direction: row;
+  align-items: center;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 12px;
+  gap: 10px;
+}
+.sw-tx-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.sw-tx-icon.sell { background: rgba(0,200,100,0.15); }
+.sw-tx-icon.buy { background: rgba(255,60,60,0.15); }
+.sw-tx-info { flex: 1; }
+.sw-tx-name { color: white; font-size: 12px; font-weight: 700; }
+.sw-tx-sub { color: var(--muted); font-size: 10px; margin-top: 2px; }
+.sw-tx-right { align-items: flex-end; }
+.sw-tx-amount { font-size: 13px; font-weight: 700; }
+.sw-tx-amount.sell { color: var(--green); }
+.sw-tx-amount.buy { color: var(--red); }
+.sw-tx-badge {
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  margin-top: 3px;
+  font-weight: 700;
+}
+.sw-tx-badge.pending { background: rgba(255,184,0,0.15); color: var(--gold); }
+.sw-tx-badge.escrow { background: rgba(255,60,60,0.15); color: var(--red); }
+.sw-tx-badge.done { background: rgba(0,200,100,0.15); color: var(--green); }
+.sw-tx-days { color: var(--gold); font-size: 9px; margin-top: 2px; }
+
+/* ── CHECKOUT SCREEN ── */
+.s-checkout {
+  height: 100%;
+  background: var(--bg);
+  padding-top: 40px;
+}
+.sch-header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 12px;
+}
+.sch-back {
+  width: 34px; height: 34px;
+  background: var(--card);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 18px; font-weight: 700;
+}
+.sch-title { color: white; font-size: 16px; font-weight: 700; }
+.sch-escrow-banner {
+  flex-direction: row;
+  align-items: center;
+  background: rgba(255,184,0,0.1);
+  margin: 0 16px 14px;
+  border-radius: 12px;
+  padding: 12px;
+  gap: 10px;
+  border: 1px solid rgba(255,184,0,0.2);
+}
+.sch-escrow-icon { font-size: 22px; }
+.sch-escrow-title { color: var(--gold); font-size: 12px; font-weight: 700; }
+.sch-escrow-desc { color: var(--muted); font-size: 10px; margin-top: 2px; line-height: 1.5; }
+.sch-card {
+  flex-direction: row;
+  background: var(--card);
+  margin: 0 16px 16px;
+  border-radius: 14px;
+  padding: 12px;
+  gap: 10px;
+  align-items: center;
+}
+.sch-card-img {
+  width: 55px; height: 77px;
+  background: var(--card2);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+.sch-card-info { flex: 1; }
+.sch-card-name { color: white; font-size: 13px; font-weight: 700; }
+.sch-card-set { color: var(--muted); font-size: 10px; margin-top: 2px; }
+.sch-card-seller { color: var(--muted); font-size: 10px; margin-top: 4px; }
+.sch-card-price { color: white; font-size: 15px; font-weight: 800; }
+.sch-section { padding: 0 16px; margin-bottom: 16px; }
+.sch-section-title { color: white; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+.sch-delivery-grid {
+  flex-direction: row;
+  gap: 8px;
+}
+.sch-delivery-opt {
+  flex: 1;
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px 10px;
+  align-items: center;
+  border: 2px solid transparent;
+}
+.sch-delivery-opt.active { border-color: var(--red); background: rgba(255,60,60,0.06); }
+.sch-delivery-icon { font-size: 26px; margin-bottom: 6px; }
+.sch-delivery-name { color: white; font-size: 12px; font-weight: 700; }
+.sch-delivery-name.active { color: var(--red); }
+.sch-delivery-desc { color: var(--muted); font-size: 9px; margin-top: 2px; }
+.sch-delivery-price { color: var(--muted); font-size: 10px; margin-top: 4px; }
+.sch-delivery-price.active { color: var(--red); }
+.sch-payment-list { gap: 7px; display: flex; flex-direction: column; }
+.sch-payment-opt {
+  flex-direction: row;
+  align-items: center;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 12px;
+  justify-content: space-between;
+  border: 2px solid transparent;
+}
+.sch-payment-opt.active { border-color: var(--red); }
+.sch-payment-left { flex-direction: row; align-items: center; gap: 10px; }
+.sch-payment-icon { font-size: 22px; }
+.sch-payment-name { color: white; font-size: 13px; font-weight: 600; }
+.sch-payment-sub { color: var(--muted); font-size: 10px; margin-top: 1px; }
+.sch-payment-radio {
+  width: 18px; height: 18px;
+  border-radius: 9px;
+  border: 2px solid var(--card2);
+  align-items: center;
+  justify-content: center;
+}
+.sch-payment-radio.active { border-color: var(--red); background: var(--red); }
+.sch-payment-radio-dot {
+  width: 8px; height: 8px;
+  border-radius: 4px;
+  background: white;
+}
+.sch-breakdown {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px;
+}
+.sch-breakdown-row {
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+.sch-breakdown-label { color: var(--muted); font-size: 12px; }
+.sch-breakdown-val { color: white; font-size: 12px; }
+.sch-breakdown-total {
+  flex-direction: row;
+  justify-content: space-between;
+  border-top: 1px solid var(--card2);
+  padding-top: 10px;
+  margin-top: 6px;
+}
+.sch-total-label { color: white; font-size: 14px; font-weight: 700; }
+.sch-total-val { color: var(--red); font-size: 16px; font-weight: 800; }
+.sch-footer { padding: 0 16px; }
+.sch-confirm {
+  background: var(--red);
+  border-radius: 14px;
+  padding: 14px;
+  align-items: center;
+}
+.sch-confirm-text { color: white; font-size: 14px; font-weight: 800; }
+
+/* ── ORDER STATUS ── */
+.s-order {
+  height: 100%;
+  background: var(--bg);
+  padding-top: 40px;
+}
+.so-header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 12px;
+}
+.so-back {
+  width: 34px; height: 34px;
+  background: var(--card);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 18px; font-weight: 700;
+}
+.so-title { color: white; font-size: 16px; font-weight: 700; }
+.so-chat {
+  width: 34px; height: 34px;
+  background: var(--card);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.so-escrow-banner {
+  flex-direction: row;
+  align-items: center;
+  background: rgba(255,60,60,0.1);
+  margin: 0 16px 14px;
+  border-radius: 12px;
+  padding: 12px;
+  gap: 10px;
+  border: 1px solid rgba(255,60,60,0.2);
+}
+.so-escrow-icon { font-size: 20px; }
+.so-escrow-title { color: var(--red); font-size: 12px; font-weight: 700; }
+.so-escrow-desc { color: var(--muted); font-size: 10px; margin-top: 2px; }
+.so-escrow-amt {
+  background: var(--red);
+  border-radius: 7px;
+  padding: 4px 9px;
+  margin-left: auto;
+}
+.so-escrow-amt span { color: white; font-size: 11px; font-weight: 800; }
+.so-card {
+  flex-direction: row;
+  background: var(--card);
+  margin: 0 16px 16px;
+  border-radius: 14px;
+  padding: 12px;
+  gap: 10px;
+  align-items: center;
+}
+.so-card-img {
+  width: 55px; height: 77px;
+  background: var(--card2);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+.so-card-info { flex: 1; }
+.so-card-name { color: white; font-size: 13px; font-weight: 700; }
+.so-card-set { color: var(--muted); font-size: 10px; margin-top: 2px; }
+.so-card-role {
+  background: rgba(255,184,0,0.15);
+  border-radius: 6px;
+  padding: 2px 7px;
+  align-self: flex-start;
+  margin-top: 5px;
+}
+.so-card-role span { color: var(--gold); font-size: 9px; font-weight: 700; }
+.so-card-price { color: white; font-size: 15px; font-weight: 800; }
+.so-timeline {
+  background: var(--card);
+  margin: 0 16px 16px;
+  border-radius: 16px;
+  padding: 16px;
+}
+.so-timeline-title { color: white; font-size: 13px; font-weight: 700; margin-bottom: 14px; }
+.so-step {
+  flex-direction: row;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  position: relative;
+}
+.so-step-connector {
+  position: absolute;
+  left: 11px;
+  top: -10px;
+  width: 2px;
+  height: 10px;
+}
+.so-step-connector.done { background: var(--green); }
+.so-step-connector.pending { background: var(--card2); }
+.so-step-circle {
+  width: 24px; height: 24px;
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.so-step-circle.done { background: var(--green); color: white; font-size: 10px; }
+.so-step-circle.active { background: var(--red); }
+.so-step-circle.pending { background: var(--card2); }
+.so-step-content {}
+.so-step-label { color: white; font-size: 12px; font-weight: 700; }
+.so-step-label.done { color: var(--green); }
+.so-step-label.active { color: var(--red); }
+.so-step-label.pending { color: var(--dim); }
+.so-step-sub { color: var(--muted); font-size: 10px; margin-top: 1px; }
+.so-action { padding: 0 16px; gap: 8px; display: flex; flex-direction: column; }
+.so-shipped-alert {
+  background: rgba(255,184,0,0.1);
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255,184,0,0.2);
+}
+.so-shipped-alert-title { color: var(--gold); font-size: 13px; font-weight: 700; }
+.so-shipped-alert-sub { color: var(--muted); font-size: 11px; margin-top: 3px; }
+.so-confirm-btn {
+  background: var(--green);
+  border-radius: 12px;
+  padding: 13px;
+  align-items: center;
+}
+.so-confirm-btn span { color: white; font-size: 14px; font-weight: 700; }
+.so-dispute-btn {
+  background: rgba(255,60,60,0.1);
+  border-radius: 12px;
+  padding: 11px;
+  align-items: center;
+  border: 1px solid rgba(255,60,60,0.3);
+}
+.so-dispute-btn span { color: var(--red); font-size: 12px; font-weight: 600; }
+.so-dispute-banner {
+  flex-direction: row;
+  align-items: center;
+  background: var(--card);
+  margin: 0 16px 0;
+  border-radius: 12px;
+  padding: 12px;
+  gap: 10px;
+}
+.so-dispute-banner-icon { font-size: 20px; }
+.so-dispute-banner-title { color: white; font-size: 12px; font-weight: 700; }
+.so-dispute-banner-desc { color: var(--muted); font-size: 10px; margin-top: 2px; }
+.so-dispute-banner-arrow { color: var(--red); font-size: 16px; font-weight: 700; margin-left: auto; }
+
+/* flex helpers */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+
+/* spacing */
+.gap-8 { gap: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Poke<span>Market</span></h1>
+  <p>Pokémon Card Trading Platform · App Preview</p>
+  <div class="badge">🃏 Escrow · FPS · MTR 面交 · 深色主題</div>
+</div>
+
+<div class="row">
+
+  <!-- ── HOME ── -->
+  <div class="flex flex-col">
+    <div class="col-label">首頁 · 市場行情</div>
+    <div class="phone">
+      <div class="status-bar">
+        <div class="status-time">9:41</div>
+        <div class="status-icons">📶 📡 🔋</div>
+      </div>
+      <div class="s-home">
+        <div class="sh-header flex" style="padding: 0 16px 12px; align-items: flex-start;">
+          <div>
+            <div class="sh-greeting">訓練員，你好 👋</div>
+            <div class="sh-title">PokéMarket</div>
+          </div>
+          <div class="sh-bell">🔔</div>
+        </div>
+
+        <div class="sh-stats flex">
+          <div class="sh-stat">
+            <div class="sh-stat-label">24h 成交量</div>
+            <div class="sh-stat-val">HK$2.8M</div>
+          </div>
+          <div class="sh-stat-div"></div>
+          <div class="sh-stat">
+            <div class="sh-stat-label">🚀 今日升幅</div>
+            <div class="sh-stat-val gain">▲ 18.5%</div>
+          </div>
+          <div class="sh-stat-div"></div>
+          <div class="sh-stat">
+            <div class="sh-stat-label">📉 今日跌幅</div>
+            <div class="sh-stat-val loss">▼ 3.2%</div>
+          </div>
+        </div>
+
+        <div class="sh-search flex">
+          <span class="sh-search-icon">🔍</span>
+          <input type="text" placeholder="搜尋卡名、Series、Rarity...">
+        </div>
+
+        <div class="sh-filters flex">
+          <div class="sh-filter active">全部</div>
+          <div class="sh-filter">Sword&Shield</div>
+          <div class="sh-filter">Sun&Moon</div>
+          <div class="sh-filter">稀有 Ultra</div>
+        </div>
+
+        <div class="sh-scroll flex">
+          <div class="sh-card-mini">
+            <div class="sh-card-mini-img">🔥</div>
+            <div class="sh-card-mini-name">Charizard VMAX</div>
+            <div class="sh-card-mini-price">HK$4.2K</div>
+            <div class="sh-card-mini-badge up">▲ 8.4%</div>
+          </div>
+          <div class="sh-card-mini">
+            <div class="sh-card-mini-img">👻</div>
+            <div class="sh-card-mini-name">Gengar VMAX</div>
+            <div class="sh-card-mini-price">HK$3.1K</div>
+            <div class="sh-card-mini-badge up">▲ 12.1%</div>
+          </div>
+          <div class="sh-card-mini">
+            <div class="sh-card-mini-img">🌙</div>
+            <div class="sh-card-mini-name">Umbreon VMAX</div>
+            <div class="sh-card-mini-price">HK$3.4K</div>
+            <div class="sh-card-mini-badge up">▲ 18.5%</div>
+          </div>
+          <div class="sh-card-mini">
+            <div class="sh-card-mini-img">🦅</div>
+            <div class="sh-card-mini-name">Rayquaza VMAX</div>
+            <div class="sh-card-mini-price">HK$2.6K</div>
+            <div class="sh-card-mini-badge up">▲ 5.7%</div>
+          </div>
+        </div>
+
+        <div class="sh-section-title flex">
+          <span>📊 市場掛牌</span>
+          <a href="#">查看全部 →</a>
+        </div>
+
+        <div class="sh-list">
+          <div class="sh-list-item flex">
+            <div class="sh-list-img">🔥</div>
+            <div class="sh-list-info">
+              <div class="sh-list-name">Charizard VMAX · Darkness Ablaze</div>
+              <div class="sh-list-set">DAA · 115/189 · Ultra Rare</div>
+              <div class="sh-list-price">HK$4,280</div>
+              <div class="sh-list-meta flex">
+                <span class="sh-list-badge up">▲ 8.4%</span>
+                <span class="sh-list-listings">📦 23 個掛牌</span>
+              </div>
+            </div>
+          </div>
+          <div class="sh-list-item flex">
+            <div class="sh-list-img">🌙</div>
+            <div class="sh-list-info">
+              <div class="sh-list-name">Umbreon VMAX · Evolving Skies</div>
+              <div class="sh-list-set">EVS · 215/203 · Ultra Rare</div>
+              <div class="sh-list-price">HK$3,420</div>
+              <div class="sh-list-meta flex">
+                <span class="sh-list-badge up">▲ 18.5%</span>
+                <span class="sh-list-listings">📦 8 個掛牌</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sh-bottom-nav flex">
+          <div class="nav-item">
+            <div class="nav-item-icon active">🏠</div>
+            <div class="nav-item-label active">市場</div>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">💰</div>
+            <div class="nav-item-label">錢包</div>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-center">📦</div>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">💼</div>
+            <div class="nav-item-label">收藏</div>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">⚙️</div>
+            <div class="nav-item-label">設定</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── WALLET ── -->
+  <div class="flex flex-col">
+    <div class="col-label">錢包 · Escrow 資金托管</div>
+    <div class="phone">
+      <div class="status-bar">
+        <div class="status-time">9:41</div>
+        <div class="status-icons">📶 📡 🔋</div>
+      </div>
+      <div class="s-wallet">
+        <div class="sw-header flex" style="padding: 0 16px 12px; align-items: center;">
+          <div class="sw-title">我的錢包</div>
+          <div class="sw-settings">⚙️</div>
+        </div>
+
+        <div class="sw-balance">
+          <div class="sw-balance-top flex">
+            <div>
+              <div class="sw-balance-label">可提現餘額</div>
+              <div class="sw-balance-val">HK$ 12,430</div>
+            </div>
+            <div class="sw-withdraw">提現 →</div>
+          </div>
+          <div class="sw-balance-div"></div>
+          <div class="sw-balance-sub flex">
+            <div class="sw-balance-sub-item">
+              <div class="sw-balance-sub-label">🔒 擔保中</div>
+              <div class="sw-balance-sub-val">HK$ 4,200</div>
+            </div>
+            <div class="sw-balance-sub-item">
+              <div class="sw-balance-sub-label">💰 總結餘</div>
+              <div class="sw-balance-sub-val">HK$ 16,630</div>
+            </div>
+          </div>
+          <div class="sw-fps-badge flex"><span>FPS 轉數快已連結</span></div>
+        </div>
+
+        <div class="sw-escrow-info flex">
+          <div class="sw-escrow-icon">🔐</div>
+          <div>
+            <div class="sw-escrow-title">資金由平台托管</div>
+            <div class="sw-escrow-desc">買家確認收卡後，款項先由平台持有，交易完成後才轉俾賣家，保障雙方</div>
+          </div>
+        </div>
+
+        <div class="sw-tabs flex">
+          <div class="sw-tab active flex">
+            <span class="sw-tab-label active">全部</span>
+            <div class="sw-tab-count active">4</div>
+          </div>
+          <div class="sw-tab flex">
+            <span class="sw-tab-label">待確認</span>
+            <div class="sw-tab-count">1</div>
+          </div>
+          <div class="sw-tab flex">
+            <span class="sw-tab-label">擔保中</span>
+            <div class="sw-tab-count">1</div>
+          </div>
+          <div class="sw-tab flex">
+            <span class="sw-tab-label">已完成</span>
+            <div class="sw-tab-count">2</div>
+          </div>
+        </div>
+
+        <div class="sw-tx-list">
+          <div class="sw-tx flex">
+            <div class="sw-tx-icon sell">↑</div>
+            <div class="sw-tx-info">
+              <div class="sw-tx-name">Charizard VMAX</div>
+              <div class="sw-tx-sub">賣俾 CardMaster_HK · 2 小時前</div>
+            </div>
+            <div class="sw-tx-right">
+              <div class="sw-tx-amount sell">+HK$4,200</div>
+              <div class="sw-tx-badge escrow">擔保中</div>
+              <div class="sw-tx-days">還剩 2 日</div>
+            </div>
+          </div>
+          <div class="sw-tx flex">
+            <div class="sw-tx-icon sell">↑</div>
+            <div class="sw-tx-info">
+              <div class="sw-tx-name">Gengar VMAX</div>
+              <div class="sw-tx-sub">賣俾 PokemonCollector · 1 日前</div>
+            </div>
+            <div class="sw-tx-right">
+              <div class="sw-tx-amount sell">+HK$3,150</div>
+              <div class="sw-tx-badge done">已完成</div>
+            </div>
+          </div>
+          <div class="sw-tx flex">
+            <div class="sw-tx-icon buy">↓</div>
+            <div class="sw-tx-info">
+              <div class="sw-tx-name">Umbreon VMAX</div>
+              <div class="sw-tx-sub">向 RareCards_HK · 30 分鐘前</div>
+            </div>
+            <div class="sw-tx-right">
+              <div class="sw-tx-amount buy">-HK$3,420</div>
+              <div class="sw-tx-badge pending">待確認</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sh-bottom-nav flex" style="margin-top: 24px;">
+          <div class="nav-item">
+            <div class="nav-item-icon">🏠</div>
+            <div class="nav-item-label">市場</div>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon active">💰</div>
+            <div class="nav-item-label active">錢包</div>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-center">📦</div>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">💼</div>
+            <div class="nav-item-label">收藏</div>
+          </div>
+          <div class="nav-item">
+            <div class="nav-item-icon">⚙️</div>
+            <div class="nav-item-label">設定</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHECKOUT ── -->
+  <div class="flex flex-col">
+    <div class="col-label">付款 · 選擇交收 + 支付</div>
+    <div class="phone">
+      <div class="status-bar">
+        <div class="status-time">9:41</div>
+        <div class="status-icons">📶 📡 🔋</div>
+      </div>
+      <div class="s-checkout">
+        <div class="sch-header flex" style="align-items: center;">
+          <div class="sch-back">←</div>
+          <div class="sch-title">確認訂單</div>
+          <div style="width: 34px;"></div>
+        </div>
+
+        <div class="sch-escrow-banner flex">
+          <div class="sch-escrow-icon">🔐</div>
+          <div>
+            <div class="sch-escrow-title">資金托管安全保障</div>
+            <div class="sch-escrow-desc">款項由平台代為保管，收卡確認後先轉俾賣家，如有问题可提出争议</div>
+          </div>
+        </div>
+
+        <div class="sch-card flex">
+          <div class="sch-card-img">🔥</div>
+          <div class="sch-card-info">
+            <div class="sch-card-name">Charizard VMAX</div>
+            <div class="sch-card-set">Darkness Ablaze · 115/189</div>
+            <div class="sch-card-seller">賣家：CardMaster_HK</div>
+          </div>
+          <div class="sch-card-price">HK$4,280</div>
+        </div>
+
+        <div class="sch-section">
+          <div class="sch-section-title">📦 交收方式</div>
+          <div class="sch-delivery-grid flex">
+            <div class="sch-delivery-opt active">
+              <div class="sch-delivery-icon">🤝</div>
+              <div class="sch-delivery-name active">面交</div>
+              <div class="sch-delivery-desc">地鐵站當面交收</div>
+              <div class="sch-delivery-price active">免費</div>
+            </div>
+            <div class="sch-delivery-opt">
+              <div class="sch-delivery-icon">📦</div>
+              <div class="sch-delivery-name">順豐快遞</div>
+              <div class="sch-delivery-desc">送貨上門</div>
+              <div class="sch-delivery-price">HK$ 35</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sch-section">
+          <div class="sch-section-title">💳 支付方式</div>
+          <div class="sch-payment-list">
+            <div class="sch-payment-opt active flex">
+              <div class="sch-payment-left flex">
+                <div class="sch-payment-icon">🏧</div>
+                <div>
+                  <div class="sch-payment-name">FPS 轉數快</div>
+                  <div class="sch-payment-sub">即時轉帳</div>
+                </div>
+              </div>
+              <div class="sch-payment-radio active">
+                <div class="sch-payment-radio-dot"></div>
+              </div>
+            </div>
+            <div class="sch-payment-opt flex">
+              <div class="sch-payment-left flex">
+                <div class="sch-payment-icon">💳</div>
+                <div>
+                  <div class="sch-payment-name">信用卡 / 扣帳卡</div>
+                  <div class="sch-payment-sub">Visa / Mastercard</div>
+                </div>
+              </div>
+              <div class="sch-payment-radio"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sch-section">
+          <div class="sch-breakdown">
+            <div class="sch-breakdown-row flex">
+              <div class="sch-breakdown-label">商品金額</div>
+              <div class="sch-breakdown-val">HK$ 4,280</div>
+            </div>
+            <div class="sch-breakdown-row flex">
+              <div class="sch-breakdown-label">平台服務費 (3%)</div>
+              <div class="sch-breakdown-val">HK$ 128</div>
+            </div>
+            <div class="sch-breakdown-row flex">
+              <div class="sch-breakdown-label">運費</div>
+              <div class="sch-breakdown-val">免費（面交）</div>
+            </div>
+            <div class="sch-breakdown-total flex">
+              <div class="sch-total-label">總計</div>
+              <div class="sch-total-val">HK$ 4,408</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sch-footer">
+          <div class="sch-confirm">
+            <div class="sch-confirm-text">確認支付 HK$ 4,408</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ORDER STATUS ── -->
+  <div class="flex flex-col">
+    <div class="col-label">訂單狀態 · Escrow 流程</div>
+    <div class="phone">
+      <div class="status-bar">
+        <div class="status-time">9:41</div>
+        <div class="status-icons">📶 📡 🔋</div>
+      </div>
+      <div class="s-order">
+        <div class="so-header flex" style="align-items: center;">
+          <div class="so-back">←</div>
+          <div class="so-title">訂單詳情</div>
+          <div class="so-chat">💬</div>
+        </div>
+
+        <div class="so-escrow-banner flex">
+          <div class="so-escrow-icon">🔐</div>
+          <div>
+            <div class="so-escrow-title">款項由平台托管中</div>
+            <div class="so-escrow-desc">HK$4,280 擔保中，確認收卡後自動轉俾賣家</div>
+          </div>
+          <div class="so-escrow-amt"><span>HK$4,280</span></div>
+        </div>
+
+        <div class="so-card flex">
+          <div class="so-card-img">🔥</div>
+          <div class="so-card-info">
+            <div class="so-card-name">Charizard VMAX</div>
+            <div class="so-card-set">Darkness Ablaze</div>
+            <div class="so-card-role flex"><span>🛒 你是買家</span></div>
+          </div>
+          <div class="so-card-price">HK$4,280</div>
+        </div>
+
+        <div class="so-timeline">
+          <div class="so-timeline-title">📍 交易進度</div>
+
+          <div class="so-step flex">
+            <div class="so-step-circle done">✓</div>
+            <div class="so-step-content">
+              <div class="so-step-label done">已付款</div>
+              <div class="so-step-sub">款項由平台保管</div>
+            </div>
+          </div>
+
+          <div class="so-step flex">
+            <div class="so-step-connector done"></div>
+            <div class="so-step-circle done">✓</div>
+            <div class="so-step-content">
+              <div class="so-step-label done">等待發貨</div>
+              <div class="so-step-sub">賣家準備中</div>
+            </div>
+          </div>
+
+          <div class="so-step flex">
+            <div class="so-step-connector done"></div>
+            <div class="so-step-circle active">📦</div>
+            <div class="so-step-content">
+              <div class="so-step-label active">已發貨</div>
+              <div class="so-step-sub">SF1234567890 · 運輸中</div>
+            </div>
+          </div>
+
+          <div class="so-step flex">
+            <div class="so-step-connector pending"></div>
+            <div class="so-step-circle pending">⏳</div>
+            <div class="so-step-content">
+              <div class="so-step-label pending">等待驗收</div>
+              <div class="so-step-sub">請檢查卡牌狀態</div>
+            </div>
+          </div>
+
+          <div class="so-step flex">
+            <div class="so-step-connector pending"></div>
+            <div class="so-step-circle pending">🎉</div>
+            <div class="so-step-content">
+              <div class="so-step-label pending">款項釋放</div>
+              <div class="so-step-sub">交易完成</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="so-action">
+          <div class="so-shipped-alert">
+            <div class="so-shipped-alert-title">📦 賣家已發貨！</div>
+            <div class="so-shipped-alert-sub">收到卡後，請檢查卡牌狀態再確認。如有問題可提出爭議。</div>
+          </div>
+          <div class="so-confirm-btn flex"><span>✅ 確認收貨</span></div>
+          <div class="so-dispute-btn flex"><span>🛡️ 有問題？提出爭議</span></div>
+        </div>
+
+        <div class="so-dispute-banner flex" style="margin-top: 12px;">
+          <div class="so-dispute-banner-icon">🛡️</div>
+          <div>
+            <div class="so-dispute-banner-title">需要提出爭議？</div>
+            <div class="so-dispute-banner-desc">平台 24 小時內審查</div>
+          </div>
+          <div class="so-dispute-banner-arrow">→</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center; margin-top: 48px; color: rgba(255,255,255,0.2); font-size: 11px; font-family: 'DM Sans', sans-serif; letter-spacing: 1px;">
+  PokeMarket · 平台安全擔保 · 買家確認收貨，賣家先收款 🔐
+</div>
+
+</body>
+</html>
