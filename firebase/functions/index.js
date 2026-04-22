@@ -9,11 +9,15 @@
  *  4. Dispute → Funds frozen until resolution
  *
  * Deploy: firebase deploy --only functions
+ *
+ * ⚠️ DEPRECATION NOTICE (March 2026):
+ * functions.config() deprecated → migrated to dotenv (.env file)
  */
 
+require("dotenv").config({ path: __dirname + "/../../.env" });
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const stripe = require("stripe")(functions.config().stripe.secret_key);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const cors = require("cors")({ origin: true });
 
 admin.initializeApp();
