@@ -6,7 +6,7 @@
  *   import { createPayment, confirmReceipt, raiseDispute } from '@/services/stripeService';
  */
 
-import { functions } from "@/services/firebase"; // Firebase app config
+import { functions } from "./firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { Stripe, loadStripe } from "@stripe/stripe-react-native";
 
