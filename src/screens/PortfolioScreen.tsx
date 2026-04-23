@@ -89,6 +89,9 @@ const PortfolioScreen: React.FC = () => {
               <View>
                 <Text style={styles.holdingLabel}>現值</Text>
                 <Text style={styles.holdingValue}>HK${item.currentValue.toLocaleString()}</Text>
+                {item.pnlPercent >= 50 && (
+                  <Text style={styles.holdingTrophy}>🏆</Text>
+                )}
               </View>
             </View>
           </View>
@@ -217,6 +220,7 @@ const styles = StyleSheet.create({
   holdingQty: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
   holdingAvg: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
   holdingValue: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+  holdingTrophy: { fontSize: 14, marginLeft: 4 },
   pnlSection: {
     paddingRight: 14,
     alignItems: 'flex-end',

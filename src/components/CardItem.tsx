@@ -14,8 +14,25 @@ const formatPrice = (price: number): string => {
   return `HK$ ${price}`;
 };
 
+const ELEMENT_COLORS = {
+  fire: '#FF6B35', water: '#4A90D9', grass: '#52C41A',
+  lightning: '#FADB14', psychic: '#B371CF', dark: '#5A4FCF',
+  dragon: '#FF4D4F', normal: '#8C8C8C',
+};
+const ELEMENT_MAP: Record<string, string> = {
+  Charizard: 'fire', Gengar: 'psychic', Rayquaza: 'dragon',
+  Pikachu: 'lightning', Umbreon: 'dark', Lugia: 'psychic',
+  Gardevoir: 'psychic', Blastoise: 'water', Darkrai: 'dark',
+};
+const getElementColor = (name: string) => {
+  const key = name.split(' ')[0];
+  return ELEMENT_COLORS[ELEMENT_MAP[key] ?? 'normal'] ?? '#8C8C8C';
+};
+
 const CardItem: React.FC<Props> = ({ card, onPress, compact }) => {
   const isGain = card.priceChange24h >= 0;
+  const elementColor = getElementColor(card.name);
+  const isTopCard = card.priceChange24h >= 8;
 
   if (compact) {
     return (
@@ -33,13 +50,18 @@ const CardItem: React.FC<Props> = ({ card, onPress, compact }) => {
   }
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.card, !compact && { borderLeftWidth: 3, borderLeftColor: elementColor }]}
+      onPress={onPress} activeOpacity={0.7}
+    >
+      {!compact && <View style={[styles.elementBar, { backgroundColor: elementColor }]} />}
       <Image source={{ uri: card.imageUrl }} style={styles.image} />
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>{card.name}</Text>
         <Text style={styles.set}>{card.set} · {card.number}</Text>
         <View style={styles.priceRow}>
           <Text style={styles.price}>{formatPrice(card.price)}</Text>
+          {isTopCard && <Text style={styles.trophyIcon}>🏆</Text>}
           <View style={[styles.badge, isGain ? styles.badgeGain : styles.badgeLoss]}>
             <Text style={[styles.badgeText, isGain ? styles.textGain : styles.textLoss]}>
               {isGain ? '▲' : '▼'} {Math.abs(card.priceChange24h).toFixed(1)}%

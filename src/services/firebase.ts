@@ -28,8 +28,8 @@ export function initFirebase() {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-    // HK region — same as Firestore
-    functions = getFunctions(app, "asia-east1");
+    // ⚠️ Functions 部署在 us-central1，必須對齊，否則 callable 會 404
+    functions = getFunctions(app, "us-central1");
   }
   return { app, auth, db, functions };
 }

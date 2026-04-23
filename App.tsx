@@ -12,24 +12,38 @@ import SellScreen from "./src/screens/SellScreen";
 import WalletScreen from "./src/screens/WalletScreen";
 import CheckoutScreen from "./src/screens/CheckoutScreen";
 import OrderStatusScreen from "./src/screens/OrderStatusScreen";
+import TradeScreen from "./src/screens/trade/TradeScreen";
+import MakeOfferScreen from "./src/screens/trade/MakeOfferScreen";
+import MyOffersScreen from "./src/screens/trade/MyOffersScreen";
+import OfferDetailScreen from "./src/screens/trade/OfferDetailScreen";
+import ChatListScreen from "./src/screens/chat/ChatListScreen";
+import ChatDetailScreen from "./src/screens/chat/ChatDetailScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Initialize Firebase globally
 initFirebase();
 
-const TabIcon: React.FC<{ icon: string; focused: boolean; label: string }> = ({
-  icon,
-  focused,
-  label,
+const TabIcon: React.FC<{ icon: string; focused: boolean; label: string; badge?: number }> = ({
+  icon, focused, label, badge,
 }) => (
   <View style={{ alignItems: "center", justifyContent: "center" }}>
     <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.4 }}>{icon}</Text>
+    {badge ? (
+      <View style={{
+        position: "absolute", top: -4, right: -8,
+        backgroundColor: "#FF3C3C", borderRadius: 8,
+        minWidth: 16, height: 16, alignItems: "center", justifyContent: "center",
+        paddingHorizontal: 3,
+      }}>
+        <Text style={{ color: "#FFF", fontSize: 9, fontWeight: "700" }}>
+          {badge > 99 ? "99+" : badge}
+        </Text>
+      </View>
+    ) : null}
     <Text
       style={{
-        fontSize: 9,
-        fontWeight: "700",
+        fontSize: 9, fontWeight: "700",
         color: focused ? "#FF3C3C" : "#6666AA",
         marginTop: 2,
       }}
@@ -60,6 +74,24 @@ const HomeTabs = () => (
       options={{
         tabBarIcon: ({ focused }) => (
           <TabIcon icon="🏠" focused={focused} label="市場" />
+        ),
+      }}
+    />
+    <Tab.Screen
+      name="TradeTab"
+      component={TradeScreen}
+      options={{
+        tabBarIcon: ({ focused }) => (
+          <TabIcon icon="📤" focused={focused} label="交換" />
+        ),
+      }}
+    />
+    <Tab.Screen
+      name="ChatTab"
+      component={ChatListScreen}
+      options={{
+        tabBarIcon: ({ focused }) => (
+          <TabIcon icon="💬" focused={focused} label="訊息" badge={0} />
         ),
       }}
     />
@@ -104,7 +136,6 @@ export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Firebase initializes async, ready immediately after
     setReady(true);
   }, []);
 
@@ -127,6 +158,19 @@ export default function App() {
         />
         <Stack.Screen name="Checkout" component={CheckoutScreen} />
         <Stack.Screen name="OrderStatus" component={OrderStatusScreen} />
+        <Stack.Screen name="MakeOffer" component={MakeOfferScreen} />
+        <Stack.Screen name="MyOffers" component={MyOffersScreen} />
+        <Stack.Screen name="OfferDetail" component={OfferDetailScreen} />
+        <Stack.Screen
+          name="ChatList"
+          component={ChatListScreen}
+          options={{ headerShown: true, headerTitle: "我的訊息", headerTintColor: "#FFF", headerStyle: { backgroundColor: "#1A1A2E" }, headerBackTitle: "返回" }}
+        />
+        <Stack.Screen
+          name="ChatDetail"
+          component={ChatDetailScreen}
+          options={{ headerShown: true, headerTitle: "對話", headerTintColor: "#FFF", headerStyle: { backgroundColor: "#1A1A2E" }, headerBackTitle: "返回" }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -134,16 +178,11 @@ export default function App() {
 
 const styles = StyleSheet.create({
   loading: {
-    flex: 1,
-    backgroundColor: "#12121F",
-    alignItems: "center",
-    justifyContent: "center",
+    flex: 1, backgroundColor: "#12121F",
+    alignItems: "center", justifyContent: "center",
   },
   loadingText: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "800",
-    marginTop: 16,
-    letterSpacing: -0.5,
+    color: "#FFFFFF", fontSize: 24, fontWeight: "800",
+    marginTop: 16, letterSpacing: -0.5,
   },
 });

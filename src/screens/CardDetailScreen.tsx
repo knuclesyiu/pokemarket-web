@@ -149,6 +149,28 @@ const CardDetailScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
+        {/* 💬 Contact Seller */}
+        <TouchableOpacity
+          style={styles.contactBtn}
+          onPress={async () => {
+            try {
+              const { httpsCallable, getFunctions } = await import('firebase/functions');
+              const createChatThread = httpsCallable(getFunctions(), 'createChatThread');
+              const result = await createChatThread({
+                listingId: card.id,
+                parties: ['placeholder_user', 'seller_placeholder'],
+              });
+              const { threadId } = result.data as { threadId: string };
+              navigation.navigate('ChatDetail', { threadId, otherPartyId: 'seller_placeholder', otherPartyName: card.set });
+            } catch {
+              // Navigate to ChatList to show instructions
+              navigation.navigate('ChatList');
+            }
+          }}
+        >
+          <Text style={styles.contactBtnText}>💬 聯絡賣家</Text>
+        </TouchableOpacity>
+
         {/* Tabs */}
         <View style={styles.tabRow}>
           {(['listings', 'history'] as const).map(t => (
@@ -449,6 +471,16 @@ const modalStyles = StyleSheet.create({
   optionDesc: { color: '#8888AA', fontSize: 12 },
   cancelBtn: { alignItems: 'center', backgroundColor: 'transparent', borderWidth: 1, borderColor: '#3A3A4E' },
   cancelText: { color: '#8888AA', fontSize: 14, fontWeight: '600' },
+  contactBtn: {
+    backgroundColor: '#1E1E2E',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#2A2A3E',
+  },
+  contactBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
 });
 
 export default CardDetailScreen;

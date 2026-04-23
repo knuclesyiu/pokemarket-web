@@ -91,9 +91,14 @@ const WalletScreen: React.FC = () => {
             <Text style={styles.balanceLabel}>可提現餘額</Text>
             <Text style={styles.balanceValue}>HK$ {available.toLocaleString()}</Text>
           </View>
-          <TouchableOpacity style={styles.withdrawBtn}>
-            <Text style={styles.withdrawBtnText}>提現 →</Text>
-          </TouchableOpacity>
+          <View style={styles.balanceActions}>
+            <TouchableOpacity style={styles.topupBtn} onPress={() => {}}>
+              <Text style={styles.topupBtnText}>↑ 充值</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.withdrawBtn} onPress={() => {}}>
+              <Text style={styles.withdrawBtnText}>提現 →</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={styles.balanceDivider} />
         <View style={styles.balanceSub}>
@@ -241,13 +246,16 @@ const styles = StyleSheet.create({
   },
   balanceLabel: { color: '#8888AA', fontSize: 12 },
   balanceValue: { color: '#FFFFFF', fontSize: 32, fontWeight: '800', marginTop: 4 },
-  withdrawBtn: {
-    backgroundColor: '#FF3C3C',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+  balanceActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  topupBtn: {
+    backgroundColor: '#1E1E2E', paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 20, borderWidth: 1, borderColor: '#2A2A3E',
   },
-  withdrawBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  topupBtnText: { color: '#FFD700', fontSize: 12, fontWeight: '700' },
+  withdrawBtn: {
+    backgroundColor: '#FF3C3C', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+  },
+  withdrawBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   balanceDivider: {
     height: 1,
     backgroundColor: '#2A2A3E',

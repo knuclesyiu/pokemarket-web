@@ -14,11 +14,14 @@ export interface PokemonCard {
   series: string;
   number: string;
   condition: CardCondition;
+  language?: CardLanguage;  // 預設 English
   listed: boolean;
   listingCount: number;
 }
 
 export type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Rare Holo' | 'Rare Ultra' | 'Rare Secret' | 'Promo';
+
+export type CardLanguage = 'Japanese' | 'English' | 'Chinese' | 'Multilingual';
 
 export type CardCondition = 'Mint' | 'Near Mint' | 'Excellent' | 'Good' | 'Fair' | 'Poor';
 

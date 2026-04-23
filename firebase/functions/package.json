@@ -1,16 +1,20 @@
 {
   "name": "pokemarket-firebase-functions",
   "version": "1.0.0",
-  "description": "Firebase Cloud Functions for PokeMarket Stripe Connect integration",
-  "main": "index.js",
+  "description": "Cloud Functions for Firebase — PokeMarket Stripe Connect",
   "engines": {
-    "node": "18"
+    "node": "24"
+  },
+  "main": "index.js",
+  "scripts": {
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
   },
   "dependencies": {
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "firebase-admin": "^11.11.0",
-    "firebase-functions": "^4.5.0",
-    "stripe": "^14.0.0"
+    "firebase-admin": "^13.6.0",
+    "firebase-functions": "^7.0.0",
+    "stripe": "^22.0.2"
   }
 }

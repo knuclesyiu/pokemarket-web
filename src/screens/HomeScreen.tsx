@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Image,
-  TextInput, FlatList, TouchableOpacity, Dimensions,
+  View, Text, ScrollView, StyleSheet,
+  FlatList, TouchableOpacity, Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import CardItem from '../components/CardItem';
+import SearchBar from '../components/search/SearchBar';
 import { MOCK_CARDS, MOCK_STATS } from '../data/mockData';
 import { PokemonCard } from '../types';
 
@@ -17,14 +18,22 @@ const SERIES_FILTER = ['全部', 'Sword&Shield', 'Sun&Moon', 'XY', 'Black&White'
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
-  const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<PokemonCard[] | null>(null);
   const [activeFilter, setActiveFilter] = useState('全部');
 
-  const filtered = MOCK_CARDS.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Use search results if available, otherwise show all
+  const displayCards = searchResults !== null ? searchResults : MOCK_CARDS;
+
+  const filtered = activeFilter === '全部'
+    ? displayCards
+    : displayCards.filter(c => c.series === activeFilter);
 
   const { topGainer, topLoser, totalVolume24h } = MOCK_STATS;
+
+  const now = new Date();
+  const timeLabel = now.getMinutes() < 5
+    ? '剛剛'
+    : now.getHours() === 9 ? '港股開市' : `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
 
   const formatVol = (v: number) =>
     v >= 1000000 ? `$${(v / 1000000).toFixed(1)}M` : `$${(v / 1000).toFixed(0)}K`;
@@ -48,6 +57,7 @@ const HomeScreen: React.FC = () => {
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>24h 成交量</Text>
           <Text style={styles.statValue}>HK${formatVol(totalVolume24h)}</Text>
+          <Text style={styles.statSub}>上次更新：{timeLabel}</Text>
         </View>
         <View style={styles.statDivider} />
         <TouchableOpacity
@@ -58,7 +68,7 @@ const HomeScreen: React.FC = () => {
           <Text style={[styles.statValue, styles.textGain]}>
             ▲ {topGainer.priceChange24h.toFixed(1)}%
           </Text>
-          <Text style={styles.statSub} numberOfLines={1}>{topGainer.name}</Text>
+          <Text style={[styles.statSub, styles.statSubLink]} numberOfLines={1}>{topGainer.name} →</Text>
         </TouchableOpacity>
         <View style={styles.statDivider} />
         <TouchableOpacity
@@ -69,21 +79,15 @@ const HomeScreen: React.FC = () => {
           <Text style={[styles.statValue, styles.textLoss]}>
             ▼ {topLoser.priceChange24h.toFixed(1)}%
           </Text>
-          <Text style={styles.statSub} numberOfLines={1}>{topLoser.name}</Text>
+          <Text style={[styles.statSub, styles.statSubLink]} numberOfLines={1}>{topLoser.name} →</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Search */}
-      <View style={styles.searchWrap}>
-        <Text style={styles.searchIcon}>🔍</Text>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="搜尋卡名、Series、Rarity..."
-          placeholderTextColor="#6666AA"
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
+      {/* Search + Version Filter */}
+      <SearchBar
+        onResults={setSearchResults}
+        placeholder="搜尋卡名、Series、Rarity..."
+      />
 
       {/* Series Filter */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
@@ -126,7 +130,9 @@ const HomeScreen: React.FC = () => {
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>📊 市場掛牌</Text>
         <TouchableOpacity>
-          <Text style={styles.seeAll}>全部 {filtered.length} 張 →</Text>
+          <Text style={styles.seeAll}>
+            全部 {filtered.length} 張 →
+          </Text>
         </TouchableOpacity>
       </View>
       <View style={styles.cardList}>
@@ -223,25 +229,29 @@ const styles = StyleSheet.create({
     fontSize: 9,
     marginTop: 2,
   },
+  statSubLink: {
+    color: '#8888AA',
+    textDecorationLine: 'underline',
+  },
   textGain: { color: '#00C864' },
   textLoss: { color: '#FF3C3C' },
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1E1E2E',
-    marginHorizontal: 16,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#2A2A3E',
+
+  // Element type badge (Fire/Water/Grass/etc)
+  elementBadge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
-  searchIcon: { fontSize: 16, marginRight: 8 },
-  searchInput: {
-    flex: 1,
-    color: '#FFFFFF',
-    fontSize: 14,
-    paddingVertical: 13,
+  elementBadgeText: { fontSize: 9, fontWeight: '800' },
+
+  // Trophy badge for profitable cards
+  trophyBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
   },
   filterRow: {
     paddingLeft: 16,
@@ -258,15 +268,15 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A3E',
   },
   filterChipActive: {
-    backgroundColor: '#FF3C3C',
-    borderColor: '#FF3C3C',
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700',
   },
   filterText: {
     color: '#8888AA',
     fontSize: 12,
     fontWeight: '600',
   },
-  filterTextActive: { color: '#FFFFFF' },
+  filterTextActive: { color: '#12121F' },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
