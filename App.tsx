@@ -9,6 +9,7 @@ import HomeScreen from "./src/screens/HomeScreen";
 import CardDetailScreen from "./src/screens/CardDetailScreen";
 import PortfolioScreen from "./src/screens/PortfolioScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
+import FeatureShowcaseScreen from "./src/screens/FeatureShowcaseScreen";
 import WalletScreen from "./src/screens/WalletScreen";
 import CheckoutScreen from "./src/screens/CheckoutScreen";
 import OrderStatusScreen from "./src/screens/OrderStatusScreen";
@@ -146,6 +147,7 @@ export default function App() {
       >
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="FeatureShowcase" component={FeatureShowcaseScreen} options={{ title: "功能概覽", headerTintColor: "#FFF", headerStyle: { backgroundColor: "#0A0A14" }, headerBackTitle: "返回" }} />
         <Stack.Screen name="Main" component={HomeTabs} />
         <Stack.Screen
           name="CardDetail"
