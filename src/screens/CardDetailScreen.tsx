@@ -196,6 +196,13 @@ const CardDetailScreen: React.FC = () => {
                 );
               })}
             </View>
+
+            {/* Disclaimer */}
+            <View style={styles.disclaimer}>
+              <Text style={styles.disclaimerText}>
+                💡 估值僅供參考，實際價格由買賣雙方自行商定。PSA/BGS 等級估價視卡牌人気程度而定。
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -435,6 +442,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E1E2E', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4,
   },
   sourceBadgeText: { color: '#6666AA', fontSize: 10 },
+  disclaimer: {
+    backgroundColor: 'rgba(136,136,170,0.1)',
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginTop: 10,
+  },
+  disclaimerText: { color: '#6666AA', fontSize: 10, lineHeight: 16 },
   currentPrice: { color: '#FFFFFF', fontSize: 22, fontWeight: '800' },
   badge: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 },
   badgeGain: { backgroundColor: 'rgba(0,200,100,0.15)' },

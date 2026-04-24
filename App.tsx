@@ -8,11 +8,9 @@ import initFirebase from "./src/services/firebase";
 import HomeScreen from "./src/screens/HomeScreen";
 import CardDetailScreen from "./src/screens/CardDetailScreen";
 import PortfolioScreen from "./src/screens/PortfolioScreen";
-import SellScreen from "./src/screens/SellScreen";
 import WalletScreen from "./src/screens/WalletScreen";
 import CheckoutScreen from "./src/screens/CheckoutScreen";
 import OrderStatusScreen from "./src/screens/OrderStatusScreen";
-import TradeScreen from "./src/screens/trade/TradeScreen";
 import MakeOfferScreen from "./src/screens/trade/MakeOfferScreen";
 import MyOffersScreen from "./src/screens/trade/MyOffersScreen";
 import OfferDetailScreen from "./src/screens/trade/OfferDetailScreen";
@@ -69,20 +67,11 @@ const HomeTabs = () => (
     }}
   >
     <Tab.Screen
-      name="HomeTab"
+      name="MarketTab"
       component={HomeScreen}
       options={{
         tabBarIcon: ({ focused }) => (
           <TabIcon icon="🏠" focused={focused} label="市場" />
-        ),
-      }}
-    />
-    <Tab.Screen
-      name="TradeTab"
-      component={TradeScreen}
-      options={{
-        tabBarIcon: ({ focused }) => (
-          <TabIcon icon="📤" focused={focused} label="交換" />
         ),
       }}
     />
@@ -110,15 +99,6 @@ const HomeTabs = () => (
       options={{
         tabBarIcon: ({ focused }) => (
           <TabIcon icon="💼" focused={focused} label="收藏" />
-        ),
-      }}
-    />
-    <Tab.Screen
-      name="SellTab"
-      component={SellScreen}
-      options={{
-        tabBarIcon: ({ focused }) => (
-          <TabIcon icon="📦" focused={focused} label="放售" />
         ),
       }}
     />
@@ -158,6 +138,7 @@ export default function App() {
         />
         <Stack.Screen name="Checkout" component={CheckoutScreen} />
         <Stack.Screen name="OrderStatus" component={OrderStatusScreen} />
+        <Stack.Screen name="Notifications" component={NotificationScreen} />
         <Stack.Screen name="MakeOffer" component={MakeOfferScreen} />
         <Stack.Screen name="MyOffers" component={MyOffersScreen} />
         <Stack.Screen name="OfferDetail" component={OfferDetailScreen} />
@@ -171,6 +152,7 @@ export default function App() {
           component={ChatDetailScreen}
           options={{ headerShown: true, headerTitle: "對話", headerTintColor: "#FFF", headerStyle: { backgroundColor: "#1A1A2E" }, headerBackTitle: "返回" }}
         />
+
       </Stack.Navigator>
     </NavigationContainer>
   );

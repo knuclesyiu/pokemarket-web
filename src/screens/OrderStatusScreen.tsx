@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  Image, Modal, TextInput,
+  Image, Modal, TextInput, Alert, ActivityIndicator,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
+import { httpsCallable, getFunctions } from 'firebase/functions';
+import { getAuth } from 'firebase/auth';
 
 type RouteProps = RouteProp<{ params: { txId: string } }, 'params'>;
 
@@ -34,6 +36,44 @@ const OrderStatusScreen: React.FC = () => {
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [disputeReason, setDisputeReason] = useState('');
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [isExtended, setIsExtended] = useState(false);
+  const [extending, setExtending] = useState(false);
+  const [disputing, setDisputing] = useState(false);
+  const [orderStatus, setOrderStatus] = useState<'funds_escrowed' | 'released' | 'disputed'>('funds_escrowed');
+
+  const handleExtendEscrow = async () => {
+    if (isExtended || extending) return;
+    setExtending(true);
+    try {
+      const extendFn = httpsCallable(getFunctions(), 'extendEscrow');
+      await extendFn({ orderId: txId });
+      setIsExtended(true);
+      Alert.alert('✅ 已延長', '款項釋放期限已延長至 14 日，請放心。');
+    } catch (e: any) {
+      Alert.alert('❌ 延長失敗', e.message ?? '請稍後再試');
+    } finally {
+      setExtending(false);
+    }
+  };
+
+  const handleCreateDispute = async () => {
+    if (!disputeReason.trim()) {
+      Alert.alert('請輸入', '請描述問題原因才能提交 dispute');
+      return;
+    }
+    setDisputing(true);
+    try {
+      const disputeFn = httpsCallable(getFunctions(), 'createDispute');
+      await disputeFn({ orderId: txId, reason: disputeReason.trim() });
+      setShowDisputeModal(false);
+      setOrderStatus('disputed');
+      Alert.alert('✅ Dispute 已提交', '我們會在 24 小時內處理，請留意通知。');
+    } catch (e: any) {
+      Alert.alert('❌ 提交失敗', e.message ?? '請稍後再試');
+    } finally {
+      setDisputing(false);
+    }
+  };
 
   const card = {
     name: 'Charizard VMAX',
@@ -213,6 +253,19 @@ const OrderStatusScreen: React.FC = () => {
           <TouchableOpacity style={styles.confirmReceiptBtn} onPress={handleConfirmReceipt}>
             <Text style={styles.confirmReceiptBtnText}>✅ 確認收貨</Text>
           </TouchableOpacity>
+          
+          {/* Extend button - only show if not yet extended */}
+          {!isExtended && (
+            <TouchableOpacity style={styles.extendBtn} onPress={handleExtendEscrow}>
+              <Text style={styles.extendBtnText}>⏰ 延長期限 (14日)</Text>
+            </TouchableOpacity>
+          )}
+          {isExtended && (
+            <View style={styles.extendedBadge}>
+              <Text style={styles.extendedBadgeText}>✓ 已延長至 14 日</Text>
+            </View>
+          )}
+          
           <TouchableOpacity
             style={styles.disputeBtn}
             onPress={() => setShowDisputeModal(true)}
@@ -243,6 +296,14 @@ const OrderStatusScreen: React.FC = () => {
             <Text style={styles.completeTitle}>交易完成！</Text>
             <Text style={styles.completeSub}>款項已轉俾 {card.counterparty}</Text>
           </View>
+          
+          {/* Report Problem button - visible within 30 days of release */}
+          <TouchableOpacity 
+            style={styles.reportProblemBtn}
+            onPress={() => setShowDisputeModal(true)}
+          >
+            <Text style={styles.reportProblemBtnText}>🛡️ 報告問題（30日內）</Text>
+          </TouchableOpacity>
         </View>
       )}
 

@@ -20,6 +20,7 @@ const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
   const [searchResults, setSearchResults] = useState<PokemonCard[] | null>(null);
   const [activeFilter, setActiveFilter] = useState('全部');
+  const [marketMode, setMarketMode] = useState<'market' | 'swap'>('market');
   const [priceMap, setPriceMap] = useState<Record<string, {
     priceHkd: number; change24h: number; source: string; ageMs: number
   }>>({});

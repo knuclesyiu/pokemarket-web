@@ -268,6 +268,126 @@ exports.stripeWebhook = v2.https.onRequest(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ESCROW PROTECTION: Day-5 Warning + Extend + Dispute
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Send warning notifications for escrow orders approaching 7-day auto-release (Day 5)
+ * Runs daily alongside dailyAutoRelease.
+ */
+exports.sendEscrowWarning = functions.pubsub
+  .schedule("every 24 hours")
+  .timeZone("Asia/Hong_Kong")
+  .onRun(async (message) => {
+    const FIVE_DAYS_AGO = new Date();
+    FIVE_DAYS_AGO.setDate(FIVE_DAYS_AGO.getDate() - 5);
+    const SEVEN_DAYS_AGO = new Date();
+    SEVEN_DAYS_AGO.setDate(SEVEN_DAYS_AGO.getDate() - 7);
+
+    const snap = await db.collection("orders")
+      .where("status", "==", "funds_escrowed")
+      .where("updatedAt", "<", admin.firestore.Timestamp.fromDate(FIVE_DAYS_AGO))
+      .where("updatedAt", ">", admin.firestore.Timestamp.fromDate(SEVEN_DAYS_AGO))
+      .get();
+
+    let sent = 0;
+    for (const doc of snap.docs) {
+      const order = doc.data();
+      if (order.releaseWarningSentAt) continue; // already sent
+
+      const daysLeft = Math.ceil((order.updatedAt?.toMillis?.() ?? Date.now()) / 86400000) - 5;
+      const daysRemaining = Math.max(0, 7 - 5 - Math.floor((Date.now() - (order.updatedAt?.toMillis?.() ?? Date.now())) / 86400000));
+
+      const notifRef = db.collection("notifications").doc();
+      await notifRef.set({
+        id: notifRef.id,
+        oderId: order.buyerId,
+        type: "escrow_warning",
+        title: "⚠️ 即將自動釋放款項",
+        body: `你的 HK$${order.amount?.toLocaleString()} 款項將於 ${daysRemaining} 日後自動釋放給賣家。如未收到卡，請立即報告問題。`,
+        orderId: doc.id,
+        cardName: order.cardName ?? "",
+        read: false,
+        createdAt: Date.now(),
+      });
+
+      await doc.ref.update({ releaseWarningSentAt: Date.now() });
+      sent++;
+    }
+    console.log(`[sendEscrowWarning] ${sent} warnings sent`);
+    return null;
+  });
+
+/**
+ * Buyer extends escrow deadline by 7 more days (max 14 days from payment)
+ * Input: { orderId: string }
+ */
+exports.extendEscrow = v2.https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "must be signed in");
+  const { orderId } = data;
+  if (!orderId) throw new functions.https.HttpsError("invalid-argument", "orderId required");
+
+  const orderRef = db.collection("orders").doc(orderId);
+  const order = await orderRef.get();
+  if (!order.exists) throw new functions.https.HttpsError("not-found", "order not found");
+  const d = order.data();
+  if (d.buyerId !== context.auth.uid) throw new functions.https.HttpsError("permission-denied", "not your order");
+  if (d.status !== "funds_escrowed") throw new functions.https.HttpsError("failed-precondition", `order status is ${d.status}`);
+  if (d.extendedUntil) throw new functions.https.HttpsError("failed-precondition", "already extended");
+
+  const newReleaseAt = Date.now() + 14 * 86400000;
+  await orderRef.update({ extendedUntil: newReleaseAt });
+  return { success: true, newReleaseAt, daysExtended: 14 };
+});
+
+/**
+ * Create a dispute for a released or released-but-problematic order
+ * Input: { orderId: string, reason: string }
+ */
+exports.createDispute = v2.https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "must be signed in");
+  const { orderId, reason } = data;
+  if (!orderId || !reason) throw new functions.https.HttpsError("invalid-argument", "orderId and reason required");
+
+  const orderRef = db.collection("orders").doc(orderId);
+  const order = await orderRef.get();
+  if (!order.exists) throw new functions.https.HttpsError("not-found", "order not found");
+  const d = order.data();
+  if (d.buyerId !== context.auth.uid && d.sellerId !== context.auth.uid) {
+    throw new functions.https.HttpsError("permission-denied", "not a participant");
+  }
+
+  const disputeRef = db.collection("disputes").doc();
+  await disputeRef.set({
+    id: disputeRef.id,
+    orderId,
+    reporterId: context.auth.uid,
+    reason,
+    status: "open",
+    createdAt: Date.now(),
+  });
+
+  await orderRef.update({ status: "disputed", disputeId: disputeRef.id });
+  return { disputeId: disputeRef.id, status: "open" };
+});
+
+/**
+ * Get notifications for current user
+ * Input: { limit?: number }
+ */
+exports.getNotifications = v2.https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "must be signed in");
+  const { limit = 50 } = data;
+  const snap = await db.collection("notifications")
+    .where("oderId", "==", context.auth.uid)
+    .orderBy("createdAt", "desc")
+    .limit(limit)
+    .get();
+  return { notifications: snap.docs.map(d => ({ id: d.id, ...d.data() })) };
+});
+
 // AUTO-RELEASE SCHEDULED FUNCTION
 // Uses 1st-gen API to avoid 1st→2nd gen upgrade conflict with existing deployment.
 // The existing Cloud Scheduler job maps to this function name.
@@ -1159,3 +1279,224 @@ async function fetchAndCache(setCode, cardNum, fallbackId) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PRICE SYNC SCHEDULED JOB (runs every 6 hours via Cloud Scheduler)
+// ─────────────────────────────────────────────────────────────────────────────
+
+exports.syncCardPricesScheduled = functions.pubsub
+  .schedule("every 6 hours")
+  .timeZone("Asia/Hong_Kong")
+  .onRun(async (message) => {
+    console.log("[syncCardPricesScheduled] Starting 6-hour price sync");
+
+    // Top traded cards by volume — update these every 6 hours
+    // Format: "setCode-cardNumber" matching TCGdex path format
+    const TOP_CARDS = [
+      "swsh5-115",   // Charizard VMAX
+      "swsh12-71",   // Gengar VMAX
+      "swsh3-76",    // Rayquaza VMAX
+      "swsh12-215",  // Umbreon VMAX
+      "swsh11-122",  // Pikachu VMAX
+      "swsh8-80",    // Mewtwo VMAX
+      "swsh4-116",   // Darkrai VMAX
+      "swsh6-186",   // Lugia V
+      "swsh6-187",   // Lugia VSTAR
+      "swsh9-181",   // Gardevoir VMAX
+      "swsh3-35",    // Blastoise VMAX
+      "swsh11-102",  // Charizard V
+      "swsh12-129",  // Mimikyu V
+      "swsh10-97",   // Absol V
+      "swsh9-163",   // Ho-Oh V
+    ];
+
+    let updated = 0, failed = 0;
+
+    for (const cardId of TOP_CARDS) {
+      try {
+        const priceData = await fetchTcgdexPrice(cardId);
+        if (priceData) {
+          await db.collection("card_prices").doc(cardId).set({
+            ...priceData,
+            updatedAt: Date.now(),
+            lastScheduledSync: Date.now(),
+          }, { merge: true });
+          updated++;
+          console.log(`[sync] ${cardId}: HKD ${priceData.priceHkd}`);
+        } else {
+          failed++;
+          console.warn(`[sync] ${cardId}: no data returned`);
+        }
+        await sleep(600); // be kind — ~1.6 req/sec max
+      } catch (e) {
+        failed++;
+        console.warn(`[sync] ${cardId} failed:`, e.message);
+      }
+    }
+
+    console.log(`[syncCardPricesScheduled] Done: ${updated} updated, ${failed} failed`);
+    return null;
+  });
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROTECTION LAYER 1 — Day-5 Escrow Warning (Scheduled)
+// Finds orders in funds_escrowed for 5-7 days and sends warning notifications.
+// ─────────────────────────────────────────────────────────────────────────────
+exports.sendEscrowWarning = functions.pubsub
+  .schedule("every 24 hours")
+  .timeZone("Asia/Hong_Kong")
+  .onRun(async (message) => {
+    const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    const ordersSnap = await db.collection("orders")
+      .where("status", "==", "funds_escrowed")
+      .get();
+
+    const results = { warned: 0, skipped: 0 };
+
+    for (const docSnap of ordersSnap.docs) {
+      const order = docSnap.data();
+      const createdMs = order.createdAt ? (order.createdAt.seconds || Date.now()) * 1000 : Date.now();
+      const ageMs = now - createdMs;
+
+      if (ageMs >= SEVEN_DAYS_MS || order.releaseWarningSentAt || ageMs < FIVE_DAYS_MS) {
+        results.skipped++;
+        continue;
+      }
+
+      const daysUntilRelease = Math.ceil((SEVEN_DAYS_MS - ageMs) / (24 * 60 * 60 * 1000));
+
+      try {
+        await db.collection("notifications").doc(docSnap.id).set({
+          type: "escrow_warning",
+          title: "⚠️ 款項即將自動釋放",
+          body: "你的訂單 HK$" + order.amountHkd + " 即將於 " + daysUntilRelease + " 日後自動釋放俾賣家，如未收到卡請立即確認",
+          orderId: docSnap.id,
+          toUserId: order.buyerId,
+          amountHkd: order.amountHkd,
+          cardName: order.cardName || "Pokemon 卡",
+          daysLeft: daysUntilRelease,
+          read: false,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        await docSnap.ref.update({
+          releaseWarningSentAt: now,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        results.warned++;
+      } catch (err) {
+        console.error("[sendEscrowWarning] failed for " + docSnap.id + ": " + err.message);
+        results.skipped++;
+      }
+    }
+
+    console.log("[sendEscrowWarning] complete: " + results.warned + " warned");
+    return null;
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROTECTION LAYER 2 — Extend Escrow (Buyer extends from Day 7 → Day 14)
+// ─────────────────────────────────────────────────────────────────────────────
+exports.extendEscrow = v2.https.onCall(
+  { region: "us-central1" },
+  async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
+    const { orderId, buyerId } = data;
+
+    if (!orderId) throw new functions.https.HttpsError("invalid-argument", "orderId required");
+    if (context.auth.uid !== buyerId) throw new functions.https.HttpsError("permission-denied", "Only buyer can extend");
+
+    const orderRef = db.collection("orders").doc(orderId);
+    const orderSnap = await orderRef.get();
+    if (!orderSnap.exists) throw new functions.https.HttpsError("not-found", "Order not found");
+
+    const order = orderSnap.data();
+    if (order.status !== "funds_escrowed") {
+      throw new functions.https.HttpsError("failed-precondition", "Cannot extend - order status is " + order.status);
+    }
+    if (order.extendedUntil && order.extendedUntil > Date.now()) {
+      throw new functions.https.HttpsError("failed-precondition", "Escrow already extended");
+    }
+
+    const newReleaseAt = Date.now() + 14 * 24 * 60 * 60 * 1000;
+
+    await orderRef.update({
+      extendedUntil: newReleaseAt,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return { success: true, newReleaseAt };
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROTECTION LAYER 3 — Create Dispute (Post-Release)
+// Buyer can dispute within 30 days of release.
+// ─────────────────────────────────────────────────────────────────────────────
+exports.createDispute = v2.https.onCall(
+  { region: "us-central1" },
+  async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
+    const { orderId, reason, buyerId } = data;
+
+    if (!orderId || !reason) {
+      throw new functions.https.HttpsError("invalid-argument", "orderId and reason required");
+    }
+    if (context.auth.uid !== buyerId) throw new functions.https.HttpsError("permission-denied", "Only buyer can dispute");
+
+    const orderRef = db.collection("orders").doc(orderId);
+    const orderSnap = await orderRef.get();
+    if (!orderSnap.exists) throw new functions.https.HttpsError("not-found", "Order not found");
+
+    const order = orderSnap.data();
+    const validStatuses = ["funds_escrowed", "funds_released"];
+    if (!validStatuses.includes(order.status)) {
+      throw new functions.https.HttpsError("failed-precondition", "Cannot dispute - order status is " + order.status);
+    }
+
+    if (order.status === "funds_released") {
+      const releasedAt = order.releasedAt ? (order.releasedAt.seconds || Date.now()) * 1000 : Date.now();
+      const daysSinceRelease = (Date.now() - releasedAt) / (30 * 24 * 60 * 60 * 1000);
+      if (daysSinceRelease > 1.0) {
+        throw new functions.https.HttpsError("failed-precondition", "Dispute window closed - 30 days since release");
+      }
+    }
+
+    const disputeRef = db.collection("disputes").doc();
+    await disputeRef.set({
+      id: disputeRef.id,
+      orderId,
+      buyerId,
+      sellerId: order.sellerId,
+      reason,
+      cardName: order.cardName || "",
+      amountHkd: order.amountHkd || 0,
+      status: "open",
+      createdAt: Date.now(),
+    });
+
+    await orderRef.update({
+      status: "disputed",
+      disputeId: disputeRef.id,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    await db.collection("notifications").doc().set({
+      type: "dispute_opened",
+      title: "🛡️ 爭議已開啟",
+      body: "買家對訂單 " + orderId + " 提出爭議：" + reason,
+      orderId,
+      toUserId: order.sellerId,
+      read: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return { disputeId: disputeRef.id, status: "open" };
+  }
+);

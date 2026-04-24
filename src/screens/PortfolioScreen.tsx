@@ -129,6 +129,18 @@ const PortfolioScreen: React.FC = () => {
         </View>
       ))}
 
+      {/* ── Floating Sell Button ── */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => {
+          const nav = navigation as any;
+          if (nav.navigate) nav.navigate('CardDetail', {});
+        }}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.fabText}>📦 放售卡牌</Text>
+      </TouchableOpacity>
+
       <View style={{ height: 100 }} />
     </ScrollView>
   );
@@ -243,6 +255,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
+  fab: {
+    position: 'absolute', bottom: 90, right: 16, left: 16,
+    backgroundColor: '#FF3C3C', borderRadius: 14, paddingVertical: 16,
+    alignItems: 'center', shadowColor: '#FF3C3C', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
+  },
+  fabText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   txBuy: { backgroundColor: 'rgba(255,60,60,0.15)' },
   txSell: { backgroundColor: 'rgba(0,200,100,0.15)' },
   txIconText: { fontSize: 16 },

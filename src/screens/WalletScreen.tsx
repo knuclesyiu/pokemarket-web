@@ -20,6 +20,7 @@ interface EscrowTransaction {
   state: EscrowState;
   date: string;
   daysLeft?: number;
+  autoReleaseAt?: number; // timestamp for auto-release warning
 }
 
 const MOCK_TRANSACTIONS: EscrowTransaction[] = [
@@ -28,6 +29,7 @@ const MOCK_TRANSACTIONS: EscrowTransaction[] = [
     cardImage: 'https://images.pokemontcg.io/swsh5/115.png',
     counterparty: 'CardMaster_HK', amount: 4200,
     state: 'in_escrow', date: '2 小時前', daysLeft: 2,
+    autoReleaseAt: Date.now() + 3 * 24 * 60 * 60 * 1000, // 3 days from now
   },
   {
     id: 't2', type: 'sell', cardName: 'Gengar VMAX',
@@ -127,6 +129,19 @@ const WalletScreen: React.FC = () => {
           </Text>
         </View>
       </View>
+
+      {/* ⚠️ ESCROW WARNING BANNER - Show if autoReleaseAt is within 5 days */}
+      {filtered.filter(t => t.state === 'in_escrow' && t.autoReleaseAt && t.autoReleaseAt - Date.now() < 5 * 24 * 60 * 60 * 1000).length > 0 && (
+        <View style={styles.warningBanner}>
+          <Text style={styles.warningIcon}>⚠️</Text>
+          <View style={styles.warningText}>
+            <Text style={styles.warningTitle}>款項即將自動釋放</Text>
+            <Text style={styles.warningDesc}>
+              以下款項將於 5 日內自動釋放給賣家，如未收到卡請立即聯絡
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* State tabs */}
       <View style={styles.tabRow}>
@@ -351,6 +366,22 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyIcon: { fontSize: 40, marginBottom: 8 },
   emptyText: { color: '#8888AA', fontSize: 14 },
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,184,0,0.15)',
+    marginHorizontal: 16,
+    borderRadius: 14,
+    padding: 14,
+    gap: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,184,0,0.3)',
+  },
+  warningIcon: { fontSize: 24 },
+  warningText: { flex: 1 },
+  warningTitle: { color: '#FFB800', fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  warningDesc: { color: '#8888AA', fontSize: 11, lineHeight: 16 },
   disputeBanner: {
     flexDirection: 'row',
     alignItems: 'center',
