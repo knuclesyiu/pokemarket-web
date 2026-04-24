@@ -845,3 +845,317 @@ exports.getChatThreads = v2.https.onCall(async (data, context) => {
 
   return { threads: snap.docs.map(d => ({ id: d.id, ...d.data() })) };
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FEATURE — Card Price API (TCGdex)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FX_EUR_TO_HKD = 8.5;
+const FX_USD_TO_HKD = 7.8;
+
+// Supported currencies in TCGdex response
+const MARKET_NAMES = ['cardmarket', 'tcgplayer'];
+
+/**
+ * Fetch and store prices for a batch of cards (used by Cloud Scheduler)
+ * Input: { cardIds: string[] }
+ * Output: { updated: number, failed: number }
+ */
+exports.syncCardPrices = v2.https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'admin only');
+
+  const { cardIds = [] } = data;
+  let updated = 0, failed = 0;
+
+  for (const cardId of cardIds) {
+    try {
+      const priceData = await fetchTcgdexPrice(cardId);
+      if (priceData) {
+        await db.collection('card_prices').doc(cardId).set({
+          ...priceData,
+          updatedAt: Date.now(),
+        }, { merge: true });
+        updated++;
+      } else {
+        failed++;
+      }
+      await sleep(500); // be kind to TCGdex — 2 req/sec max
+    } catch (e) {
+      console.warn(`[syncCardPrices] failed ${cardId}:`, e.message);
+      failed++;
+    }
+  }
+
+  return { updated, failed };
+});
+
+/**
+ * Get price for a single card (on-demand, with cache)
+ * Input: { cardId: string }
+ * Output: CardPrice document
+ */
+exports.getCardPrice = v2.https.onCall(async (data, context) => {
+  const { cardId } = data;
+  if (!cardId) throw new functions.https.HttpsError('invalid-argument', 'cardId required');
+
+  // Try Firestore cache first
+  const cached = await db.collection('card_prices').doc(cardId).get();
+  const cacheAge = cached.exists ? (Date.now() - cached.data().updatedAt) : Infinity;
+  const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
+
+  // Fresh enough? Return cached
+  if (cached.exists && cacheAge < CACHE_TTL) {
+    return { source: 'cache', ageMs: cacheAge, ...cached.data() };
+  }
+
+  // Stale or missing — fetch fresh from TCGdex
+  const priceData = await fetchTcgdexPrice(cardId);
+  if (priceData) {
+    await db.collection('card_prices').doc(cardId).set({
+      ...priceData,
+      updatedAt: Date.now(),
+    }, { merge: true });
+  }
+
+  return { source: 'live', ...(priceData ?? { error: 'price not found' }) };
+});
+
+/**
+ * Bulk search cards + get their prices
+ * Input: { query: string, language?: 'en' | 'ja' | 'fr' | ... }
+ * Output: { cards: CardSearchResult[] }
+ */
+exports.searchCardsWithPrices = v2.https.onCall(async (data, context) => {
+  const { query, language = 'en', limit = 20 } = data;
+  if (!query) throw new functions.https.HttpsError('invalid-argument', 'query required');
+
+  // Search via TCGdex card search
+  const searchUrl = `https://api.tcgdex.dev/v2/cards?name=${encodeURIComponent(query)}&lang=${language}`;
+  const searchResp = await fetch(searchUrl, { timeout: 8000 });
+  if (!searchResp.ok) throw new functions.https.HttpsError('unavailable', 'TCGdex search failed');
+
+  const cards = await searchResp.json();
+  const results = Array.isArray(cards) ? cards.slice(0, limit) : [cards].filter(Boolean);
+
+  // Enrich each card with cached price (don't call TCGdex per card — too slow)
+  const enriched = await Promise.all(results.map(async (card) => {
+    const cardId = `${card.id}`;
+    const cached = await db.collection('card_prices').doc(cardId).get();
+    return {
+      id: card.id,
+      name: card.name,
+      set: card.set?.name ?? card.set,
+      setCode: card.set?.id ?? card.set,
+      imageUrl: card.image ?? card.smallImage ?? card.largeImage,
+      rarity: card.rarity,
+      language,
+      price: cached.exists ? cached.data() : null,
+    };
+  }));
+
+  return { cards: enriched, total: enriched.length };
+});
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+async function fetchTcgdexPrice(cardId) {
+  // cardId format: "swsh5-115" → set=swsh5, number=115
+  // Normalise from either "set-number" or Firestore document id
+  const [setCode, cardNum] = (cardId.includes('-') && !cardId.match(/^[a-z]+\d+/))
+    ? cardId.split('-')
+    : [null, null];
+
+  if (!setCode || !cardNum) {
+    // Try to look up from Firestore cards collection by document id
+    const cardDoc = await db.collection('cards').doc(cardId).get();
+    if (!cardDoc.exists) return null;
+    const d = cardDoc.data();
+    return fetchAndCache(setCode || d.setCode, cardNum || d.number, cardId);
+  }
+
+  return fetchAndCache(setCode, cardNum, cardId);
+}
+
+async function fetchAndCache(setCode, cardNum, fallbackId) {
+  try {
+    const url = `https://api.tcgdex.dev/v2/cards/${setCode}/${cardNum}?lang=en`;
+    const resp = await fetch(url, { timeout: 8000 });
+    if (!resp.ok) return null;
+
+    const card = await resp.json();
+    const markets = card.markets ?? {};
+
+    const cardmarket = markets.cardmarket ?? {};
+    const tcgplayer = markets.tcgplayer ?? {};
+
+    const priceEur = cardmarket.averagePrice ?? 0;
+    const priceUsd = tcgplayer.averagePrice ?? 0;
+    const trendEur = cardmarket.priceChange?.priceChange ?? 0;
+    const trendUsd = tcgplayer.priceChange?.priceChange ?? 0;
+
+    // Convert to HKD
+    const hkdMarket = round(priceEur * FX_EUR_TO_HKD);
+    const hkdTcg = round(priceUsd * FX_USD_TO_HKD);
+    // Prefer CardMarket for Japanese cards, TCGPlayer for English
+    const bestHkd = Math.max(hkdMarket, hkdTcg);
+
+    return {
+      id: fallbackId,
+      setCode,
+      cardNumber: cardNum,
+      // Raw source prices
+      priceEurUsd: { eur: priceEur, usd: priceUsd },
+      // HKD prices
+      priceHkd: bestHkd,
+      cardmarketHkd: hkdMarket,
+      tcgplayerHkd: hkdTcg,
+      // 24h change (percentage — from market data or approximate from trend)
+      change24h: round(((trendEur / (priceEur || 1)) * 100) * 10) / 10,
+      change30d: cardmarket.trendPrice != null && cardmarket.averagePrice != null
+        ? round(((cardmarket.trendPrice - cardmarket.averagePrice) / cardmarket.averagePrice) * 100 * 10) / 10
+        : null,
+      // Grades (PSA multiplier — applied client-side)
+      gradeMultiplier: { psa10: 2.5, psa9: 1.8, bgs10: 2.3, bgs9: 1.6 },
+      lastFetched: Date.now(),
+    };
+  } catch (e) {
+    console.warn('[fetchAndCache]', setCode, cardNum, e.message);
+    return null;
+  }
+}
+
+function round(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FEATURE — Card Price API (TCGdex)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Sync prices for a batch of card IDs (Cloud Scheduler calls this)
+ * Input: { cardIds: string[] }
+ */
+exports.syncCardPrices = v2.https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "admin only");
+  const { cardIds = [] } = data;
+  let updated = 0, failed = 0;
+  for (const cardId of cardIds) {
+    try {
+      const priceData = await fetchTcgdexPrice(cardId);
+      if (priceData) {
+        await db.collection("card_prices").doc(cardId).set({ ...priceData, updatedAt: Date.now() }, { merge: true });
+        updated++;
+      } else { failed++; }
+      await sleep(500);
+    } catch (e) { console.warn("syncCardPrices failed:", cardId, e.message); failed++; }
+  }
+  return { updated, failed };
+});
+
+/**
+ * Get price for a single card (on-demand, with 6h cache)
+ * Input: { cardId: string }
+ */
+exports.getCardPrice = v2.https.onCall(async (data, context) => {
+  const { cardId } = data;
+  if (!cardId) throw new functions.https.HttpsError("invalid-argument", "cardId required");
+  const cached = await db.collection("card_prices").doc(cardId).get();
+  const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
+  if (cached.exists && (Date.now() - cached.data().updatedAt) < CACHE_TTL) {
+    return { source: "cache", ageMs: Date.now() - cached.data().updatedAt, ...cached.data() };
+  }
+  const priceData = await fetchTcgdexPrice(cardId);
+  if (priceData) {
+    await db.collection("card_prices").doc(cardId).set({ ...priceData, updatedAt: Date.now() }, { merge: true });
+  }
+  return { source: "live", ...(priceData ?? { error: "not found" }) };
+});
+
+/**
+ * Search cards + enrich with prices (bulk, avoids N+1 calls to TCGdex)
+ * Input: { query: string, language?: string, limit?: number }
+ */
+exports.searchCardsWithPrices = v2.https.onCall(async (data, context) => {
+  const { query, language = "en", limit = 20 } = data;
+  if (!query) throw new functions.https.HttpsError("invalid-argument", "query required");
+  const searchUrl = `https://api.tcgdex.dev/v2/cards?name=${encodeURIComponent(query)}&lang=${language}`;
+  const searchResp = await fetch(searchUrl, { timeout: 8000 });
+  if (!searchResp.ok) throw new functions.https.HttpsError("unavailable", "TCGdex failed");
+  let cards = await searchResp.json();
+  if (!Array.isArray(cards)) cards = [cards];
+  const results = cards.slice(0, limit);
+  const enriched = await Promise.all(results.map(async (card) => {
+    const cid = card.id;
+    const cached = await db.collection("card_prices").doc(cid).get();
+    return {
+      id: cid, name: card.name,
+      set: card.set?.name ?? card.set ?? "",
+      setCode: card.set?.id ?? "",
+      imageUrl: card.image ?? card.smallImage ?? card.largeImage ?? "",
+      rarity: card.rarity ?? "",
+      language,
+      price: cached.exists ? cached.data() : null,
+    };
+  }));
+  return { cards: enriched, total: enriched.length };
+});
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+async function fetchTcgdexPrice(cardId) {
+  // cardId format: "swsh5-115" or Firestore doc id
+  let setCode = null, cardNum = null;
+  if (cardId.includes("-")) {
+    const parts = cardId.split("-");
+    // last part is number, everything before is set
+    setCode = parts.slice(0, -1).join("-");
+    cardNum = parts[parts.length - 1];
+  }
+  if (!setCode || !cardNum) {
+    const cardDoc = await db.collection("cards").doc(cardId).get();
+    if (!cardDoc.exists) return null;
+    const d = cardDoc.data();
+    setCode = d.setCode || d.set;
+    cardNum = d.number;
+  }
+  return fetchAndCache(setCode, cardNum, cardId);
+}
+
+async function fetchAndCache(setCode, cardNum, fallbackId) {
+  try {
+    const url = `https://api.tcgdex.dev/v2/cards/${setCode}/${cardNum}?lang=en`;
+    const resp = await fetch(url, { timeout: 8000 });
+    if (!resp.ok) return null;
+    const card = await resp.json();
+    const markets = card.markets ?? {};
+    const cm = markets.cardmarket ?? {};
+    const tcg = markets.tcgplayer ?? {};
+
+    const priceEur = parseFloat(cm.averagePrice) || 0;
+    const priceUsd = parseFloat(tcg.averagePrice) || 0;
+    const trendEur = parseFloat(cm.priceChange?.priceChange) || 0;
+
+    const hkdMarket = Math.round(priceEur * FX_EUR_TO_HKD * 100) / 100;
+    const hkdTcg    = Math.round(priceUsd * FX_USD_TO_HKD * 100) / 100;
+    const bestHkd  = Math.max(hkdMarket, hkdTcg);
+
+    const change24h = priceEur > 0
+      ? Math.round(((trendEur / priceEur) * 100) * 10) / 10
+      : 0;
+
+    return {
+      id: fallbackId, setCode, cardNumber: cardNum,
+      priceEurUsd: { eur: priceEur, usd: priceUsd },
+      priceHkd: bestHkd, cardmarketHkd: hkdMarket, tcgplayerHkd: hkdTcg,
+      change24h,
+      gradeMultiplier: { psa10: 2.5, psa9: 1.8, bgs10: 2.3, bgs9: 1.6 },
+      lastFetched: Date.now(),
+    };
+  } catch (e) {
+    console.warn("[fetchAndCache]", setCode, cardNum, e.message);
+    return null;
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }

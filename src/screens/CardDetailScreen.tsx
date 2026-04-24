@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image,
-  TouchableOpacity, Dimensions, Modal,
+  TouchableOpacity, Dimensions, Modal, ActivityIndicator,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { PokemonCard } from '../types';
 import { generatePriceHistory, MOCK_LISTINGS } from '../data/mockData';
 
@@ -86,9 +87,34 @@ const CardDetailScreen: React.FC = () => {
   const { card } = route.params;
   const [activeTab, setActiveTab] = useState<'listings' | 'history'>('listings');
   const [showSellModal, setShowSellModal] = useState(false);
+  const [priceData, setPriceData] = useState<{ priceHkd: number; change24h: number; source: string; ageMs: number } | null>(null);
+  const [priceLoading, setPriceLoading] = useState(true);
   const priceHistory = generatePriceHistory(card.price);
 
-  const isGain = card.priceChange24h >= 0;
+  const isGain = (priceData?.change24h ?? card.priceChange24h) >= 0;
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const fn = getFunctions();
+        const getCardPrice = httpsCallable(fn, 'getCardPrice');
+        const result = await getCardPrice({ cardId: card.id });
+        const data = result.data as any;
+        if (data && !data.error) {
+          setPriceData({
+            priceHkd: data.priceHkd ?? card.price,
+            change24h: data.change24h ?? card.priceChange24h,
+            source: data.source ?? 'cache',
+            ageMs: data.ageMs ?? 0,
+          });
+        }
+      } catch (e) {
+        console.warn('[CardDetail] getCardPrice failed:', e);
+      } finally {
+        setPriceLoading(false);
+      }
+    })();
+  }, [card.id]);
 
   const formatPrice = (p: number) =>
     p >= 1000 ? `HK$ ${(p / 1000).toFixed(1)}K` : `HK$ ${p}`;
@@ -122,14 +148,54 @@ const CardDetailScreen: React.FC = () => {
             <Text style={styles.cardSet}>{card.set} · {card.number}</Text>
             <Text style={styles.cardRarity}>{card.rarity}</Text>
             <View style={styles.priceSection}>
-              <Text style={styles.currentPrice}>{formatPrice(card.price)}</Text>
+              {priceLoading ? (
+                <ActivityIndicator size="small" color="#FF3C3C" />
+              ) : (
+                <>
+                  <Text style={styles.currentPrice}>
+                    {formatPrice(priceData?.priceHkd ?? card.price)}
+                  </Text>
+                  <View style={styles.priceSourceBadge}>
+                    <View style={[
+                      styles.sourceDot,
+                      { backgroundColor: priceData?.source === 'live' ? '#00C864' : '#8888AA' }
+                    ]} />
+                    <Text style={styles.priceSourceText}>
+                      {priceData?.source === 'live' ? 'Live' : 'Cache'}
+                      {priceData?.ageMs ? ` · ${Math.round(priceData.ageMs/3600000)}h ago` : ''}
+                    </Text>
+                  </View>
+                </>
+              )}
               <View style={[styles.badge, isGain ? styles.badgeGain : styles.badgeLoss]}>
                 <Text style={[styles.badgeText, isGain ? styles.textGain : styles.textLoss]}>
-                  {isGain ? '▲' : '▼'} {Math.abs(card.priceChange24h).toFixed(1)}%
+                  {isGain ? '▲' : '▼'} {Math.abs(priceData?.change24h ?? card.priceChange24h).toFixed(1)}%
                 </Text>
               </View>
             </View>
             <Text style={styles.listingCount}>📦 {card.listingCount} 個掛牌</Text>
+            {/* PSA/BGS Grade Price Table */}
+            <View style={styles.gradeTable}>
+              <Text style={styles.gradeTableTitle}>🏆 等級估價（HKD）</Text>
+              {[
+                { grade: 'PSA 10', mult: 2.5, label: 'Gem Mint' },
+                { grade: 'PSA 9',  mult: 1.8, label: 'Mint' },
+                { grade: 'BGS 10', mult: 2.3, label: 'Gem Mint' },
+                { grade: 'BGS 9.5', mult: 2.0, label: 'Mint+' },
+              ].map(g => {
+                const basePrice = priceData?.priceHkd ?? card.price;
+                const gradedPrice = Math.round(basePrice * g.mult);
+                return (
+                  <View key={g.grade} style={styles.gradeRow}>
+                    <Text style={styles.gradeLabel}>{g.grade} ({g.label})</Text>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <Text style={styles.gradeValue}>HK${gradedPrice.toLocaleString()}</Text>
+                      <Text style={styles.gradePremium}>×{g.mult}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
           </View>
         </View>
 
@@ -350,6 +416,25 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   priceSection: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  priceSourceBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  sourceDot: { width: 6, height: 6, borderRadius: 3 },
+  priceSourceText: { color: '#6666AA', fontSize: 10 },
+  gradeTable: {
+    backgroundColor: '#1E1E2E', borderRadius: 14, padding: 14, marginTop: 12,
+  },
+  gradeTableTitle: { color: '#FFFFFF', fontSize: 13, fontWeight: '700', marginBottom: 10 },
+  gradeRow: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#2A2A3E',
+  },
+  gradeLabel: { color: '#8888AA', fontSize: 12 },
+  gradeValue: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  gradePremium: { color: '#00C864', fontSize: 12 },
+  sourceBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#1E1E2E', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4,
+  },
+  sourceBadgeText: { color: '#6666AA', fontSize: 10 },
   currentPrice: { color: '#FFFFFF', fontSize: 22, fontWeight: '800' },
   badge: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 },
   badgeGain: { backgroundColor: 'rgba(0,200,100,0.15)' },
