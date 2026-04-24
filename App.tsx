@@ -8,6 +8,7 @@ import initFirebase from "./src/services/firebase";
 import HomeScreen from "./src/screens/HomeScreen";
 import CardDetailScreen from "./src/screens/CardDetailScreen";
 import PortfolioScreen from "./src/screens/PortfolioScreen";
+import ProfileScreen from "./src/screens/ProfileScreen";
 import WalletScreen from "./src/screens/WalletScreen";
 import CheckoutScreen from "./src/screens/CheckoutScreen";
 import OrderStatusScreen from "./src/screens/OrderStatusScreen";
@@ -102,6 +103,15 @@ const HomeTabs = () => (
       options={{
         tabBarIcon: ({ focused }) => (
           <TabIcon icon="💼" focused={focused} label="收藏" />
+        ),
+      }}
+    />
+    <Tab.Screen
+      name="ProfileTab"
+      component={ProfileScreen}
+      options={{
+        tabBarIcon: ({ focused }) => (
+          <TabIcon icon="👤" focused={focused} label="個人" />
         ),
       }}
     />
