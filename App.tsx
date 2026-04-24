@@ -10,6 +10,7 @@ import CardDetailScreen from "./src/screens/CardDetailScreen";
 import PortfolioScreen from "./src/screens/PortfolioScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import FeatureShowcaseScreen from "./src/screens/FeatureShowcaseScreen";
+import NotificationScreen from "./src/screens/NotificationScreen";
 import WalletScreen from "./src/screens/WalletScreen";
 import CheckoutScreen from "./src/screens/CheckoutScreen";
 import OrderStatusScreen from "./src/screens/OrderStatusScreen";
@@ -75,45 +76,35 @@ const HomeTabs = () => (
       name="MarketTab"
       component={HomeScreen}
       options={{
-        tabBarIcon: ({ focused }) => (
-          <TabIcon icon="🏠" focused={focused} label="市場" />
-        ),
+        tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>🏠</Text>,
       }}
     />
     <Tab.Screen
       name="ChatTab"
       component={ChatListScreen}
       options={{
-        tabBarIcon: ({ focused }) => (
-          <TabIcon icon="💬" focused={focused} label="訊息" badge={0} />
-        ),
+        tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>💬</Text>,
       }}
     />
     <Tab.Screen
       name="WalletTab"
       component={WalletScreen}
       options={{
-        tabBarIcon: ({ focused }) => (
-          <TabIcon icon="💰" focused={focused} label="錢包" />
-        ),
+        tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>💰</Text>,
       }}
     />
     <Tab.Screen
       name="PortfolioTab"
       component={PortfolioScreen}
       options={{
-        tabBarIcon: ({ focused }) => (
-          <TabIcon icon="💼" focused={focused} label="收藏" />
-        ),
+        tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>💼</Text>,
       }}
     />
     <Tab.Screen
       name="ProfileTab"
       component={ProfileScreen}
       options={{
-        tabBarIcon: ({ focused }) => (
-          <TabIcon icon="👤" focused={focused} label="個人" />
-        ),
+        tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>👤</Text>,
       }}
     />
   </Tab.Navigator>

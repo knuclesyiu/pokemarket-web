@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PokeMarket — 功能概覽</title>
+<style>
+  @font-face {
+    font-family: 'NotoSansCJK';
+    src: url('fonts/NotoSansCJKsc.otf');
+  }
+  @font-face {
+    font-family: 'NotoColorEmoji';
+    src: url('fonts/NotoColorEmoji.ttf');
+  }
+
+  :root {
+    --bg: #0A0A14;
+    --card-bg: #12121F;
+    --card-border: #1E1E2E;
+    --accent: #FF3C3C;
+    --text-primary: #FFFFFF;
+    --text-secondary: #CCCCEE;
+    --text-muted: #8888AA;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'NotoSansCJK', 'Inter', -apple-system, sans-serif;
+    padding: 0;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 15mm;
+    background: var(--bg);
+    page-break-after: always;
+    position: relative;
+  }
+
+  .page:last-child { page-break-after: auto; }
+
+  /* Cover Page */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 257mm;
+    text-align: center;
+  }
+
+  .cover-logo {
+    font-size: 56px;
+    font-weight: 900;
+    font-style: italic;
+    color: var(--accent);
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+  }
+
+  .cover-title {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .cover-subtitle {
+    font-size: 18px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .cover-tagline {
+    font-size: 13px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 50px;
+  }
+
+  .cover-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .cover-stat {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 24px 16px;
+    text-align: center;
+  }
+
+  .cover-stat-val {
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .cover-stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Feature Cards Grid */
+  .section-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-top: 10mm;
+  }
+
+  .section-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .section-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    opacity: 0.15;
+  }
+
+  .card-header { margin-bottom: 14px; }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .card-emoji { font-size: 28px; }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 3px;
+  }
+
+  .card-subtitle {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .divider {
+    height: 1px;
+    opacity: 0.4;
+    margin-bottom: 12px;
+  }
+
+  .bullets { display: flex; flex-direction: column; gap: 7px; }
+
+  .bullet {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .bullet-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .bullet-text {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 17px;
+  }
+
+  .bottom-accent {
+    height: 3px;
+    border-radius: 2px;
+    margin-top: 14px;
+    opacity: 0.6;
+  }
+
+  /* CTA Page */
+  .cta-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 257mm;
+    text-align: center;
+    background: var(--card-bg);
+    border-radius: 24px;
+    margin: 5mm;
+    padding: 40px;
+  }
+
+  .cta-logo { font-size: 40px; margin-bottom: 16px; }
+
+  .cta-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+  }
+
+  .cta-sub {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 40px;
+  }
+
+  .cta-btn {
+    background: var(--accent);
+    color: #FFF;
+    font-size: 16px;
+    font-weight: 800;
+    padding: 16px 48px;
+    border-radius: 14px;
+    display: inline-block;
+    margin-bottom: 50px;
+  }
+
+  .cta-features-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .cta-feature {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: left;
+  }
+
+  .cta-feature-icon { font-size: 20px; margin-bottom: 6px; }
+  .cta-feature-name { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+  .cta-feature-desc { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Print rules */
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page { 
+      width: 100%; 
+      min-height: 100vh; 
+      padding: 20mm 15mm; 
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 1 — Cover                                  -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+  <div class="cover">
+    <div class="cover-logo">🎴 PokeMarket</div>
+    <div class="cover-title">Pokemon 卡片交易平台</div>
+    <div class="cover-subtitle">功能概覽 · Feature Overview</div>
+    <div class="cover-tagline">安全 · 快速 · 全球行情</div>
+
+    <div class="cover-stats">
+      <div class="cover-stat">
+        <div class="cover-stat-val">8+</div>
+        <div class="cover-stat-label">功能模組</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-val">27</div>
+        <div class="cover-stat-label">Cloud Functions</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-val">3</div>
+        <div class="cover-stat-label">語言支援</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-val">HKD</div>
+        <div class="cover-stat-label">結算貨幣</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 50px; color: var(--text-muted); font-size: 12px;">
+      掃描二維碼下載 App 或瀏覽 pokemarket.app
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 2 — Core Features                          -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-header">
+    <div class="section-title">核心功能 · Core Features</div>
+    <div class="section-sub">8 大功能模組，全方位覆蓋交易流程</div>
+  </div>
+
+  <div class="card-grid">
+
+    <!-- Card 1: Live Prices -->
+    <div class="card" style="--accent-color: #FF3C3C">
+      <div class="card-header">
+        <div class="card-top">
+          <span class="tag" style="background: rgba(255,60,60,0.15); color: #FF3C3C;">實時行情</span>
+          <span class="card-emoji">📊</span>
+        </div>
+        <div class="card-title">Live Market Prices</div>
+        <div class="card-subtitle">秒級更新 · 覆蓋全球</div>
+        <div class="divider" style="background: #FF3C3C;"></div>
+        <div class="bullets">
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF3C3C;"></div>
+            <div class="bullet-text">TCGdex API — CardMarket EUR + TCGPlayer USD</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF3C3C;"></div>
+            <div class="bullet-text">每 6 小時自動同步 15 張熱門卡行情</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF3C3C;"></div>
+            <div class="bullet-text">PSA / BGS 等級估價倍數顯示</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF3C3C;"></div>
+            <div class="bullet-text">所有價格即時轉換為港幣（HKD）</div>
+          </div>
+        </div>
+        <div class="bottom-accent" style="background: #FF3C3C;"></div>
+      </div>
+    </div>
+
+    <!-- Card 2: Escrow -->
+    <div class="card" style="--accent-color: #FFB800">
+      <div class="card-header">
+        <div class="card-top">
+          <span class="tag" style="background: rgba(255,184,0,0.15); color: #FFB800;">交易保障</span>
+          <span class="card-emoji">🔐</span>
+        </div>
+        <div class="card-title">Escrow Protection</div>
+        <div class="card-subtitle">資金托管 · 零風險交易</div>
+        <div class="divider" style="background: #FFB800;"></div>
+        <div class="bullets">
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FFB800;"></div>
+            <div class="bullet-text">款項由平台托管，確認收貨後釋放</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FFB800;"></div>
+            <div class="bullet-text">Day 5 自動發預警告示通知</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FFB800;"></div>
+            <div class="bullet-text">買家可延長期限最多 14 日</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FFB800;"></div>
+            <div class="bullet-text">爭議時可提交 Dispute，款項暫停釋放</div>
+          </div>
+        </div>
+        <div class="bottom-accent" style="background: #FFB800;"></div>
+      </div>
+    </div>
+
+    <!-- Card 3: Auth -->
+    <div class="card" style="--accent-color: #00C864">
+      <div class="card-header">
+        <div class="card-top">
+          <span class="tag" style="background: rgba(0,200,100,0.15); color: #00C864;">用戶認證</span>
+          <span class="card-emoji">🔑</span>
+        </div>
+        <div class="card-title">Secure Authentication</div>
+        <div class="card-subtitle">電話 · Email · 生物識別</div>
+        <div class="divider" style="background: #00C864;"></div>
+        <div class="bullets">
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00C864;"></div>
+            <div class="bullet-text">Firebase Auth 電話 SMS OTP 驗證</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00C864;"></div>
+            <div class="bullet-text">Email + 密碼登入（自動註冊）</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00C864;"></div>
+            <div class="bullet-text">交易 PIN（SHA-256）每筆交易驗證</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00C864;"></div>
+            <div class="bullet-text">Biometric 原生支援 FaceID / Fingerprint</div>
+          </div>
+        </div>
+        <div class="bottom-accent" style="background: #00C864;"></div>
+      </div>
+    </div>
+
+    <!-- Card 4: Reviews -->
+    <div class="card" style="--accent-color: #AA66FF">
+      <div class="card-header">
+        <div class="card-top">
+          <span class="tag" style="background: rgba(170,102,255,0.15); color: #AA66FF;">信用評價</span>
+          <span class="card-emoji">⭐</span>
+        </div>
+        <div class="card-title">Peer Review System</div>
+        <div class="card-subtitle">好評差評 · 建立信任</div>
+        <div class="divider" style="background: #AA66FF;"></div>
+        <div class="bullets">
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #AA66FF;"></div>
+            <div class="bullet-text">每筆交易完成後可留 👍 好評 或 👎 差評</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #AA66FF;"></div>
+            <div class="bullet-text">信用評價影響用戶排名與曝光</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #AA66FF;"></div>
+            <div class="bullet-text">公開好評率%，雙方均可評價</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #AA66FF;"></div>
+            <div class="bullet-text">所有評價存入 Firestore 不可篡改日誌</div>
+          </div>
+        </div>
+        <div class="bottom-accent" style="background: #AA66FF;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 3 — More Features + Tech Stack              -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+  <div class="card-grid" style="margin-top: 15mm;">
+
+    <!-- Card 5: i18n -->
+    <div class="card" style="--accent-color: #00AADD">
+      <div class="card-header">
+        <div class="card-top">
+          <span class="tag" style="background: rgba(0,170,221,0.15); color: #00AADD;">多語言</span>
+          <span class="card-emoji">🌐</span>
+        </div>
+        <div class="card-title">Multi-Language Support</div>
+        <div class="card-subtitle">繁中 · 簡中 · English</div>
+        <div class="divider" style="background: #00AADD;"></div>
+        <div class="bullets">
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00AADD;"></div>
+            <div class="bullet-text">UI 完全支援三種語言即時切換</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00AADD;"></div>
+            <div class="bullet-text">語言偏好存於用戶個人設定</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00AADD;"></div>
+            <div class="bullet-text">所有市場資訊、價格貨幣自動本地化</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00AADD;"></div>
+            <div class="bullet-text">未來可擴展至日語、英語市場</div>
+          </div>
+        </div>
+        <div class="bottom-accent" style="background: #00AADD;"></div>
+      </div>
+    </div>
+
+    <!-- Card 6: Chat -->
+    <div class="card" style="--accent-color: #FF8C00">
+      <div class="card-header">
+        <div class="card-top">
+          <span class="tag" style="background: rgba(255,140,0,0.15); color: #FF8C00;">即時通訊</span>
+          <span class="card-emoji">💬</span>
+        </div>
+        <div class="card-title">In-App Messaging</div>
+        <div class="card-subtitle">買賣雙方即時溝通</div>
+        <div class="divider" style="background: #FF8C00;"></div>
+        <div class="bullets">
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF8C00;"></div>
+            <div class="bullet-text">Firestore 即時訊息，無需刷新</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF8C00;"></div>
+            <div class="bullet-text">每筆訂單自動創建 Chat Thread</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF8C00;"></div>
+            <div class="bullet-text">支援文字、圖片、報價訊息類型</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF8C00;"></div>
+            <div class="bullet-text">已讀 / 未讀狀態指示燈</div>
+          </div>
+        </div>
+        <div class="bottom-accent" style="background: #FF8C00;"></div>
+      </div>
+    </div>
+
+    <!-- Card 7: Portfolio -->
+    <div class="card" style="--accent-color: #FF4081">
+      <div class="card-header">
+        <div class="card-top">
+          <span class="tag" style="background: rgba(255,64,129,0.15); color: #FF4081;">收藏管理</span>
+          <span class="card-emoji">💼</span>
+        </div>
+        <div class="card-title">Portfolio Tracker</div>
+        <div class="card-subtitle">持倉成本 · 帳面盈虧</div>
+        <div class="divider" style="background: #FF4081;"></div>
+        <div class="bullets">
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF4081;"></div>
+            <div class="bullet-text">追蹤所有持有卡牌的均價與數量</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF4081;"></div>
+            <div class="bullet-text">實時計算總市值與帳面 P&L</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF4081;"></div>
+            <div class="bullet-text">成交記錄完整保存，隨時查閱</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #FF4081;"></div>
+            <div class="bullet-text">一鍵「放售」直接進入掛牌流程</div>
+          </div>
+        </div>
+        <div class="bottom-accent" style="background: #FF4081;"></div>
+      </div>
+    </div>
+
+    <!-- Card 8: Payments -->
+    <div class="card" style="--accent-color: #00E5CC">
+      <div class="card-header">
+        <div class="card-top">
+          <span class="tag" style="background: rgba(0,229,204,0.15); color: #00E5CC;">支付結算</span>
+          <span class="card-emoji">💳</span>
+        </div>
+        <div class="card-title">Stripe Payments</div>
+        <div class="card-subtitle">Stripe Connect · 秒級結算</div>
+        <div class="divider" style="background: #00E5CC;"></div>
+        <div class="bullets">
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00E5CC;"></div>
+            <div class="bullet-text">Stripe Connect 托管款項，平台零接觸資金</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00E5CC;"></div>
+            <div class="bullet-text">買家付款 → Escrow → 確認 → 自動結算</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00E5CC;"></div>
+            <div class="bullet-text">支援信用卡 / 轉數快 / FPS 多種方式</div>
+          </div>
+          <div class="bullet">
+            <div class="bullet-dot" style="background: #00E5CC;"></div>
+            <div class="bullet-text">每筆交易手續費透明，無隱藏收費</div>
+          </div>
+        </div>
+        <div class="bottom-accent" style="background: #00E5CC;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tech Stack Section -->
+  <div style="margin-top: 30px; background: #12121F; border: 1px solid #1E1E2E; border-radius: 20px; padding: 20px;">
+    <div style="font-size: 13px; font-weight: 800; color: #FFFFFF; margin-bottom: 14px;">⚙️ 技術架構 · Tech Stack</div>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+      <div style="background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px; text-align: center;">
+        <div style="font-size: 18px; margin-bottom: 4px;">📱</div>
+        <div style="font-size: 11px; font-weight: 700; color: #FFFFFF;">React Native</div>
+        <div style="font-size: 10px; color: #8888AA;">Mobile App</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px; text-align: center;">
+        <div style="font-size: 18px; margin-bottom: 4px;">🔥</div>
+        <div style="font-size: 11px; font-weight: 700; color: #FFFFFF;">Firebase</div>
+        <div style="font-size: 10px; color: #8888AA;">Auth · Firestore · Functions</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px; text-align: center;">
+        <div style="font-size: 18px; margin-bottom: 4px;">☁️</div>
+        <div style="font-size: 11px; font-weight: 700; color: #FFFFFF;">GCP Cloud</div>
+        <div style="font-size: 10px; color: #8888AA;">Cloud Scheduler · Pub/Sub</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px; text-align: center;">
+        <div style="font-size: 18px; margin-bottom: 4px;">💳</div>
+        <div style="font-size: 11px; font-weight: 700; color: #FFFFFF;">Stripe Connect</div>
+        <div style="font-size: 10px; color: #8888AA;">Payments & Payouts</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px; text-align: center;">
+        <div style="font-size: 18px; margin-bottom: 4px;">🌐</div>
+        <div style="font-size: 11px; font-weight: 700; color: #FFFFFF;">TCGdex API</div>
+        <div style="font-size: 10px; color: #8888AA;">CardMarket + TCGPlayer</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px; text-align: center;">
+        <div style="font-size: 18px; margin-bottom: 4px;">🔐</div>
+        <div style="font-size: 11px; font-weight: 700; color: #FFFFFF;">SHA-256 PIN</div>
+        <div style="font-size: 10px; color: #8888AA;">Transaction Security</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PAGE 4 — CTA / Closing                           -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page">
+  <div class="cta-page">
+    <div class="cta-logo">🎴</div>
+    <div class="cta-title">準備好了嗎？</div>
+    <div class="cta-sub">立即開始你的第一筆安全交易</div>
+
+    <div class="cta-btn">進入市場 →</div>
+
+    <div class="cta-features-summary">
+      <div class="cta-feature">
+        <div class="cta-feature-icon">📊</div>
+        <div class="cta-feature-name">實時行情</div>
+        <div class="cta-feature-desc">TCGdex 全球卡價</div>
+      </div>
+      <div class="cta-feature">
+        <div class="cta-feature-icon">🔐</div>
+        <div class="cta-feature-name">Escrow 保障</div>
+        <div class="cta-feature-desc">零風險資金托管</div>
+      </div>
+      <div class="cta-feature">
+        <div class="cta-feature-icon">💬</div>
+        <div class="cta-feature-name">即時通訊</div>
+        <div class="cta-feature-desc">買賣雙方直接聯繫</div>
+      </div>
+      <div class="cta-feature">
+        <div class="cta-feature-icon">💳</div>
+        <div class="cta-feature-name">Stripe 結算</div>
+        <div class="cta-feature-desc">安全快速的支付</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 50px; color: var(--text-muted); font-size: 12px;">
+      pokemarket.app · PokeMarket HK · 2026
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
