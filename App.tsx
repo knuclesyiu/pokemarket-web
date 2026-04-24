@@ -140,14 +140,13 @@ export default function App() {
       <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: "#12121F" },
-          animation: "slide_from_right",
+          animation: 'fade',
         }}
       >
+        <Stack.Screen name="FeatureShowcase" component={FeatureShowcaseScreen} options={{ headerShown: false }} />
+
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="FeatureShowcase" component={FeatureShowcaseScreen} options={{ title: "功能概覽", headerTintColor: "#FFF", headerStyle: { backgroundColor: "#0A0A14" }, headerBackTitle: "返回" }} />
         <Stack.Screen name="Main" component={HomeTabs} />
         <Stack.Screen
           name="CardDetail"
