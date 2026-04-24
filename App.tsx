@@ -16,6 +16,9 @@ import MyOffersScreen from "./src/screens/trade/MyOffersScreen";
 import OfferDetailScreen from "./src/screens/trade/OfferDetailScreen";
 import ChatListScreen from "./src/screens/chat/ChatListScreen";
 import ChatDetailScreen from "./src/screens/chat/ChatDetailScreen";
+import LoginScreen from "./src/screens/auth/LoginScreen";
+import RegisterScreen from "./src/screens/auth/RegisterScreen";
+import { AuthProvider } from "./src/contexts/AuthContext";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -122,7 +125,8 @@ export default function App() {
   if (!ready) return <LoadingScreen />;
 
   return (
-    <NavigationContainer>
+    <AuthProvider>
+      <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -130,6 +134,8 @@ export default function App() {
           animation: "slide_from_right",
         }}
       >
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Main" component={HomeTabs} />
         <Stack.Screen
           name="CardDetail"
@@ -154,7 +160,8 @@ export default function App() {
         />
 
       </Stack.Navigator>
-    </NavigationContainer>
+      </NavigationContainer>
+    </AuthProvider>
   );
 }
 

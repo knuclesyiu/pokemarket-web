@@ -1500,3 +1500,105 @@ exports.createDispute = v2.https.onCall(
     return { disputeId: disputeRef.id, status: "open" };
   }
 );
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USER REGISTRATION & PROFILE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * completeProfile — called by app after first auth to save phone/email/name
+ * Input: { displayName, phone, email }
+ */
+exports.completeProfile = v2.https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'sign in first');
+  const { displayName, phone, email } = data;
+  if (!displayName) throw new functions.https.HttpsError('invalid-argument', 'displayName required');
+  await db.collection('users').doc(context.auth.uid).set({
+    displayName, phone: phone ?? '', email: email ?? '',
+    memberSince: Date.now(), lastLogin: Date.now(),
+    isBuyer: true, isSeller: false,
+    positiveReviews: 0, negativeReviews: 0,
+    language: 'zh-HK', notificationsEnabled: true,
+  }, { merge: true });
+  return { success: true };
+});
+
+/**
+ * getUserProfile — public profile for any user
+ * Input: { uid }
+ */
+exports.getUserProfile = v2.https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'sign in first');
+  const { uid } = data;
+  const snap = await db.collection('users').doc(uid).get();
+  if (!snap.exists) throw new functions.https.HttpsError('not-found', 'user not found');
+  const d = snap.data();
+  // Remove sensitive fields
+  delete d.transactionPinHash;
+  return { user: { uid, ...d } };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REVIEW SYSTEM (positive / negative only)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * submitReview — leave a positive or negative review for the counterparty in an order
+ * Input: { orderId, type: 'positive' | 'negative', comment?: string }
+ * Both buyer and seller can review each other after order is released/completed.
+ */
+exports.submitReview = v2.https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'must be signed in');
+  const { orderId, type, comment } = data;
+  if (!orderId || !type) throw new functions.https.HttpsError('invalid-argument', 'orderId and type required');
+  if (type !== 'positive' && type !== 'negative') throw new functions.https.HttpsError('invalid-argument', 'type must be positive or negative');
+
+  const orderRef = db.collection('orders').doc(orderId);
+  const order = await orderRef.get();
+  if (!order.exists) throw new functions.https.HttpsError('not-found', 'order not found');
+  const d = order.data();
+  const myId = context.auth.uid;
+  const isBuyer = d.buyerId === myId;
+  const isSeller = d.sellerId === myId;
+  if (!isBuyer && !isSeller) throw new functions.https.HttpsError('permission-denied', 'not a participant');
+
+  const revieweeId = isBuyer ? d.sellerId : d.buyerId;
+
+  // Check no duplicate review
+  const existing = await db.collection('reviews')
+    .where('orderId', '==', orderId)
+    .where('reviewerId', '==', myId)
+    .limit(1).get();
+  if (!existing.empty) throw new functions.https.HttpsError('already-exists', 'you already reviewed this order');
+
+  const reviewRef = db.collection('reviews').doc();
+  await reviewRef.set({
+    id: reviewRef.id, orderId, reviewerId: myId, revieweeId,
+    type, comment: comment ?? '',
+    cardName: d.cardName ?? '', createdAt: Date.now(),
+  });
+
+  // Update reviewee's score
+  const inc = type === 'positive' ? { positiveReviews: admin.firestore.FieldValue.increment(1) }
+                                 : { negativeReviews: admin.firestore.FieldValue.increment(1) };
+  await db.collection('users').doc(revieweeId).update(inc);
+
+  return { reviewId: reviewRef.id, success: true };
+});
+
+/**
+ * getUserReviews — get all reviews for a user
+ * Input: { uid, limit?: number }
+ */
+exports.getUserReviews = v2.https.onCall(async (data, context) => {
+  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'must be signed in');
+  const { uid, limit = 50 } = data;
+  const snap = await db.collection('reviews')
+    .where('revieweeId', '==', uid)
+    .orderBy('createdAt', 'desc')
+    .limit(limit)
+    .get();
+  return { reviews: snap.docs.map(d => ({ id: d.id, ...d.data() })) };
+});
+
