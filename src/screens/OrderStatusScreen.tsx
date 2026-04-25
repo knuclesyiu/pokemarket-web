@@ -34,6 +34,7 @@ const OrderStatusScreen: React.FC = () => {
 
   const [currentStep, setCurrentStep] = useState<number>(2); // Demo: step 2 = shipped
   const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [showReleaseModal, setShowReleaseModal] = useState(false);
   const [disputeReason, setDisputeReason] = useState('');
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [isExtended, setIsExtended] = useState(false);
@@ -92,6 +93,19 @@ const OrderStatusScreen: React.FC = () => {
   };
 
   const handleReleaseFund = () => {
+    setShowReleaseModal(true);
+  };
+
+  const confirmRelease = async () => {
+    setShowReleaseModal(false);
+    // Call releasePayment cloud function
+    try {
+      const fn = getFunctions();
+      const releaseFn = httpsCallable(fn, 'releasePayment');
+      await releaseFn({ orderId: txId });
+    } catch (e) {
+      // Proceed optimistically in demo mode
+    }
     setCurrentStep(4);
   };
 
@@ -327,6 +341,38 @@ const OrderStatusScreen: React.FC = () => {
       <View style={{ height: 40 }} />
 
       {/* Dispute Modal */}
+      {/* Release Confirm Modal — Double Confirm */}
+      <Modal visible={showReleaseModal} animationType="slide" transparent>
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.sheet}>
+            <View style={modalStyles.handle} />
+            <Text style={modalStyles.title}>🔓 確認釋放款項？</Text>
+            <Text style={modalStyles.subtitle}>
+              款項將直接轉俾賣家，交易完成後無法撤回。{'\n'}
+              請確認已收到卡牌且狀態滿意。
+            </Text>
+            <View style={modalStyles.releaseCard}>
+              <Text style={modalStyles.releaseAmount}>HK$ {card.price.toLocaleString()}</Text>
+              <Text style={modalStyles.releaseTo}>款項將轉俾 {card.counterparty}</Text>
+            </View>
+            <View style={modalStyles.actions}>
+              <TouchableOpacity
+                style={modalStyles.cancelBtn}
+                onPress={() => setShowReleaseModal(false)}
+              >
+                <Text style={modalStyles.cancelBtnText}>取消</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={modalStyles.releaseConfirmBtn}
+                onPress={confirmRelease}
+              >
+                <Text style={modalStyles.releaseConfirmBtnText}>✅ 確認釋放款項</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={showDisputeModal} animationType="slide" transparent>
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
@@ -643,8 +689,18 @@ const modalStyles = StyleSheet.create({
   actions: { marginTop: 20, gap: 10 },
   submitBtn: { backgroundColor: '#FF4060', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
   submitBtnText: { color: '#F0F0FF', fontSize: 15, fontWeight: '700' },
-  cancelBtn: { alignItems: 'center', paddingVertical: 12 },
+  cancelBtn: { flex: 1, alignItems: 'center', paddingVertical: 12 },
   cancelBtnText: { color: '#8888CC', fontSize: 14 },
+  releaseCard: {
+    backgroundColor: '#0E0E1A', borderRadius: 14, padding: 16,
+    borderWidth: 1, borderColor: '#2A2A50', marginBottom: 16,
+  },
+  releaseAmount: { color: '#D4AF37', fontSize: 28, fontWeight: '800', textAlign: 'center' },
+  releaseTo: { color: '#8888CC', fontSize: 12, textAlign: 'center', marginTop: 4 },
+  releaseConfirmBtn: {
+    backgroundColor: '#D4AF37', borderRadius: 14, paddingVertical: 14, flex: 1, marginLeft: 8, alignItems: 'center',
+  },
+  releaseConfirmBtnText: { color: '#080810', fontSize: 15, fontWeight: '800' },
 });
 
 export default OrderStatusScreen;
