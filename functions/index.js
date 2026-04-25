@@ -970,8 +970,25 @@ exports.getChatThreads = v2.https.onCall(async (data, context) => {
 // FEATURE — Card Price API (TCGdex)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const FX_EUR_TO_HKD = 8.5;
-const FX_USD_TO_HKD = 7.8;
+let FX_EUR_TO_HKD = 8.5;
+let FX_USD_TO_HKD = 7.8;
+
+async function refreshFxRates() {
+  try {
+    const resp = await fetch('https://api.exchangerate-api.com/v4/latest/USD', { timeout: 5000 });
+    const data = await resp.json();
+    const eurToUsd = data.rates.EUR;
+    const hkdToUsd = data.rates.HKD;
+    FX_USD_TO_HKD = hkdToUsd;
+    FX_EUR_TO_HKD = hkdToUsd / eurToUsd;
+    console.log('[FX] Refreshed — USD/HKD:', FX_USD_TO_HKD, 'EUR/HKD:', FX_EUR_TO_HKD);
+  } catch (e) {
+    console.warn('[FX] Refresh failed, using defaults — USD/HKD:', FX_USD_TO_HKD);
+  }
+}
+
+// Call on module load
+refreshFxRates();
 
 // Supported currencies in TCGdex response
 const MARKET_NAMES = ['cardmarket', 'tcgplayer'];
@@ -1285,11 +1302,20 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 // PRICE SYNC SCHEDULED JOB (runs every 6 hours via Cloud Scheduler)
 // ─────────────────────────────────────────────────────────────────────────────
 
+exports.refreshFxRatesScheduled = functions.pubsub
+  .schedule('every 360 minutes')
+  .onRun(async () => {
+    await refreshFxRates();
+    return null;
+  });
+
 exports.syncCardPricesScheduled = functions.pubsub
-  .schedule("every 6 hours")
+  .schedule('every 180 minutes')
   .timeZone("Asia/Hong_Kong")
   .onRun(async (message) => {
-    console.log("[syncCardPricesScheduled] Starting 6-hour price sync");
+    // Refresh FX rates first before syncing prices
+    await refreshFxRates();
+    console.log("[syncCardPricesScheduled] Starting 3-hour price sync");
 
     // Top traded cards by volume — update these every 6 hours
     // Format: "setCode-cardNumber" matching TCGdex path format
