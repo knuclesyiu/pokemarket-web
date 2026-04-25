@@ -32,7 +32,7 @@ const PortfolioScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Portfolio Summary */}
+      {/* Portfolio Summary — Obsidian Gallery: elevated card with gold accent border */}
       <View style={styles.summaryCard}>
         <View style={styles.summaryTop}>
           <View>
@@ -132,7 +132,7 @@ const PortfolioScreen: React.FC = () => {
         </View>
       ))}
 
-      {/* ── Floating Sell Button ── */}
+      {/* Floating Sell Button */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => {
@@ -168,7 +168,6 @@ const PortfolioScreen: React.FC = () => {
             <TouchableOpacity
               style={addModalStyles.confirmBtn}
               onPress={() => {
-                // Placeholder — integrate with portfolio API here
                 setShowAddModal(false);
                 setAddCardId('');
                 setAddQty('1');
@@ -191,8 +190,9 @@ const PortfolioScreen: React.FC = () => {
   );
 };
 
+// NEW: Obsidian Gallery design system
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121F' },
+  container: { flex: 1, backgroundColor: '#080810' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -201,22 +201,28 @@ const styles = StyleSheet.create({
     paddingTop: 56,
     paddingBottom: 12,
   },
-  headerTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '800' },
+  headerTitle: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
   addBtn: {
-    backgroundColor: '#FF3C3C',
+    backgroundColor: '#D4AF37',   // NEW: gold primary CTA
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
   },
-  addBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  addBtnText: { color: '#080810', fontSize: 13, fontWeight: '700' },
   summaryCard: {
-    backgroundColor: '#1E1E2E',
+    backgroundColor: '#14142A',   // NEW: elevated card surface
     marginHorizontal: 16,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    padding: 24,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#FF3C3C33',
+    borderColor: '#2A2A50',        // NEW: subtle border
+    // NEW: premium elevation shadow with warm gold tint
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 8,
   },
   summaryTop: {
     flexDirection: 'row',
@@ -224,23 +230,23 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  summaryLabel: { color: '#8888AA', fontSize: 12 },
-  summaryValue: { color: '#FFFFFF', fontSize: 28, fontWeight: '800', marginTop: 4 },
+  summaryLabel: { color: '#8888CC', fontSize: 12 },
+  summaryValue: { color: '#F0F0FF', fontSize: 28, fontWeight: '800', marginTop: 4, letterSpacing: -1 },
   pnlBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
-  pnlGain: { backgroundColor: 'rgba(0,200,100,0.15)' },
-  pnlLoss: { backgroundColor: 'rgba(255,60,60,0.15)' },
+  pnlGain: { backgroundColor: 'rgba(0,200,150,0.15)' },   // NEW: jade tint
+  pnlLoss: { backgroundColor: 'rgba(255,64,96,0.15)' },   // NEW: ruby tint
   pnlBadgeText: { fontSize: 12, fontWeight: '700' },
-  pnlGainText: { color: '#00C864' },
-  pnlLossText: { color: '#FF3C3C' },
+  pnlGainText: { color: '#00C896' },   // NEW: jade accent
+  pnlLossText: { color: '#FF4060' },    // NEW: ruby accent
   summaryBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: '#2A2A3E',
+    borderTopColor: '#2A2A50',
     paddingTop: 14,
   },
-  summarySub: { color: '#8888AA', fontSize: 10 },
-  summarySubValue: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', marginTop: 2 },
+  summarySub: { color: '#8888CC', fontSize: 10 },
+  summarySubValue: { color: '#F0F0FF', fontSize: 14, fontWeight: '700', marginTop: 2 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -249,34 +255,42 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 12,
   },
-  sectionTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  count: { color: '#8888AA', fontSize: 12 },
+  sectionTitle: { color: '#F0F0FF', fontSize: 16, fontWeight: '700' },
+  count: { color: '#8888CC', fontSize: 12 },
   holdingCard: {
     flexDirection: 'row',
-    backgroundColor: '#1E1E2E',
+    backgroundColor: '#14142A',     // NEW: elevated card
     marginHorizontal: 16,
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 10,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2A2A50',
+    // NEW: card elevation
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 6,
   },
   holdingImage: {
     width: 80,
     height: 112,
-    backgroundColor: '#2A2A3E',
+    backgroundColor: '#1C1C38',
   },
   holdingInfo: { flex: 1, padding: 12 },
-  holdingName: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  holdingSet: { color: '#8888AA', fontSize: 10, marginTop: 2 },
+  holdingName: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
+  holdingSet: { color: '#8888CC', fontSize: 10, marginTop: 2 },
   holdingBottom: {
     flexDirection: 'row',
     gap: 12,
     marginTop: 8,
   },
-  holdingLabel: { color: '#6666AA', fontSize: 9 },
-  holdingQty: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  holdingAvg: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  holdingValue: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+  holdingLabel: { color: '#8888CC', fontSize: 9 },
+  holdingQty: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
+  holdingAvg: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
+  holdingValue: { color: '#D4AF37', fontSize: 13, fontWeight: '700' },   // NEW: gold price
   holdingTrophy: { fontSize: 14, marginLeft: 4 },
   pnlSection: {
     paddingRight: 14,
@@ -290,7 +304,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E1E2E',
+    borderBottomColor: '#1C1C38',
   },
   txIcon: {
     width: 36,
@@ -302,71 +316,78 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute', bottom: 90, right: 16, left: 16,
-    backgroundColor: '#FF3C3C', borderRadius: 14, paddingVertical: 16,
-    alignItems: 'center', shadowColor: '#FF3C3C', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
+    backgroundColor: '#D4AF37', borderRadius: 14, paddingVertical: 16,   // NEW: gold CTA
+    alignItems: 'center',
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  fabText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
-  txBuy: { backgroundColor: 'rgba(255,60,60,0.15)' },
-  txSell: { backgroundColor: 'rgba(0,200,100,0.15)' },
+  fabText: { color: '#080810', fontSize: 15, fontWeight: '800' },
+  txBuy: { backgroundColor: 'rgba(255,64,96,0.15)' },   // NEW: ruby tint
+  txSell: { backgroundColor: 'rgba(0,200,150,0.15)' },  // NEW: jade tint
   txIconText: { fontSize: 16 },
   txInfo: { flex: 1 },
-  txCard: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  txDate: { color: '#8888AA', fontSize: 10, marginTop: 2 },
+  txCard: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
+  txDate: { color: '#8888CC', fontSize: 10, marginTop: 2 },
   txPrice: { fontSize: 14, fontWeight: '700' },
 });
 
+// NEW: Obsidian Gallery design system
 const addModalStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#1E1E2E',
+    backgroundColor: '#1C1C38',    // NEW: elevated surface
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
     paddingBottom: 40,
+    borderWidth: 1,
+    borderColor: '#2A2A50',
   },
   handle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#3A3A4E',
+    backgroundColor: '#3D3D70',
     alignSelf: 'center',
     marginBottom: 16,
   },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '800', marginBottom: 20 },
+  title: { color: '#F0F0FF', fontSize: 18, fontWeight: '800', marginBottom: 20 },
   field: { marginBottom: 16 },
-  label: { color: '#8888AA', fontSize: 12, marginBottom: 6 },
+  label: { color: '#8888CC', fontSize: 12, marginBottom: 6 },
   input: {
-    backgroundColor: '#2A2A3E',
+    backgroundColor: '#14142A',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#3A3A4E',
+    borderColor: '#2A2A50',
   },
-  inputText: { color: '#FFFFFF', fontSize: 14 },
-  hint: { color: '#6666AA', fontSize: 11, marginBottom: 20, lineHeight: 16 },
+  inputText: { color: '#F0F0FF', fontSize: 14 },
+  hint: { color: '#8888CC', fontSize: 11, marginBottom: 20, lineHeight: 16 },
   confirmBtn: {
-    backgroundColor: '#FF3C3C',
+    backgroundColor: '#D4AF37',    // NEW: gold CTA
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     marginBottom: 10,
   },
-  confirmBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  confirmBtnText: { color: '#080810', fontSize: 15, fontWeight: '700' },
   cancelBtn: {
     alignItems: 'center',
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#3A3A4E',
+    borderColor: '#D4AF37',
     borderRadius: 14,
     paddingVertical: 14,
   },
-  cancelText: { color: '#8888AA', fontSize: 14, fontWeight: '600' },
+  cancelText: { color: '#D4AF37', fontSize: 14, fontWeight: '600' },
 });
 
 export default PortfolioScreen;

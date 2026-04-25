@@ -16,6 +16,24 @@ const { width } = Dimensions.get('window');
 
 const SERIES_FILTER = ['全部', 'Sword&Shield', 'Sun&Moon', 'XY', 'Black&White', 'Base'];
 
+// NEW: Obsidian Gallery design system — color constants
+const COLORS = {
+  bgVoid: '#080810',
+  bgSurface: '#0E0E1A',
+  bgCard: '#14142A',
+  bgElevated: '#1C1C38',
+  borderSubtle: '#2A2A50',
+  borderActive: '#3D3D70',
+  textPrimary: '#F0F0FF',
+  textSecondary: '#8888CC',
+  textTertiary: '#4A4A70',
+  accentGold: '#D4AF37',
+  accentEmber: '#FF6B35',
+  accentJade: '#00C896',
+  accentRuby: '#FF4060',
+  accentViolet: '#8B5CF6',
+};
+
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
   const [searchResults, setSearchResults] = useState<PokemonCard[] | null>(null);
@@ -46,9 +64,8 @@ const HomeScreen: React.FC = () => {
     const { db } = await import('../services/firebase');
     const { collection, query, where, getDocs } = await import('firebase/firestore');
 
-    const ids = cards.map(c => c.id).slice(0, 20); // top 20 only
+    const ids = cards.map(c => c.id).slice(0, 20);
 
-    // Batch fetch — Firestore 'in' supports max 10 items per query
     const BATCH = 10;
     const batches = [];
     for (let i = 0; i < ids.length; i += BATCH) {
@@ -79,7 +96,6 @@ const HomeScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Load prices for displayed cards on mount and on card changes
     if (displayCards.length > 0) {
       loadPrices(displayCards);
     }
@@ -112,8 +128,8 @@ const HomeScreen: React.FC = () => {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor="#FF3C3C"
-          colors={['#FF3C3C']}
+          tintColor={COLORS.accentGold}
+          colors={[COLORS.accentGold]}
         />
       }
     >
@@ -131,11 +147,11 @@ const HomeScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Market Stats Bar */}
+      {/* Market Stats Bar — elevated card, jade/ruby stats, gold volume */}
       <View style={styles.statsBar}>
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>24h 成交量</Text>
-          <Text style={styles.statValue}>HK${formatVol(totalVolume24h)}</Text>
+          <Text style={styles.statValueGold}>HK${formatVol(totalVolume24h)}</Text>
           <Text style={styles.statSub}>上次更新：{timeLabel}</Text>
         </View>
         <View style={styles.statDivider} />
@@ -144,10 +160,10 @@ const HomeScreen: React.FC = () => {
           onPress={() => navigation.navigate('CardDetail', { card: enrichCard(topGainer) })}
         >
           <Text style={styles.statLabel}>🚀 今日升幅</Text>
-          <Text style={[styles.statValue, styles.textGain]}>
+          <Text style={styles.statValueJade}>
             ▲ {enrichCard(topGainer).priceChange24h.toFixed(1)}%
           </Text>
-          <Text style={[styles.statSub, styles.statSubLink]} numberOfLines={1}>
+          <Text style={styles.statSubLink} numberOfLines={1}>
             {topGainer.name} →
           </Text>
         </TouchableOpacity>
@@ -157,10 +173,10 @@ const HomeScreen: React.FC = () => {
           onPress={() => navigation.navigate('CardDetail', { card: enrichCard(topLoser) })}
         >
           <Text style={styles.statLabel}>📉 今日跌幅</Text>
-          <Text style={[styles.statValue, styles.textLoss]}>
+          <Text style={styles.statValueRuby}>
             ▼ {enrichCard(topLoser).priceChange24h.toFixed(1)}%
           </Text>
-          <Text style={[styles.statSub, styles.statSubLink]} numberOfLines={1}>
+          <Text style={styles.statSubLink} numberOfLines={1}>
             {topLoser.name} →
           </Text>
         </TouchableOpacity>
@@ -172,7 +188,7 @@ const HomeScreen: React.FC = () => {
         placeholder="搜尋卡名、Series、Rarity..."
       />
 
-      {/* Series Filter */}
+      {/* Series Filter — gold active state */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
         {SERIES_FILTER.map(f => (
           <TouchableOpacity
@@ -241,58 +257,89 @@ const HomeScreen: React.FC = () => {
   );
 };
 
+// NEW: Obsidian Gallery design system
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121F' },
+  container: { flex: 1, backgroundColor: '#080810' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
   },
-  greeting: { color: '#8888AA', fontSize: 12 },
-  headerTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
+  greeting: { color: '#8888CC', fontSize: 12 },
+  headerTitle: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
   bellBtn: {
-    width: 44, height: 44, borderRadius: 14, backgroundColor: '#1E1E2E',
+    width: 44, height: 44, borderRadius: 14, backgroundColor: '#14142A',
     alignItems: 'center', justifyContent: 'center', position: 'relative',
+    borderWidth: 1, borderColor: '#2A2A50',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   bellIcon: { fontSize: 20 },
   liveDot: {
     position: 'absolute', top: 10, right: 10, width: 8, height: 8,
-    borderRadius: 4, backgroundColor: '#00C864',
+    borderRadius: 4, backgroundColor: '#00C896',
   },
+  // NEW: elevated card with gold volume, jade/ruby stat colors
   statsBar: {
-    flexDirection: 'row', backgroundColor: '#1E1E2E', marginHorizontal: 16,
-    borderRadius: 16, padding: 14, marginBottom: 16, alignItems: 'center',
+    flexDirection: 'row',
+    backgroundColor: '#14142A',   // elevated card surface
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2A2A50',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   statItem: { flex: 1, alignItems: 'center' },
   statItemClickable: { paddingVertical: 4 },
-  statDivider: { width: 1, height: 40, backgroundColor: '#2A2A3E' },
-  statLabel: { color: '#6666AA', fontSize: 10, marginBottom: 4 },
-  statValue: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  statSub: { color: '#8888AA', fontSize: 9, marginTop: 2 },
-  statSubLink: { textDecorationLine: 'underline' },
-  textGain: { color: '#00C864' },
-  textLoss: { color: '#FF3C3C' },
+  statDivider: { width: 1, height: 40, backgroundColor: '#2A2A50' },
+  statLabel: { color: '#8888CC', fontSize: 10, marginBottom: 4 },
+  statValueGold: { color: '#D4AF37', fontSize: 14, fontWeight: '800' },   // NEW: gold volume
+  statValueJade: { color: '#00C896', fontSize: 14, fontWeight: '700' },   // NEW: jade gain
+  statValueRuby: { color: '#FF4060', fontSize: 14, fontWeight: '700' },   // NEW: ruby loss
+  statSub: { color: '#8888CC', fontSize: 9, marginTop: 2 },
+  statSubLink: { color: '#D4AF37', fontSize: 9, marginTop: 2, textDecorationLine: 'underline' },
+  // NEW: gold active filter chips
   filterRow: { paddingLeft: 16, marginBottom: 12, maxHeight: 36 },
   filterChip: {
     paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
-    backgroundColor: '#1E1E2E', marginRight: 8, borderWidth: 1, borderColor: '#2A2A3E',
+    backgroundColor: '#14142A', marginRight: 8,
+    borderWidth: 1, borderColor: '#2A2A50',
   },
-  filterChipActive: { backgroundColor: '#FFD700', borderColor: '#FFD700' },
-  filterText: { color: '#8888AA', fontSize: 12, fontWeight: '600' },
-  filterTextActive: { color: '#12121F' },
+  filterChipActive: {
+    backgroundColor: '#D4AF37',
+    borderColor: '#D4AF37',
+    // subtle gold glow
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  filterText: { color: '#8888CC', fontSize: 12, fontWeight: '600' },
+  filterTextActive: { color: '#080810', fontWeight: '700' },
   priceIndicator: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, marginBottom: 8,
   },
   livePulse: {
-    width: 8, height: 8, borderRadius: 4, backgroundColor: '#00C864',
+    width: 8, height: 8, borderRadius: 4, backgroundColor: '#00C896',
   },
-  priceIndicatorText: { color: '#00C864', fontSize: 10, fontWeight: '600' },
+  priceIndicatorText: { color: '#00C896', fontSize: 10, fontWeight: '600' },
   sectionHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, marginTop: 20, marginBottom: 12,
   },
-  sectionTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  seeAll: { color: '#FF3C3C', fontSize: 12, fontWeight: '600' },
+  sectionTitle: { color: '#F0F0FF', fontSize: 16, fontWeight: '700' },
+  seeAll: { color: '#D4AF37', fontSize: 12, fontWeight: '600' },   // NEW: gold link
   cardList: { paddingHorizontal: 16 },
 });
 

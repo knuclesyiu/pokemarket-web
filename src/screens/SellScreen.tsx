@@ -10,7 +10,24 @@ import type { CardCondition } from '../types';
 
 const CONDITIONS: CardCondition[] = ['Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
 
-// Trigger review for cards priced above this threshold (HKD)
+// NEW: Obsidian Gallery — gold step indicators, premium feel
+const COLORS = {
+  bgVoid: '#080810',
+  bgSurface: '#0E0E1A',
+  bgCard: '#14142A',
+  bgElevated: '#1C1C38',
+  borderSubtle: '#2A2A50',
+  borderActive: '#3D3D70',
+  textPrimary: '#F0F0FF',
+  textSecondary: '#8888CC',
+  textTertiary: '#4A4A70',
+  accentGold: '#D4AF37',
+  accentEmber: '#FF6B35',
+  accentJade: '#00C896',
+  accentRuby: '#FF4060',
+  accentViolet: '#8B5CF6',
+};
+
 const REVIEW_THRESHOLD = 500;
 
 const SellScreen: React.FC = () => {
@@ -43,7 +60,6 @@ const SellScreen: React.FC = () => {
         setStep(4);
       } else {
         Alert.alert('✅ 掛牌成功！', `${selectedCard.name} 已成功上架。`, [{ text: '好的' }]);
-        // Reset
         setStep(1); setSelectedCard(null); setPrice(''); setListing(null);
       }
     } catch (err) {
@@ -64,7 +80,7 @@ const SellScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Progress */}
+      {/* Progress — gold step indicators */}
       <View style={styles.progressSection}>
         <View style={styles.progressBar}>
           {['揀卡', needsReview ? '品相審核' : '定價', '確認'].map((label, i) => {
@@ -84,7 +100,7 @@ const SellScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* ── Step 1: Select Card ── */}
+      {/* Step 1: Select Card */}
       {step === 1 && (
         <View style={styles.stepContent}>
           <Text style={styles.stepTitle}>選擇要放售的卡牌</Text>
@@ -138,7 +154,7 @@ const SellScreen: React.FC = () => {
         </View>
       )}
 
-      {/* ── Step 2: Pricing + Condition ── */}
+      {/* Step 2: Pricing + Condition */}
       {step === 2 && selectedCard && (
         <View style={styles.stepContent}>
           <Text style={styles.stepTitle}>設定價格</Text>
@@ -187,7 +203,6 @@ const SellScreen: React.FC = () => {
             </View>
           )}
 
-          {/* Review threshold notice */}
           {Number(price) >= REVIEW_THRESHOLD && (
             <View style={styles.reviewNotice}>
               <Text style={styles.reviewNoticeText}>
@@ -235,7 +250,7 @@ const SellScreen: React.FC = () => {
         </View>
       )}
 
-      {/* ── Step 3: Confirm ── */}
+      {/* Step 3: Confirm */}
       {step === 3 && selectedCard && (
         <View style={styles.stepContent}>
           <Text style={styles.stepTitle}>確認掛牌</Text>
@@ -258,13 +273,13 @@ const SellScreen: React.FC = () => {
             </View>
             <View style={styles.confirmRow}>
               <Text style={styles.confirmLabel}>掛牌價</Text>
-              <Text style={styles.confirmPrice}>HK$ {Number(price).toLocaleString()}</Text>
+              <Text style={styles.confirmPriceGold}>HK$ {Number(price).toLocaleString()}</Text>
             </View>
             <View style={styles.confirmRow}>
               <Text style={styles.confirmLabel}>品相</Text>
               <Text style={styles.confirmValue}>
                 {condition}
-                {needsReview && <Text style={{ color: '#FFB800' }}> · 待審核</Text>}
+                {needsReview && <Text style={{ color: COLORS.accentGold }}> · 待審核</Text>}
               </Text>
             </View>
             <View style={styles.confirmRow}>
@@ -300,13 +315,12 @@ const SellScreen: React.FC = () => {
         </View>
       )}
 
-      {/* ── Step 4: Review Submit ── */}
+      {/* Step 4: Review Submit */}
       {step === 4 && selectedCard && (
         <View style={styles.stepContent}>
           <Text style={styles.stepTitle}>📋 品相審核</Text>
           <Text style={styles.stepSubtitle}>上傳卡牌相片，讓買家更信任你的掛牌</Text>
 
-          {/* Selected card recap */}
           <View style={styles.reviewCardRecap}>
             <Image source={{ uri: selectedCard.imageUrl }} style={styles.reviewCardThumb} />
             <View>
@@ -317,7 +331,6 @@ const SellScreen: React.FC = () => {
             <ReviewBadge status="pending" />
           </View>
 
-          {/* Photo upload guide */}
           <View style={styles.photoGuide}>
             <Text style={styles.photoGuideTitle}>📸 需要上傳</Text>
             <View style={styles.photoGuideList}>
@@ -327,11 +340,9 @@ const SellScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Photo slots */}
           <View style={styles.photoSlots}>
             {[0, 1, 2].map(i => (
               <TouchableOpacity key={i} style={styles.photoSlot} onPress={() => {
-                // In production: launchImageLibrary
                 Alert.alert('📷 提示', '請在真實設備上使用 react-native-image-picker 上傳相片');
               }}>
                 <Text style={styles.photoSlotIcon}>+ 📷</Text>
@@ -342,14 +353,12 @@ const SellScreen: React.FC = () => {
             ))}
           </View>
 
-          {/* PSA/BGS Certificate */}
           <View style={styles.certSection}>
             <TouchableOpacity style={styles.certToggle} onPress={() => {}}>
               <Text style={styles.certToggleText}>☑️ 我有 PSA/BGS 證書（快速通過審核）</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Review status */}
           <View style={styles.reviewStatusBox}>
             <Text style={styles.reviewStatusIcon}>⏳</Text>
             <View>
@@ -391,10 +400,7 @@ const SellScreen: React.FC = () => {
                   <Image source={{ uri: card.imageUrl }} style={modalStyles.cardThumb} />
                   <View style={{ flex: 1 }}>
                     <Text style={modalStyles.cardName}>{card.name}</Text>
-                    <Text style={modalStyles.cardSet}>{card.set} · {card.number}</Text>
-                    {card.language && (
-                      <Text style={{ color: '#8888AA', fontSize: 10 }}>🌐 {card.language}</Text>
-                    )}
+                    <Text style={modalStyles.cardSet}>{card.set}</Text>
                   </View>
                   <Text style={modalStyles.cardPrice}>HK${card.price.toLocaleString()}</Text>
                 </TouchableOpacity>
@@ -412,204 +418,223 @@ const SellScreen: React.FC = () => {
   );
 };
 
+// NEW: Obsidian Gallery design system
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121F' },
+  container: { flex: 1, backgroundColor: '#080810' },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 56,
+    paddingBottom: 12,
   },
-  headerTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '800' },
-  headerGuide: { color: '#FF3C3C', fontSize: 13, fontWeight: '600' },
+  headerTitle: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
+  headerGuide: { color: COLORS.accentGold, fontSize: 13, fontWeight: '600' },
+  // NEW: gold step progress indicators
   progressSection: { paddingHorizontal: 16, marginBottom: 20 },
   progressBar: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    backgroundColor: '#1E1E2E', borderRadius: 16, padding: 16, position: 'relative',
-  },
-  progressLine: {
-    position: 'absolute', top: '50%', left: 24, height: 3,
-    backgroundColor: '#FF3C3C', borderRadius: 2, marginTop: -1.5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    position: 'relative',
+    paddingHorizontal: 8,
   },
   progressStep: { alignItems: 'center', zIndex: 1 },
   stepCircle: {
-    width: 32, height: 32, borderRadius: 16, backgroundColor: '#2A2A3E',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 4,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#14142A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#2A2A50',
+    marginBottom: 8,
   },
-  stepCircleActive: { backgroundColor: '#FF3C3C' },
-  stepNum: { color: '#6666AA', fontSize: 13, fontWeight: '700' },
-  stepNumActive: { color: '#FFFFFF' },
-  stepLabel: { color: '#6666AA', fontSize: 10 },
-  stepLabelActive: { color: '#FFFFFF' },
+  stepCircleActive: {
+    backgroundColor: COLORS.accentGold,
+    borderColor: COLORS.accentGold,
+    shadowColor: COLORS.accentGold,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  stepNum: { color: '#8888CC', fontSize: 13, fontWeight: '700' },
+  stepNumActive: { color: '#080810', fontWeight: '800' },
+  stepLabel: { color: '#8888CC', fontSize: 11 },
+  stepLabelActive: { color: COLORS.accentGold, fontWeight: '600' },
+  progressLine: {
+    position: 'absolute',
+    left: 40,
+    right: 40,
+    height: 2,
+    backgroundColor: COLORS.accentGold,
+    top: '50%',
+    marginTop: -1,
+  },
   stepContent: { paddingHorizontal: 16 },
-  stepTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  stepSubtitle: { color: '#8888AA', fontSize: 13, marginBottom: 20 },
-  selectedCardPreview: { marginBottom: 20 },
-  selectedCardInner: {
-    backgroundColor: '#1E1E2E', borderRadius: 16, overflow: 'hidden',
-    flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12,
+  stepTitle: { color: '#F0F0FF', fontSize: 20, fontWeight: '800', marginBottom: 20 },
+  stepSubtitle: { color: '#8888CC', fontSize: 13, marginTop: -16, marginBottom: 20 },
+  // NEW: elevated card selection
+  selectedCardPreview: {
+    backgroundColor: '#14142A',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A50',
+    marginBottom: 20,
   },
-  previewImage: { width: 70, height: 98, borderRadius: 10, backgroundColor: '#2A2A3E' },
-  previewInfo: { flex: 1 },
-  previewName: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  previewSet: { color: '#8888AA', fontSize: 11, marginTop: 2 },
-  previewPrice: { color: '#FF3C3C', fontSize: 12, fontWeight: '600', marginTop: 6 },
-  previewLang: { color: '#8888AA', fontSize: 11, marginTop: 4 },
-  changeBtn: { color: '#FF3C3C', fontSize: 12, fontWeight: '600' },
-  placeholderCard: {
-    backgroundColor: '#1E1E2E', borderRadius: 16, padding: 24,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: '#3A3A4E', borderStyle: 'dashed',
-  },
+  selectedCardInner: { flexDirection: 'row', alignItems: 'center' },
+  previewImage: { width: 80, height: 112, borderRadius: 8, backgroundColor: '#1C1C38' },
+  previewInfo: { flex: 1, paddingHorizontal: 12 },
+  previewName: { color: '#F0F0FF', fontSize: 15, fontWeight: '700' },
+  previewSet: { color: '#8888CC', fontSize: 11, marginTop: 2 },
+  previewPrice: { color: COLORS.accentGold, fontSize: 13, fontWeight: '700', marginTop: 8 },
+  previewLang: { color: '#8888CC', fontSize: 11, marginTop: 4 },
+  changeBtn: { color: COLORS.accentGold, fontSize: 12, fontWeight: '600' },
+  placeholderCard: { height: 100, alignItems: 'center', justifyContent: 'center' },
   placeholderIcon: { fontSize: 32, marginBottom: 8 },
-  placeholderText: { color: '#8888AA', fontSize: 14 },
-  sectionLabel: { color: '#8888AA', fontSize: 12, marginBottom: 10 },
-  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  placeholderText: { color: '#8888CC', fontSize: 14 },
+  sectionLabel: { color: '#8888CC', fontSize: 12, marginBottom: 12 },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
   quickCard: {
-    width: '48%', backgroundColor: '#1E1E2E', borderRadius: 12, overflow: 'hidden',
-    borderWidth: 2, borderColor: 'transparent',
+    width: '47%',
+    backgroundColor: '#14142A',
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#2A2A50',
   },
-  quickCardSelected: { borderColor: '#FF3C3C' },
-  quickImage: { width: '100%', height: 80, backgroundColor: '#2A2A3E' },
-  quickName: { color: '#FFFFFF', fontSize: 12, fontWeight: '600', paddingHorizontal: 8, paddingTop: 6 },
-  quickPrice: { color: '#8888AA', fontSize: 11, paddingHorizontal: 8, paddingBottom: 8 },
-  nextBtn: { backgroundColor: '#FF3C3C', borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
-  nextBtnDisabled: { backgroundColor: '#3A3A4E' },
-  nextBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  quickCardSelected: { borderColor: COLORS.accentGold, backgroundColor: 'rgba(212,175,55,0.1)' },
+  quickImage: { width: '100%', height: 80, borderRadius: 8, backgroundColor: '#1C1C38', marginBottom: 8 },
+  quickName: { color: '#F0F0FF', fontSize: 12, fontWeight: '600' },
+  quickPrice: { color: COLORS.accentGold, fontSize: 12, fontWeight: '700', marginTop: 4 },
+  // NEW: gold primary CTA
+  nextBtn: {
+    backgroundColor: COLORS.accentGold,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  nextBtnDisabled: { backgroundColor: '#2A2A50' },
+  nextBtnText: { color: '#080810', fontSize: 15, fontWeight: '700' },
   refPrice: {
-    backgroundColor: '#1E1E2E', borderRadius: 14, padding: 14,
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16,
+    backgroundColor: '#14142A',
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A50',
   },
-  refLabel: { color: '#8888AA', fontSize: 13 },
-  refValue: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  typeToggle: {
-    flexDirection: 'row', backgroundColor: '#1E1E2E', borderRadius: 14,
-    padding: 4, marginBottom: 16,
+  refLabel: { color: '#8888CC', fontSize: 12 },
+  refValue: { color: '#F0F0FF', fontSize: 16, fontWeight: '800' },
+  typeToggle: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  typeBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#14142A',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2A2A50',
   },
-  typeBtn: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
-  typeBtnActive: { backgroundColor: '#FF3C3C' },
-  typeBtnText: { color: '#8888AA', fontSize: 13, fontWeight: '600' },
-  typeBtnTextActive: { color: '#FFFFFF' },
-  fieldLabel: { color: '#8888AA', fontSize: 12, marginBottom: 8, marginTop: 12 },
+  typeBtnActive: { borderColor: COLORS.accentGold, backgroundColor: 'rgba(212,175,55,0.1)' },
+  typeBtnText: { color: '#8888CC', fontSize: 13, fontWeight: '600' },
+  typeBtnTextActive: { color: COLORS.accentGold },
+  fieldLabel: { color: '#8888CC', fontSize: 12, marginBottom: 8 },
   priceInputWrap: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#1E1E2E', borderRadius: 14, paddingHorizontal: 16,
-    borderWidth: 1, borderColor: '#FF3C3C',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#14142A',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#2A2A50',
+    marginBottom: 12,
   },
-  pricePrefix: { color: '#FFFFFF', fontSize: 20, fontWeight: '700', marginRight: 8 },
-  priceField: { flex: 1, color: '#FFFFFF', fontSize: 24, fontWeight: '700', paddingVertical: 14 },
-  priceCompare: { backgroundColor: '#1E1E2E', borderRadius: 10, padding: 10, marginTop: 8 },
-  compareText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  reviewNotice: {
-    backgroundColor: 'rgba(255,184,0,0.15)', borderRadius: 10,
-    padding: 10, marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,184,0,0.3)',
-  },
-  reviewNoticeText: { color: '#FFB800', fontSize: 12, fontWeight: '600' },
-  conditionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pricePrefix: { color: COLORS.accentGold, fontSize: 18, fontWeight: '700', marginRight: 8 },
+  priceField: { flex: 1, color: '#F0F0FF', fontSize: 18, paddingVertical: 12 },
+  priceCompare: { marginBottom: 12 },
+  compareText: { color: '#8888CC', fontSize: 13 },
+  reviewNotice: { backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: 8, padding: 10, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)' },
+  reviewNoticeText: { color: COLORS.accentGold, fontSize: 12, fontWeight: '600' },
+  conditionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
   conditionChip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: '#1E1E2E', borderWidth: 1, borderColor: '#2A2A3E',
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16,
+    backgroundColor: '#14142A', borderWidth: 1, borderColor: '#2A2A50',
   },
-  conditionChipActive: { backgroundColor: '#FFD700', borderColor: '#FFD700' },
-  conditionText: { color: '#8888AA', fontSize: 12, fontWeight: '600' },
-  conditionTextActive: { color: '#12121F' },
-  feeInfo: { backgroundColor: '#1E1E2E', borderRadius: 14, padding: 14, marginTop: 20 },
-  feeTitle: { color: '#FFFFFF', fontSize: 13, fontWeight: '700', marginBottom: 8 },
-  feeRow: { color: '#8888AA', fontSize: 12, marginBottom: 4 },
-  stepNav: { flexDirection: 'row', gap: 10, marginTop: 20 },
+  conditionChipActive: { borderColor: COLORS.accentGold, backgroundColor: 'rgba(212,175,55,0.15)' },
+  conditionText: { color: '#8888CC', fontSize: 12, fontWeight: '600' },
+  conditionTextActive: { color: COLORS.accentGold },
+  feeInfo: { backgroundColor: '#14142A', borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#2A2A50' },
+  feeTitle: { color: '#F0F0FF', fontSize: 13, fontWeight: '700', marginBottom: 10 },
+  feeRow: { color: '#8888CC', fontSize: 12, marginBottom: 4 },
+  stepNav: { flexDirection: 'row', gap: 12 },
   backBtn: {
-    paddingVertical: 15, paddingHorizontal: 16, borderRadius: 14, backgroundColor: '#1E1E2E',
+    flex: 1, alignItems: 'center', backgroundColor: 'transparent',
+    borderWidth: 1, borderColor: '#2A2A50', borderRadius: 14, paddingVertical: 16,
   },
-  backBtnText: { color: '#8888AA', fontSize: 14, fontWeight: '600' },
-  confirmCard: {
-    backgroundColor: '#1E1E2E', borderRadius: 16, overflow: 'hidden',
-    flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12, marginBottom: 16,
-  },
-  confirmImage: { width: 90, height: 126, borderRadius: 10, backgroundColor: '#2A2A3E' },
-  confirmInfo: { flex: 1 },
-  confirmName: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  confirmSet: { color: '#8888AA', fontSize: 12, marginTop: 4 },
-  confirmLang: { color: '#8888AA', fontSize: 11, marginTop: 4 },
-  confirmDetails: {
-    backgroundColor: '#1E1E2E', borderRadius: 16, padding: 16, marginBottom: 20,
-  },
-  confirmRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2A2A3E',
-  },
-  confirmLabel: { color: '#8888AA', fontSize: 13 },
-  confirmValue: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  confirmPrice: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  confirmNet: { color: '#00C864', fontSize: 16, fontWeight: '700' },
-  reviewInfo: {
-    backgroundColor: 'rgba(255,184,0,0.1)', borderRadius: 14, padding: 14, marginBottom: 16,
-    borderWidth: 1, borderColor: 'rgba(255,184,0,0.2)',
-  },
-  reviewInfoTitle: { color: '#FFB800', fontSize: 13, fontWeight: '700', marginBottom: 8 },
-  reviewInfoText: { color: '#8888AA', fontSize: 12, lineHeight: 20 },
-  listBtn: { backgroundColor: '#FF3C3C', borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
-  listBtnDisabled: { backgroundColor: '#3A3A4E' },
-  listBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  backBtnCenter: { alignItems: 'center', marginTop: 12 },
-  // Step 4 — Review
-  reviewCardRecap: {
-    backgroundColor: '#1E1E2E', borderRadius: 16, padding: 14,
-    flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20,
-  },
-  reviewCardThumb: { width: 60, height: 84, borderRadius: 8, backgroundColor: '#2A2A3E' },
-  reviewCardName: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  reviewCardPrice: { color: '#FF3C3C', fontSize: 13, fontWeight: '600', marginTop: 2 },
-  reviewCardCondition: { color: '#8888AA', fontSize: 11, marginTop: 2 },
-  photoGuide: { backgroundColor: '#1E1E2E', borderRadius: 14, padding: 14, marginBottom: 16 },
-  photoGuideTitle: { color: '#FFFFFF', fontSize: 13, fontWeight: '700', marginBottom: 8 },
-  photoGuideList: { gap: 6 },
-  photoGuideItem: { color: '#8888AA', fontSize: 12 },
-  photoSlots: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  photoSlot: {
-    flex: 1, height: 90, backgroundColor: '#1E1E2E', borderRadius: 12,
-    borderWidth: 1, borderColor: '#2A2A3E', borderStyle: 'dashed',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  photoSlotIcon: { fontSize: 24, marginBottom: 4 },
-  photoSlotLabel: { color: '#6666AA', fontSize: 10 },
-  certSection: { marginBottom: 20 },
-  certToggle: { backgroundColor: '#1E1E2E', borderRadius: 12, padding: 14 },
-  certToggleText: { color: '#FFFFFF', fontSize: 13 },
-  reviewStatusBox: {
-    backgroundColor: 'rgba(255,184,0,0.1)', borderRadius: 14, padding: 14,
-    flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20,
-    borderWidth: 1, borderColor: 'rgba(255,184,0,0.2)',
-  },
-  reviewStatusIcon: { fontSize: 28 },
-  reviewStatusTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  reviewStatusSub: { color: '#8888AA', fontSize: 11, marginTop: 2 },
-  continueBtn: {
-    backgroundColor: '#FFD700', borderRadius: 14, paddingVertical: 16, alignItems: 'center',
-  },
-  continueBtnText: { color: '#12121F', fontSize: 16, fontWeight: '800' },
+  backBtnText: { color: '#8888CC', fontSize: 14, fontWeight: '600' },
+  confirmCard: { flexDirection: 'row', backgroundColor: '#14142A', borderRadius: 16, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#2A2A50' },
+  confirmImage: { width: 80, height: 112, borderRadius: 8, backgroundColor: '#1C1C38' },
+  confirmInfo: { flex: 1, paddingLeft: 12 },
+  confirmName: { color: '#F0F0FF', fontSize: 15, fontWeight: '700' },
+  confirmSet: { color: '#8888CC', fontSize: 11, marginTop: 2 },
+  confirmLang: { color: '#8888CC', fontSize: 11, marginTop: 4 },
+  confirmDetails: { backgroundColor: '#14142A', borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#2A2A50' },
+  confirmRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  confirmLabel: { color: '#8888CC', fontSize: 13 },
+  confirmValue: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
+  confirmPriceGold: { color: COLORS.accentGold, fontSize: 15, fontWeight: '800' },
+  confirmNet: { color: COLORS.accentJade, fontSize: 15, fontWeight: '800' },
+  reviewInfo: { backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)' },
+  reviewInfoTitle: { color: COLORS.accentGold, fontSize: 13, fontWeight: '700', marginBottom: 8 },
+  reviewInfoText: { color: '#8888CC', fontSize: 12, lineHeight: 20 },
+  listBtn: { backgroundColor: COLORS.accentGold, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginBottom: 12 },
+  listBtnDisabled: { backgroundColor: '#2A2A50' },
+  listBtnText: { color: '#080810', fontSize: 15, fontWeight: '700' },
+  backBtnCenter: { alignItems: 'center' },
+  reviewCardRecap: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#14142A', borderRadius: 16, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#2A2A50' },
+  reviewCardThumb: { width: 60, height: 84, borderRadius: 8, backgroundColor: '#1C1C38' },
+  reviewCardName: { color: '#F0F0FF', fontSize: 14, fontWeight: '700', marginLeft: 12 },
+  reviewCardPrice: { color: COLORS.accentGold, fontSize: 14, fontWeight: '700', marginLeft: 12 },
+  reviewCardCondition: { color: '#8888CC', fontSize: 11, marginLeft: 12 },
+  photoGuide: { backgroundColor: '#14142A', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#2A2A50' },
+  photoGuideTitle: { color: '#F0F0FF', fontSize: 13, fontWeight: '700', marginBottom: 10 },
+  photoGuideItem: { color: '#8888CC', fontSize: 12, marginBottom: 4 },
+  photoSlots: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  photoSlot: { flex: 1, height: 80, backgroundColor: '#14142A', borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A2A50' },
+  photoSlotIcon: { fontSize: 24 },
+  photoSlotLabel: { color: '#8888CC', fontSize: 10, marginTop: 4 },
+  certSection: { marginBottom: 16 },
+  certToggle: { backgroundColor: '#14142A', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#2A2A50' },
+  certToggleText: { color: COLORS.accentGold, fontSize: 13, fontWeight: '600' },
+  reviewStatusBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#14142A', borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#2A2A50', gap: 12 },
+  reviewStatusIcon: { fontSize: 24 },
+  reviewStatusTitle: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
+  reviewStatusSub: { color: '#8888CC', fontSize: 11 },
+  continueBtn: { backgroundColor: COLORS.accentGold, borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
+  continueBtnText: { color: '#080810', fontSize: 15, fontWeight: '700' },
 });
 
 const modalStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: '#1E1E2E', borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 20, paddingBottom: 40, maxHeight: '80%',
-  },
-  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#3A3A4E', alignSelf: 'center', marginBottom: 16 },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '800', marginBottom: 16 },
-  searchBarWrap: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#2A2A3E',
-    borderRadius: 12, paddingHorizontal: 12, marginBottom: 16, gap: 8,
-  },
-  searchInput: { flex: 1, color: '#FFFFFF', fontSize: 14, paddingVertical: 12 },
-  cardRow: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 10,
-    gap: 12, borderBottomWidth: 1, borderBottomColor: '#2A2A3E',
-  },
-  cardThumb: { width: 50, height: 70, borderRadius: 8, backgroundColor: '#2A2A3E' },
-  cardName: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  cardSet: { color: '#8888AA', fontSize: 11 },
-  cardPrice: { color: '#FF3C3C', fontSize: 13, fontWeight: '700' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: '#1C1C38', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, borderWidth: 1, borderColor: '#2A2A50' },
+  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#3D3D70', alignSelf: 'center', marginBottom: 16 },
+  title: { color: '#F0F0FF', fontSize: 18, fontWeight: '800', marginBottom: 20 },
+  searchBarWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#14142A', borderRadius: 12, paddingHorizontal: 14, marginBottom: 16, borderWidth: 1, borderColor: '#2A2A50' },
+  searchInput: { flex: 1, color: '#F0F0FF', fontSize: 14, paddingVertical: 12, marginLeft: 8 },
+  cardRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2A2A50' },
+  cardThumb: { width: 50, height: 70, borderRadius: 6, backgroundColor: '#1C1C38', marginRight: 12 },
+  cardName: { color: '#F0F0FF', fontSize: 14, fontWeight: '600' },
+  cardSet: { color: '#8888CC', fontSize: 11 },
+  cardPrice: { color: COLORS.accentGold, fontSize: 13, fontWeight: '700' },
   closeBtn: { alignItems: 'center', marginTop: 16 },
-  closeText: { color: '#8888AA', fontSize: 14, fontWeight: '600' },
+  closeText: { color: '#8888CC', fontSize: 14, fontWeight: '600' },
 });
 
 export default SellScreen;
