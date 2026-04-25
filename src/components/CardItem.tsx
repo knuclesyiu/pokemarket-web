@@ -14,7 +14,7 @@ const formatPrice = (price: number): string => {
   return `HK$ ${price}`;
 };
 
-const ELEMENT_COLORS = {
+const ELEMENT_COLORS: Record<string, string> = {
   fire: '#FF6B35', water: '#4A90D9', grass: '#52C41A',
   lightning: '#FADB14', psychic: '#B371CF', dark: '#5A4FCF',
   dragon: '#FF4D4F', normal: '#8C8C8C',
@@ -125,11 +125,13 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 11, fontWeight: '700' },
   textGain: { color: '#00C864' },
   textLoss: { color: '#FF3C3C' },
+  elementBar: { width: 3 },
   listings: {
     color: '#6666AA',
     fontSize: 11,
     marginTop: 4,
   },
+  trophyIcon: { fontSize: 14 },
   // compact
   compactCard: {
     width: 120,

@@ -52,7 +52,7 @@ const ProfileScreen: React.FC = () => {
         { text: '取消', style: 'cancel' },
         {
           text: '確認',
-          onPress: async (pin) => {
+          onPress: async (pin?: string) => {
             if (!pin || pin.length < 4) { Alert.alert('錯誤', '密碼最少 4 位'); return; }
             setChangingPin(true);
             try {

@@ -3,7 +3,7 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { onSnapshot, query, orderBy, where } from 'firebase/firestore';
+import { onSnapshot, query, orderBy, where, collection } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { ChatThread } from '../../types/chat';
 
@@ -26,9 +26,9 @@ const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
     }
 
     const q = query(
-      db.collection('chat_threads')
-        .where('parties', 'array-contains', CURRENT_USER_ID)
-        .orderBy('lastMessageAt', 'desc')
+      collection(db, 'chat_threads'),
+      where('parties', 'array-contains', CURRENT_USER_ID),
+      orderBy('lastMessageAt', 'desc')
     );
 
     const unsub = onSnapshot(q,

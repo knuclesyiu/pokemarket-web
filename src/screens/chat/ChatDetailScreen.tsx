@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import {
   onSnapshot, addDoc, collection, query, orderBy,
-  updateDoc, doc, where, serverTimestamp,
+  updateDoc, doc, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { ChatMessage } from '../../types/chat';
@@ -32,7 +32,8 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
 
   // Real-time listener on messages subcollection
   useEffect(() => {
-    const msgsRef = db.collection('chat_messages').doc(threadId).collection('messages');
+    const threadDoc = doc(db, 'chat_threads', threadId);
+    const msgsRef = collection(threadDoc, 'messages');
     const q = query(msgsRef, orderBy('createdAt', 'asc'));
 
     const unsub = onSnapshot(q,
@@ -65,7 +66,8 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
     setSending(true);
 
     try {
-      const msgsRef = db.collection('chat_messages').doc(threadId).collection('messages');
+      const threadDoc = doc(db, 'chat_threads', threadId);
+      const msgsRef = collection(threadDoc, 'messages');
       await addDoc(msgsRef, {
         senderId: CURRENT_USER_ID,
         senderName: '我',

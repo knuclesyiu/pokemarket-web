@@ -616,6 +616,12 @@ const styles = StyleSheet.create({
   disputeBannerTitle: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
   disputeBannerDesc: { color: '#8888AA', fontSize: 11, marginTop: 2 },
   disputeArrow: { color: '#FF3C3C', fontSize: 18, fontWeight: '700' },
+  extendBtn: { backgroundColor: '#2A2A3E', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 8 },
+  extendBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+  extendedBadge: { backgroundColor: 'rgba(0,200,100,0.15)', borderRadius: 8, paddingVertical: 8, alignItems: 'center', marginTop: 8 },
+  extendedBadgeText: { color: '#00C864', fontSize: 12, fontWeight: '700' },
+  reportProblemBtn: { backgroundColor: 'rgba(255,60,60,0.1)', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,60,60,0.3)' },
+  reportProblemBtnText: { color: '#FF3C3C', fontSize: 13, fontWeight: '600' },
 });
 
 const modalStyles = StyleSheet.create({

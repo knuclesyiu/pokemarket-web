@@ -4,6 +4,8 @@ import {
   TouchableOpacity, Dimensions, Modal, ActivityIndicator,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../types/navigation';
 import type { RouteProp } from '@react-navigation/native';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import PriceChart from '../components/PriceChart';
@@ -15,7 +17,7 @@ const { width } = Dimensions.get('window');
 
 const CardDetailScreen: React.FC = () => {
   const route = useRoute<RouteProps>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { card } = route.params;
   const [activeTab, setActiveTab] = useState<'listings' | 'history'>('listings');
   const [showSellModal, setShowSellModal] = useState(false);
@@ -159,8 +161,8 @@ const CardDetailScreen: React.FC = () => {
           style={styles.contactBtn}
           onPress={async () => {
             try {
-              const { httpsCallable, getFunctions } = await import('firebase/functions');
-              const createChatThread = httpsCallable(getFunctions(), 'createChatThread');
+              const fns = getFunctions();
+              const createChatThread = httpsCallable(fns, 'createChatThread');
               const result = await createChatThread({
                 listingId: card.id,
                 parties: ['placeholder_user', 'seller_placeholder'],

@@ -18,8 +18,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { MarketListing } from '../types/trade';
-import { MOCK_CARDS } from '../data/mockData';
+import { MarketListing } from '../../types/trade';
+import { MOCK_CARDS } from '../../data/mockData';
 
 type NavProp = NativeStackNavigationProp<any>;
 const { width } = Dimensions.get('window');
@@ -57,7 +57,7 @@ const ListingCard: React.FC<{
   <TouchableOpacity style={styles.cardTile} onPress={onPress} activeOpacity={0.75}>
     <View style={styles.cardImageWrap}>
       {item.card?.imageUrl ? (
-        <Image source={{ uri: item.card.imageUrl }} style={styles.cardImage} resizeMode="contain" />
+        <Image source={{ uri: item.card.imageUrl }} style={styles.cardImage as any} resizeMode="contain" />
       ) : (
         <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
           <Text style={styles.cardImagePlaceholderText}>🎴</Text>
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
   skelLine: { height: 10, backgroundColor: '#2A2A3E', borderRadius: 4 },
   errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   errorText: { color: '#8888AA', fontSize: 14 },
-  retryBtn: { marginTop: 12, backgroundColor: '#1E1E2E', padding: '10 20', borderRadius: 12 },
+  retryBtn: { marginTop: 12, backgroundColor: '#1E1E2E', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 12 },
   retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyIcon: { fontSize: 60, opacity: 0.3 },

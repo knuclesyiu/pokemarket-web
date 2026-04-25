@@ -2,7 +2,7 @@
  * AuthContext — manages Firebase Auth state + user profile from Firestore
  */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from 'firebase/auth';
+import { User, ConfirmationResult } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { UserProfile } from '../types/user';
@@ -52,9 +52,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Create skeleton profile on first login
           const profile: UserProfile = {
             uid: user.uid,
-            displayName: user.displayName ?? user.phone ?? 'User',
+            displayName: user.displayName ?? (user.phoneNumber ?? 'User'),
             email: user.email ?? '',
-            phone: user.phone ?? '',
+            phone: user.phoneNumber ?? '',
             memberSince: Date.now(),
             lastLogin: Date.now(),
             isSeller: false,
@@ -84,10 +84,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithEmail = async (email: string, password: string) => {
     const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import('firebase/auth');
     try {
-      return await signInWithEmailAndPassword(auth, email, password);
+      return (await signInWithEmailAndPassword(auth, email, password)).user;
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        return await createUserWithEmailAndPassword(auth, email, password);
+        return (await createUserWithEmailAndPassword(auth, email, password)).user;
       }
       throw e;
     }

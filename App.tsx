@@ -23,8 +23,9 @@ import ChatDetailScreen from "./src/screens/chat/ChatDetailScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import { AuthProvider } from "./src/contexts/AuthContext";
+import type { RootStackParamList } from "./src/types/navigation";
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
 initFirebase();
