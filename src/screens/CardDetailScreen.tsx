@@ -387,6 +387,16 @@ const styles = StyleSheet.create({
   textGain: { color: '#00C864' },
   textLoss: { color: '#FF3C3C' },
   listingCount: { color: '#6666AA', fontSize: 11, marginTop: 6 },
+  contactBtn: {
+    backgroundColor: '#1E1E2E',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#2A2A3E',
+  },
+  contactBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   actionRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
