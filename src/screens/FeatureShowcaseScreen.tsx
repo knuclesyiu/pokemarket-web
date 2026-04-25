@@ -177,14 +177,14 @@ const FeatureCard: React.FC<{ feature: FeatureCard; index: number }> = ({ featur
         duration: 600,
         delay: index * 120,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: false // RN 0.81+ Android,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 600,
         delay: index * 120,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: false // RN 0.81+ Android,
       }),
     ]).start();
   }, []);
