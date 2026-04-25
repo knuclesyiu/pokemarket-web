@@ -85,7 +85,7 @@ const NotificationScreen: React.FC = () => {
 
       {loading ? (
         <View style={styles.loading}>
-          <ActivityIndicator size="large" color="#FF3C3C" />
+          <ActivityIndicator size="large" color="#FF4060" />
         </View>
       ) : (
         <FlatList
@@ -107,14 +107,14 @@ const NotificationScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121F' },
+  container: { flex: 1, backgroundColor: '#080810' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingTop: 56, paddingBottom: 16,
   },
-  headerTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '800' },
+  headerTitle: { color: '#F0F0FF', fontSize: 24, fontWeight: '800' },
   unreadCount: {
-    backgroundColor: '#FF3C3C', borderRadius: 12,
+    backgroundColor: '#FF4060', borderRadius: 12,
     paddingHorizontal: 10, paddingVertical: 4,
     color: '#FFF', fontSize: 11, fontWeight: '700',
   },
@@ -122,25 +122,25 @@ const styles = StyleSheet.create({
   notifItem: {
     flexDirection: 'row', alignItems: 'flex-start',
     paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: '#1E1E2E',
+    borderBottomWidth: 1, borderBottomColor: '#14142A',
     gap: 12,
   },
   notifItemUnread: { backgroundColor: 'rgba(255,60,60,0.04)' },
   unreadDot: {
-    width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF3C3C',
+    width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF4060',
     marginTop: 6, flexShrink: 0,
   },
   notifContent: { flex: 1 },
-  notifTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', marginBottom: 4 },
+  notifTitle: { color: '#F0F0FF', fontSize: 14, fontWeight: '600', marginBottom: 4 },
   notifTitleUnread: { fontWeight: '800' },
-  notifBody: { color: '#8888AA', fontSize: 13, lineHeight: 18, marginBottom: 6 },
-  notifTime: { color: '#6666AA', fontSize: 11 },
+  notifBody: { color: '#8888CC', fontSize: 13, lineHeight: 18, marginBottom: 6 },
+  notifTime: { color: '#4A4A70', fontSize: 11 },
   notifBadge: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,184,0,0.15)', alignItems: 'center', justifyContent: 'center' },
   notifBadgeText: { fontSize: 16 },
   empty: { alignItems: 'center', paddingTop: 100 },
   emptyIcon: { fontSize: 56, marginBottom: 16 },
-  emptyTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  emptySub: { color: '#6666AA', fontSize: 13 },
+  emptyTitle: { color: '#F0F0FF', fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  emptySub: { color: '#4A4A70', fontSize: 13 },
 });
 
 export default NotificationScreen;

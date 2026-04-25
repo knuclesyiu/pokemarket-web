@@ -167,7 +167,7 @@ const ProfileScreen: React.FC = () => {
           </View>
           <View style={styles.ratingDivider} />
           <View style={styles.ratingRate}>
-            <Text style={[styles.ratingBig, { color: positiveRate >= 70 ? '#00C864' : '#FFB800' }]}>
+            <Text style={[styles.ratingBig, { color: positiveRate >= 70 ? '#00C896' : '#D4AF37' }]}>
               {positiveRate}%
             </Text>
             <Text style={styles.ratingLabel}>好評率</Text>
@@ -239,74 +239,74 @@ const ProfileScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121F' },
+  container: { flex: 1, backgroundColor: '#080810' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
   },
-  headerTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '800' },
+  headerTitle: { color: '#F0F0FF', fontSize: 24, fontWeight: '800' },
   notifBell: { fontSize: 24 },
   avatarSection: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16,
     marginBottom: 24,
   },
   avatar: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: '#FF3C3C',
+    width: 72, height: 72, borderRadius: 36, backgroundColor: '#FF4060',
     alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { color: '#FFF', fontSize: 28, fontWeight: '900' },
   nameSection: { marginLeft: 16, flex: 1 },
-  displayName: { color: '#FFFFFF', fontSize: 20, fontWeight: '800', marginBottom: 4 },
-  memberSince: { color: '#8888AA', fontSize: 12, marginBottom: 6 },
-  editProfile: { color: '#FF3C3C', fontSize: 13, fontWeight: '600' },
+  displayName: { color: '#F0F0FF', fontSize: 20, fontWeight: '800', marginBottom: 4 },
+  memberSince: { color: '#8888CC', fontSize: 12, marginBottom: 6 },
+  editProfile: { color: '#FF4060', fontSize: 13, fontWeight: '600' },
   section: {
-    backgroundColor: '#1E1E2E', marginHorizontal: 16, borderRadius: 18,
+    backgroundColor: '#14142A', marginHorizontal: 16, borderRadius: 18,
     padding: 18, marginBottom: 14,
   },
-  sectionTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', marginBottom: 14 },
+  sectionTitle: { color: '#F0F0FF', fontSize: 15, fontWeight: '700', marginBottom: 14 },
   sectionTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  sectionArrow: { color: '#FF3C3C', fontSize: 12, fontWeight: '600' },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2A2A3E' },
-  infoLabel: { color: '#8888AA', fontSize: 13 },
-  infoValue: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+  sectionArrow: { color: '#FF4060', fontSize: 12, fontWeight: '600' },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2A2A50' },
+  infoLabel: { color: '#8888CC', fontSize: 13 },
+  infoValue: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
   ratingRow: { flexDirection: 'row', alignItems: 'center' },
   ratingPositive: { flex: 1, alignItems: 'center' },
   ratingNegative: { flex: 1, alignItems: 'center' },
   ratingRate: { flex: 1, alignItems: 'center' },
-  ratingDivider: { width: 1, height: 40, backgroundColor: '#2A2A3E' },
-  ratingBig: { color: '#FFFFFF', fontSize: 24, fontWeight: '800', marginBottom: 4 },
-  ratingLabel: { color: '#8888AA', fontSize: 11 },
-  noReview: { color: '#8888AA', fontSize: 12, textAlign: 'center', marginTop: 10 },
+  ratingDivider: { width: 1, height: 40, backgroundColor: '#2A2A50' },
+  ratingBig: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', marginBottom: 4 },
+  ratingLabel: { color: '#8888CC', fontSize: 11 },
+  noReview: { color: '#8888CC', fontSize: 12, textAlign: 'center', marginTop: 10 },
   prefRow: { marginBottom: 16 },
-  prefLabel: { color: '#FFFFFF', fontSize: 14, fontWeight: '600', marginBottom: 10 },
-  prefSub: { color: '#6666AA', fontSize: 11, marginTop: 2 },
+  prefLabel: { color: '#F0F0FF', fontSize: 14, fontWeight: '600', marginBottom: 10 },
+  prefSub: { color: '#4A4A70', fontSize: 11, marginTop: 2 },
   langOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   langBtn: {
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10,
-    backgroundColor: '#12121F', borderWidth: 1, borderColor: '#2A2A3E',
+    backgroundColor: '#080810', borderWidth: 1, borderColor: '#2A2A50',
   },
-  langBtnActive: { backgroundColor: 'rgba(255,60,60,0.15)', borderColor: '#FF3C3C' },
-  langBtnText: { color: '#8888AA', fontSize: 12, fontWeight: '600' },
-  langBtnTextActive: { color: '#FF3C3C' },
+  langBtnActive: { backgroundColor: 'rgba(255,60,60,0.15)', borderColor: '#FF4060' },
+  langBtnText: { color: '#8888CC', fontSize: 12, fontWeight: '600' },
+  langBtnTextActive: { color: '#FF4060' },
   toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   toggle: {
-    width: 50, height: 28, borderRadius: 14, backgroundColor: '#2A2A3E',
+    width: 50, height: 28, borderRadius: 14, backgroundColor: '#2A2A50',
     justifyContent: 'center', paddingHorizontal: 3,
   },
-  toggleActive: { backgroundColor: '#00C864' },
+  toggleActive: { backgroundColor: '#00C896' },
   toggleKnob: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#FFF' },
   toggleKnobActive: { alignSelf: 'flex-end' },
   actionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   actionIcon: { fontSize: 22, marginRight: 12 },
   actionContent: { flex: 1 },
-  actionLabel: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  actionSub: { color: '#6666AA', fontSize: 11, marginTop: 2 },
-  actionArrow: { color: '#6666AA', fontSize: 16 },
+  actionLabel: { color: '#F0F0FF', fontSize: 14, fontWeight: '600' },
+  actionSub: { color: '#4A4A70', fontSize: 11, marginTop: 2 },
+  actionArrow: { color: '#4A4A70', fontSize: 16 },
   signOutBtn: {
     backgroundColor: 'rgba(255,60,60,0.08)', borderRadius: 14, paddingVertical: 16,
     alignItems: 'center', marginHorizontal: 16, borderWidth: 1, borderColor: 'rgba(255,60,60,0.2)',
   },
-  signOutBtnText: { color: '#FF3C3C', fontSize: 14, fontWeight: '700' },
+  signOutBtnText: { color: '#FF4060', fontSize: 14, fontWeight: '700' },
 });
 
 export default ProfileScreen;

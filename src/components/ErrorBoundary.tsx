@@ -50,21 +50,21 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#12121F',
+    backgroundColor: '#080810',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
   icon: { fontSize: 48, marginBottom: 16 },
   title: {
-    color: '#FFFFFF',
+    color: '#F0F0FF',
     fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: 12,
   },
   message: {
-    color: '#FF3C3C',
+    color: '#FF4060',
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
@@ -75,20 +75,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   hint: {
-    color: '#8888AA',
+    color: '#8888CC',
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 24,
   },
   resetBtn: {
-    backgroundColor: '#FF3C3C',
+    backgroundColor: '#FF4060',
     paddingHorizontal: 28,
     paddingVertical: 12,
     borderRadius: 12,
   },
   resetBtnText: {
-    color: '#FFFFFF',
+    color: '#F0F0FF',
     fontSize: 15,
     fontWeight: '700',
   },
