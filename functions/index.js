@@ -16,15 +16,25 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HELPERS
+// PLATFORM FEE CONFIGURATION  (tunable — update before go-live)
 // ─────────────────────────────────────────────────────────────────────────────
-
-const PLATFORM_FEE_PERCENT = 0.03;
+const PLATFORM_FEE_PERCENT = 0.015;   // 1.5% — set to 0 to disable platform fee
+const STRIPE_PERCENT_FEE  = 0.029;    // Stripe: 2.9% + HK$2.35 per charge
+const STRIPE_FIXED_CENTS  = 235;      // HK$2.35 in cents
+const PLATFORM_MIN_FEE    = 500;      // Minimum platform fee in HKD cents (HK$5 floor)
+const ESCROW_MIN_HKD      = 2000;     // Escrow only enabled for listings >= HK$20 (2000 cents)
 
 function splitAmount(grossHkdCents) {
-  const platformFee = Math.round(grossHkdCents * PLATFORM_FEE_PERCENT);
+  // grossHkdCents = buyer pays card price only (platform fee added separately at checkout)
+  // Stripe fee: 2.9% + HK$2.35 per successful charge
+  // Platform fee: PLATFORM_FEE_PERCENT of gross, with PLATFORM_MIN_FEE floor
+  const stripeFee = Math.round(grossHkdCents * STRIPE_PERCENT_FEE) + STRIPE_FIXED_CENTS;
+  const platformFee = Math.max(
+    Math.round(grossHkdCents * PLATFORM_FEE_PERCENT),
+    PLATFORM_MIN_FEE
+  );
   const sellerNet = grossHkdCents - platformFee;
-  return { platformFee, sellerNet };
+  return { platformFee, stripeFee, sellerNet, grossHkdCents };
 }
 
 async function getOrCreateConnectAccount(sellerId, sellerEmail) {
@@ -75,6 +85,9 @@ exports.createPaymentIntent = v2.https.onCall(
       throw new functions.https.HttpsError("invalid-argument", "Missing required fields");
     }
     const amountCents = Math.round(amountHkd * 100);
+    // Escrow only for transactions >= ESCROW_MIN_HKD (HK$20)
+    // Below threshold: direct Stripe transfer, no escrow hold
+    const useEscrow = amountCents >= ESCROW_MIN_HKD;
     const { platformFee, sellerNet } = splitAmount(amountCents);
 
     const paymentIntent = await stripe.paymentIntents.create({
