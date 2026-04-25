@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image,
-  TouchableOpacity, FlatList,
+  TouchableOpacity, FlatList, Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,6 +12,9 @@ type NavProp = NativeStackNavigationProp<any>;
 
 const PortfolioScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addCardId, setAddCardId] = useState('');
+  const [addQty, setAddQty] = useState('1');
 
   const totalValue = MOCK_PORTFOLIO.reduce((s, i) => s + i.currentValue, 0);
   const totalCost = MOCK_PORTFOLIO.reduce((s, i) => s + i.avgBuyPrice * i.quantity, 0);
@@ -24,7 +27,7 @@ const PortfolioScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>我的收藏</Text>
-        <TouchableOpacity style={styles.addBtn}>
+        <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddModal(true)}>
           <Text style={styles.addBtnText}>+ 添加</Text>
         </TouchableOpacity>
       </View>
@@ -140,6 +143,48 @@ const PortfolioScreen: React.FC = () => {
       >
         <Text style={styles.fabText}>📦 放售卡牌</Text>
       </TouchableOpacity>
+
+      {/* Add Card Modal */}
+      <Modal visible={showAddModal} animationType="slide" transparent>
+        <View style={addModalStyles.overlay}>
+          <View style={addModalStyles.sheet}>
+            <View style={addModalStyles.handle} />
+            <Text style={addModalStyles.title}>添加卡牌</Text>
+            <View style={addModalStyles.field}>
+              <Text style={addModalStyles.label}>卡牌 ID</Text>
+              <View style={addModalStyles.input}>
+                <Text style={addModalStyles.inputText}>{addCardId || ' '}</Text>
+              </View>
+            </View>
+            <View style={addModalStyles.field}>
+              <Text style={addModalStyles.label}>數量</Text>
+              <View style={addModalStyles.input}>
+                <Text style={addModalStyles.inputText}>{addQty || ' '}</Text>
+              </View>
+            </View>
+            <Text style={addModalStyles.hint}>
+              請輸入卡牌 ID 和數量以添加到投資組合。
+            </Text>
+            <TouchableOpacity
+              style={addModalStyles.confirmBtn}
+              onPress={() => {
+                // Placeholder — integrate with portfolio API here
+                setShowAddModal(false);
+                setAddCardId('');
+                setAddQty('1');
+              }}
+            >
+              <Text style={addModalStyles.confirmBtnText}>確認添加</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[addModalStyles.cancelBtn]}
+              onPress={() => setShowAddModal(false)}
+            >
+              <Text style={addModalStyles.cancelText}>取消</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <View style={{ height: 100 }} />
     </ScrollView>
@@ -269,6 +314,59 @@ const styles = StyleSheet.create({
   txCard: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
   txDate: { color: '#8888AA', fontSize: 10, marginTop: 2 },
   txPrice: { fontSize: 14, fontWeight: '700' },
+});
+
+const addModalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: '#1E1E2E',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#3A3A4E',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '800', marginBottom: 20 },
+  field: { marginBottom: 16 },
+  label: { color: '#8888AA', fontSize: 12, marginBottom: 6 },
+  input: {
+    backgroundColor: '#2A2A3E',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#3A3A4E',
+  },
+  inputText: { color: '#FFFFFF', fontSize: 14 },
+  hint: { color: '#6666AA', fontSize: 11, marginBottom: 20, lineHeight: 16 },
+  confirmBtn: {
+    backgroundColor: '#FF3C3C',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  confirmBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  cancelBtn: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#3A3A4E',
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+  cancelText: { color: '#8888AA', fontSize: 14, fontWeight: '600' },
 });
 
 export default PortfolioScreen;

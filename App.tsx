@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import initFirebase from "./src/services/firebase";
+import ErrorBoundary from "./src/components/ErrorBoundary";
 import HomeScreen from "./src/screens/HomeScreen";
 import CardDetailScreen from "./src/screens/CardDetailScreen";
 import PortfolioScreen from "./src/screens/PortfolioScreen";
@@ -128,8 +129,9 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <NavigationContainer>
-      <Stack.Navigator
+      <ErrorBoundary>
+        <NavigationContainer>
+          <Stack.Navigator
         screenOptions={{
           animation: 'fade',
         }}
@@ -162,7 +164,8 @@ export default function App() {
         />
 
       </Stack.Navigator>
-      </NavigationContainer>
+        </NavigationContainer>
+      </ErrorBoundary>
     </AuthProvider>
   );
 }

@@ -1,6 +1,7 @@
 /**
  * PokeMarket — Firebase Configuration
- * Replace with your actual Firebase project config.
+ * Reads config from environment variables (EXPO_PUBLIC_*).
+ * Environment variables are defined in .env at project root.
  */
 
 import { initializeApp, FirebaseApp } from "firebase/app";
@@ -9,12 +10,12 @@ import { getFirestore, Firestore } from "firebase/firestore";
 import { getFunctions, Functions } from "firebase/functions";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCZFuIC5gSqxLN8xGpmhgluLlJM7ZFLWGc",
-  authDomain: "pokemarket-255c6.firebaseapp.com",
-  projectId: "pokemarket-255c6",
-  storageBucket: "pokemarket-255c6.firebasestorage.app",
-  messagingSenderId: "129667382439",
-  appId: "1:129667382439:web:6762742bf2a14fa7bbaf82",
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: `${process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize once
@@ -28,7 +29,7 @@ export function initFirebase() {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-    // ⚠️ Functions 部署在 us-central1，必須對齊，否則 callable 會 404
+    // Functions are deployed in us-central1 — must match or calls will 404
     functions = getFunctions(app, "us-central1");
   }
   return { app, auth, db, functions };

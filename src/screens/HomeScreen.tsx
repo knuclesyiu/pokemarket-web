@@ -44,43 +44,37 @@ const HomeScreen: React.FC = () => {
   // Load real prices from Firestore for displayed cards
   const loadPrices = useCallback(async (cards: PokemonCard[]) => {
     const { db } = await import('../services/firebase');
-    const { collection, doc, getDocs } = await import('firebase/firestore');
+    const { collection, query, where, getDocs } = await import('firebase/firestore');
 
     const ids = cards.map(c => c.id).slice(0, 20); // top 20 only
-    const priceDocMap: Record<string, any> = {};
 
-    await Promise.allSettled(ids.map(async (id) => {
-      const snap = await getDocs(collection(db, 'card_prices'));
-      const found = snap.docs.find(d => d.id === id || d.id.includes(id));
-      if (found) {
-        priceDocMap[id] = { ...found.data(), priceDocId: found.id };
-      }
-    }));
+    // Batch fetch — Firestore 'in' supports max 10 items per query
+    const BATCH = 10;
+    const batches = [];
+    for (let i = 0; i < ids.length; i += BATCH) {
+      batches.push(ids.slice(i, i + BATCH));
+    }
 
-    // Also try onSnapshot for each — batch query via IN query
-    if (ids.length > 0) {
-      try {
-        const priceSnaps = await getDocs(
-          collection(db, 'card_prices')
-        );
-        const newMap: typeof priceMap = {};
-        priceSnaps.docs.forEach(d => {
-          if (ids.includes(d.id)) {
-            const p = d.data();
-            newMap[d.id] = {
-              priceHkd: p.priceHkd ?? p.price ?? 0,
-              change24h: p.change24h ?? 0,
-              source: p.source ?? 'cache',
-              ageMs: p.updatedAt ? Date.now() - p.updatedAt : 0,
-            };
-          }
-        });
-        if (Object.keys(newMap).length > 0) {
-          setPriceMap(prev => ({ ...prev, ...newMap }));
-        }
-      } catch (e) {
-        // Firestore query failed — prices stay as mock
-      }
+    const newMap: typeof priceMap = {};
+    await Promise.allSettled(
+      batches.map(batch =>
+        getDocs(query(collection(db, 'card_prices'), where('id', 'in', batch)))
+          .then(snap => {
+            snap.docs.forEach(d => {
+              const p = d.data();
+              newMap[d.id] = {
+                priceHkd: p.priceHkd ?? p.price ?? 0,
+                change24h: p.change24h ?? 0,
+                source: p.source ?? 'cache',
+                ageMs: p.updatedAt ? Date.now() - p.updatedAt : 0,
+              };
+            });
+          })
+      )
+    );
+
+    if (Object.keys(newMap).length > 0) {
+      setPriceMap(prev => ({ ...prev, ...newMap }));
     }
   }, []);
 

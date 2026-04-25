@@ -53,10 +53,64 @@ export interface PortfolioItem {
   pnlPercent: number;
 }
 
+// ── Market Stats ──────────────────────────────────────────────────────────────
+
 export interface MarketStats {
   totalVolume24h: number;
+  totalVolume7d: number;
+  activeListings: number;
+  avgPrice: number;
   topGainer: PokemonCard;
   topLoser: PokemonCard;
   trendingCards: PokemonCard[];
   newListings: PokemonCard[];
+}
+
+// ── User ───────────────────────────────────────────────────────────────────────
+
+export interface User {
+  uid: string;
+  displayName: string;
+  email: string;
+  phone?: string;
+  avatarUrl?: string;
+  rating: number;
+  createdAt: string;
+  listedCards: string[];
+  portfolio: PortfolioItem[];
+}
+
+// ── Chat ───────────────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  text: string;
+  imageUrl?: string;
+  createdAt: string;
+  read: boolean;
+}
+
+// ── Trade / Offers ─────────────────────────────────────────────────────────────
+
+export interface Offer {
+  id: string;
+  buyerId: string;
+  sellerId: string;
+  cardId: string;
+  offerPrice: number;
+  status: 'pending' | 'accepted' | 'rejected' | 'expired';
+  createdAt: string;
+}
+
+// ── Reviews ────────────────────────────────────────────────────────────────────
+
+export interface Review {
+  id: string;
+  reviewerId: string;
+  revieweeId: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  comment: string;
+  createdAt: string;
 }
