@@ -8,6 +8,7 @@ import type { RouteProp } from '@react-navigation/native';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import PriceChart from '../components/PriceChart';
 import { generatePriceHistory, MOCK_LISTINGS } from '../data/mockData';
+import { PokemonCard } from '../types';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard } }, 'params'>;
 const { width } = Dimensions.get('window');

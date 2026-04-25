@@ -231,6 +231,9 @@ export const MOCK_PORTFOLIO: PortfolioItem[] = [
 
 export const MOCK_STATS: MarketStats = {
   totalVolume24h: 2847650,
+  totalVolume7d: 18923500,
+  activeListings: 1247,
+  avgPrice: 2450,
   topGainer: MOCK_CARDS[6], // Umbreon +18.5%
   topLoser: MOCK_CARDS[4], // Mewtwo -3.2%
   trendingCards: [MOCK_CARDS[0], MOCK_CARDS[1], MOCK_CARDS[6], MOCK_CARDS[3]],
