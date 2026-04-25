@@ -23,8 +23,8 @@ const TIMELINE_STEPS: TimelineStep[] = [
   { key: 'paid', label: '已付款', sublabel: '款項由平台托管', icon: '💳' },
   { key: 'awaiting_ship', label: '等待發貨', sublabel: '賣家準備中', icon: '📦' },
   { key: 'shipped', label: '已發貨', sublabel: '快件運輸中', icon: '🚚' },
-  { key: 'confirmed', label: '已確認收貨', sublabel: '等待款項釋放', icon: '✅' },
-  { key: 'released', label: '款項已釋放', sublabel: '交易完成', icon: '🎉' },
+  { key: 'confirmed', label: '已確認收貨', sublabel: '等待資金釋放', icon: '✅' },
+  { key: 'released', label: '資金已釋放', sublabel: '交易完成', icon: '🎉' },
 ];
 
 const OrderStatusScreen: React.FC = () => {
@@ -127,12 +127,12 @@ const OrderStatusScreen: React.FC = () => {
         <Text style={styles.escrowBannerIcon}>🔐</Text>
         <View style={styles.escrowBannerText}>
           <Text style={styles.escrowBannerTitle}>
-            {currentStep < 3 ? '款項由平台托管中' : currentStep === 4 ? '款項已釋放俾賣家' : '款項已釋放'}
+            {currentStep < 3 ? '資金由平台託付中' : currentStep === 4 ? '資金已釋放俾賣家' : '資金已釋放'}
           </Text>
           <Text style={styles.escrowBannerDesc}>
             {currentStep < 3
               ? `HK$ ${card.price.toLocaleString()} 擔保中，確認收卡後自動轉俾賣家`
-              : '交易完成，款項已轉俾賣家'}
+              : '交易完成，資金已轉俾賣家'}
           </Text>
         </View>
         {currentStep < 3 && (
@@ -294,7 +294,7 @@ const OrderStatusScreen: React.FC = () => {
           <View style={styles.confirmingAlert}>
             <Text style={styles.confirmingAlertText}>✅ 已確認收貨</Text>
             <Text style={styles.confirmingAlertSub}>
-              款項將自動釋放俾賣家，交易完成！
+              資金將自動釋放俾賣家，交易完成！
             </Text>
           </View>
           <TouchableOpacity style={styles.releaseBtn} onPress={handleReleaseFund}>
@@ -308,7 +308,7 @@ const OrderStatusScreen: React.FC = () => {
           <View style={styles.completeCard}>
             <Text style={styles.completeEmoji}>🎉</Text>
             <Text style={styles.completeTitle}>交易完成！</Text>
-            <Text style={styles.completeSub}>款項已轉俾 {card.counterparty}</Text>
+            <Text style={styles.completeSub}>資金已轉俾 {card.counterparty}</Text>
           </View>
           
           {/* Report Problem button - visible within 30 days of release */}
@@ -348,7 +348,7 @@ const OrderStatusScreen: React.FC = () => {
             <View style={modalStyles.handle} />
             <Text style={modalStyles.title}>🔓 確認釋放款項？</Text>
             <Text style={modalStyles.subtitle}>
-              款項將直接轉俾賣家，交易完成後無法撤回。{'\n'}
+              資金將直接轉俾賣家，交易完成後無法撤回。{'\n'}
               請確認已收到卡牌且狀態滿意。
             </Text>
             <View style={modalStyles.releaseCard}>

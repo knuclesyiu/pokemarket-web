@@ -103,7 +103,7 @@ const CheckoutScreen: React.FC = () => {
       <View style={styles.escrowBanner}>
         <Text style={styles.escrowBannerIcon}>🔐</Text>
         <View style={styles.escrowBannerText}>
-          <Text style={styles.escrowBannerTitle}>資金托管安全保障</Text>
+          <Text style={styles.escrowBannerTitle}>資金託付安全保障</Text>
           <Text style={styles.escrowBannerDesc}>
             款項由平台代為保管，收卡確認後先轉俾賣家，如有问题可提出争议
           </Text>

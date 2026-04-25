@@ -64,7 +64,7 @@ const FEATURES: FeatureCard[] = [
     tag: '交易保障',
     tagColor: '#FF6B35',   // ember
     emoji: '🔐',
-    title: 'Escrow Protection',
+    title: '資金託付保障',
     subtitle: '資金托管・零風險交易',
     bullets: [
       '款項由平台托管，確認收貨後釋放',
@@ -158,7 +158,7 @@ const FEATURES: FeatureCard[] = [
     subtitle: 'Stripe Connect・秒級結算',
     bullets: [
       'Stripe Connect 托管款項，平台零接觸資金',
-      '買家付款 → Escrow → 確認 → 自動結算',
+      '買家付款 → 資金託付 → 確認 → 自動結算',
       '支援信用卡/轉數快/FPS 多種方式',
       '每筆交易手續費透明，無隱藏收費',
     ],

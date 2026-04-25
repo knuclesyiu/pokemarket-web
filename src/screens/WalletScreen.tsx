@@ -62,7 +62,7 @@ const MOCK_TRANSACTIONS: EscrowTransaction[] = [
 // NEW: Obsidian Gallery — jade/ruby state colors, gold active tab
 const STATE_LABELS: Record<EscrowState, { zh: string; color: string; bg: string }> = {
   pending: { zh: '待確認', color: '#D4AF37', bg: 'rgba(212,175,55,0.15)' },
-  in_escrow: { zh: '擔保中', color: '#FF6B35', bg: 'rgba(255,107,53,0.15)' },
+  in_escrow: { zh: '託付中', color: '#FF6B35', bg: 'rgba(255,107,53,0.15)' },
   released: { zh: '已完成', color: '#00C896', bg: 'rgba(0,200,150,0.15)' },
 };
 
@@ -112,7 +112,7 @@ const WalletScreen: React.FC = () => {
   const tabs: { key: EscrowState | 'all'; label: string; count: number }[] = [
     { key: 'all', label: '全部', count: MOCK_TRANSACTIONS.length },
     { key: 'pending', label: '待確認', count: MOCK_TRANSACTIONS.filter(t => t.state === 'pending').length },
-    { key: 'in_escrow', label: '擔保中', count: MOCK_TRANSACTIONS.filter(t => t.state === 'in_escrow').length },
+    { key: 'in_escrow', label: '託付中', count: MOCK_TRANSACTIONS.filter(t => t.state === 'in_escrow').length },
     { key: 'released', label: '已完成', count: MOCK_TRANSACTIONS.filter(t => t.state === 'released').length },
   ];
 
@@ -163,7 +163,7 @@ const WalletScreen: React.FC = () => {
       <View style={styles.escrowInfo}>
         <Text style={styles.escrowIcon}>🔐</Text>
         <View style={styles.escrowText}>
-          <Text style={styles.escrowTitle}>資金由平台托管</Text>
+          <Text style={styles.escrowTitle}>資金由平台託付</Text>
           <Text style={styles.escrowDesc}>
             買家確認收卡後，款項先由平台持有，交易完成後才轉俾賣家，保障雙方
           </Text>
