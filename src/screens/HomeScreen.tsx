@@ -7,6 +7,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db } from '../services/firebase';
 import CardItem from '../components/CardItem';
 import SearchBar from '../components/search/SearchBar';
@@ -45,6 +46,26 @@ const HomeScreen: React.FC = () => {
     priceHkd: number; change24h: number; source: string; ageMs: number
   }>>({});
   const [refreshing, setRefreshing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  // Cache warmup on mount — prime card_prices cache
+  useEffect(() => {
+    if (displayCards.length === 0) return;
+    const primeCache = async () => {
+      const ids = displayCards.map(c => c.id).slice(0, 30);
+      try {
+        setSyncing(true);
+        const fn = getFunctions();
+        const syncFn = httpsCallable(fn, 'syncCardPrices');
+        await syncFn({ cardIds: ids });
+      } catch (e) {
+        console.warn('[Home] cache warmup failed:', e);
+      } finally {
+        setTimeout(() => setSyncing(false), 2000);
+      }
+    };
+    primeCache();
+  }, []);
 
   const displayCards = searchResults !== null ? searchResults : MOCK_CARDS;
   const filtered = activeFilter === '全部'
@@ -143,6 +164,9 @@ const HomeScreen: React.FC = () => {
             <View style={styles.liveDot} />
           )}
         </TouchableOpacity>
+        {syncing && (
+          <Text style={styles.syncBadge}>🔄 同步行情中...</Text>
+        )}
       </View>
 
       {/* Market Stats Bar — elevated card, jade/ruby stats, gold volume */}
@@ -264,6 +288,7 @@ const styles = StyleSheet.create({
   },
   greeting: { color: '#8888CC', fontSize: 12 },
   headerTitle: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
+  syncBadge: { color: '#8888CC', fontSize: 10, marginLeft: 8 },
   bellBtn: {
     width: 44, height: 44, borderRadius: 14, backgroundColor: '#14142A',
     alignItems: 'center', justifyContent: 'center', position: 'relative',
