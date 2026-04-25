@@ -30,17 +30,26 @@ const Tab = createBottomTabNavigator();
 
 initFirebase();
 
+// NEW: Obsidian Gallery — tab bar with gold active state
 const TabIcon: React.FC<{ icon: string; focused: boolean; label: string; badge?: number }> = ({
   icon, focused, label, badge,
 }) => (
   <View style={{ alignItems: "center", justifyContent: "center" }}>
-    <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.4 }}>{icon}</Text>
+    <Text style={{ 
+      fontSize: 22, 
+      opacity: focused ? 1 : 0.4,
+      // NEW: subtle scale on active
+      transform: focused ? [{ scale: 1.05 }] : [],
+    }}>
+      {icon}
+    </Text>
     {badge ? (
       <View style={{
         position: "absolute", top: -4, right: -8,
-        backgroundColor: "#FF3C3C", borderRadius: 8,
+        backgroundColor: "#FF4060", borderRadius: 8,
         minWidth: 16, height: 16, alignItems: "center", justifyContent: "center",
         paddingHorizontal: 3,
+        // NEW: ruby badge instead of red
       }}>
         <Text style={{ color: "#FFF", fontSize: 9, fontWeight: "700" }}>
           {badge > 99 ? "99+" : badge}
@@ -50,7 +59,8 @@ const TabIcon: React.FC<{ icon: string; focused: boolean; label: string; badge?:
     <Text
       style={{
         fontSize: 9, fontWeight: "700",
-        color: focused ? "#FF3C3C" : "#6666AA",
+        // NEW: gold active, tertiary inactive
+        color: focused ? "#D4AF37" : "#4A4A70",
         marginTop: 2,
       }}
     >
@@ -63,10 +73,11 @@ const HomeTabs = () => (
   <Tab.Navigator
     screenOptions={{
       headerShown: false,
+      // NEW: Obsidian Gallery tab bar
       tabBarStyle: {
-        backgroundColor: "#1A1A2E",
+        backgroundColor: "#0E0E1A",  // surface background
         borderTopWidth: 1,
-        borderTopColor: "#2A2A3E",
+        borderTopColor: "#2A2A50",   // subtle border
         height: 80,
         paddingTop: 10,
         paddingBottom: 20,
@@ -114,7 +125,7 @@ const HomeTabs = () => (
 
 const LoadingScreen = () => (
   <View style={styles.loading}>
-    <ActivityIndicator size="large" color="#FF3C3C" />
+    <ActivityIndicator size="large" color="#D4AF37" />
     <Text style={styles.loadingText}>PokeMarket</Text>
   </View>
 );
@@ -156,12 +167,12 @@ export default function App() {
         <Stack.Screen
           name="ChatList"
           component={ChatListScreen}
-          options={{ headerShown: true, headerTitle: "我的訊息", headerTintColor: "#FFF", headerStyle: { backgroundColor: "#1A1A2E" }, headerBackTitle: "返回" }}
+          options={{ headerShown: true, headerTitle: "我的訊息", headerTintColor: "#F0F0FF", headerStyle: { backgroundColor: "#0E0E1A" }, headerBackTitle: "返回" }}
         />
         <Stack.Screen
           name="ChatDetail"
           component={ChatDetailScreen}
-          options={{ headerShown: true, headerTitle: "對話", headerTintColor: "#FFF", headerStyle: { backgroundColor: "#1A1A2E" }, headerBackTitle: "返回" }}
+          options={{ headerShown: true, headerTitle: "對話", headerTintColor: "#F0F0FF", headerStyle: { backgroundColor: "#0E0E1A" }, headerBackTitle: "返回" }}
         />
 
       </Stack.Navigator>
@@ -173,11 +184,11 @@ export default function App() {
 
 const styles = StyleSheet.create({
   loading: {
-    flex: 1, backgroundColor: "#12121F",
+    flex: 1, backgroundColor: "#080810",  // NEW: void background
     alignItems: "center", justifyContent: "center",
   },
   loadingText: {
-    color: "#FFFFFF", fontSize: 24, fontWeight: "800",
+    color: "#F0F0FF", fontSize: 24, fontWeight: "800",
     marginTop: 16, letterSpacing: -0.5,
   },
 });

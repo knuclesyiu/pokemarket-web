@@ -1,7 +1,7 @@
 /**
  * FeatureShowcaseScreen — Key Feature Cards for PokeMarket
- * Dark premium fintech aesthetic with staggered card reveals.
- * Designed for investor/product demos.
+ * NEW: Obsidian Gallery design system — dark premium collectibles aesthetic
+ * Deep layered surfaces with warm gold and ember accents
  */
 import React, { useEffect, useRef } from 'react';
 import {
@@ -12,6 +12,24 @@ import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 const CARD_W = width - 32;
+
+// NEW: Obsidian Gallery constants
+const COLORS = {
+  bgVoid: '#080810',
+  bgSurface: '#0E0E1A',
+  bgCard: '#14142A',
+  bgElevated: '#1C1C38',
+  borderSubtle: '#2A2A50',
+  borderActive: '#3D3D70',
+  textPrimary: '#F0F0FF',
+  textSecondary: '#8888CC',
+  textTertiary: '#4A4A70',
+  accentGold: '#D4AF37',
+  accentEmber: '#FF6B35',
+  accentJade: '#00C896',
+  accentRuby: '#FF4060',
+  accentViolet: '#8B5CF6',
+};
 
 interface FeatureCard {
   id: string;
@@ -24,11 +42,12 @@ interface FeatureCard {
   accent: string;
 }
 
+// Updated tags with refined colors
 const FEATURES: FeatureCard[] = [
   {
     id: 'prices',
     tag: '實時行情',
-    tagColor: '#FF3C3C',
+    tagColor: '#D4AF37',   // gold
     emoji: '📊',
     title: 'Live Market Prices',
     subtitle: '秒級更新・覆蓋全球',
@@ -38,12 +57,12 @@ const FEATURES: FeatureCard[] = [
       'PSA/BGS 等級估價倍數顯示',
       '所有價格即時轉換為港幣（HKD）',
     ],
-    accent: '#FF3C3C',
+    accent: '#D4AF37',
   },
   {
     id: 'escrow',
     tag: '交易保障',
-    tagColor: '#FFB800',
+    tagColor: '#FF6B35',   // ember
     emoji: '🔐',
     title: 'Escrow Protection',
     subtitle: '資金托管・零風險交易',
@@ -53,12 +72,12 @@ const FEATURES: FeatureCard[] = [
       '買家可延長期限最多 14 日',
       '爭議時可提交 Dispute，款項暫停釋放',
     ],
-    accent: '#FFB800',
+    accent: '#FF6B35',
   },
   {
     id: 'auth',
     tag: '用戶認證',
-    tagColor: '#00C864',
+    tagColor: '#00C896',   // jade
     emoji: '🔑',
     title: 'Secure Authentication',
     subtitle: '電話・Email・生物識別',
@@ -68,12 +87,12 @@ const FEATURES: FeatureCard[] = [
       '交易 PIN（SHA-256）每筆交易驗證',
       'Biometric 原生支援 FaceID / Fingerprint',
     ],
-    accent: '#00C864',
+    accent: '#00C896',
   },
   {
     id: 'reviews',
     tag: '信用評價',
-    tagColor: '#AA66FF',
+    tagColor: '#8B5CF6',   // violet
     emoji: '⭐',
     title: 'Peer Review System',
     subtitle: '好評差評・建立信任',
@@ -83,7 +102,7 @@ const FEATURES: FeatureCard[] = [
       '公開好評率%，雙方均可評價',
       '所有評價存入區塊鏈般不可篡改日誌',
     ],
-    accent: '#AA66FF',
+    accent: '#8B5CF6',
   },
   {
     id: 'i18n',
@@ -103,7 +122,7 @@ const FEATURES: FeatureCard[] = [
   {
     id: 'chat',
     tag: '即時通訊',
-    tagColor: '#FF8C00',
+    tagColor: '#FF6B35',
     emoji: '💬',
     title: 'In-App Messaging',
     subtitle: '買賣雙方即時溝通',
@@ -113,12 +132,12 @@ const FEATURES: FeatureCard[] = [
       '支援文字、圖片、報價訊息類型',
       '已讀/未讀狀態指示燈',
     ],
-    accent: '#FF8C00',
+    accent: '#FF6B35',
   },
   {
     id: 'portfolio',
     tag: '收藏管理',
-    tagColor: '#FF4081',
+    tagColor: '#FF4060',   // ruby
     emoji: '💼',
     title: 'Portfolio Tracker',
     subtitle: '持倉成本・帳面盈虧',
@@ -128,12 +147,12 @@ const FEATURES: FeatureCard[] = [
       '成交記錄完整保存，随時查閱',
       '一鍵「放售」直接進入掛牌流程',
     ],
-    accent: '#FF4081',
+    accent: '#FF4060',
   },
   {
     id: 'payments',
     tag: '支付結算',
-    tagColor: '#00E5CC',
+    tagColor: '#00C896',
     emoji: '💳',
     title: 'Stripe Payments',
     subtitle: 'Stripe Connect・秒級結算',
@@ -143,7 +162,7 @@ const FEATURES: FeatureCard[] = [
       '支援信用卡/轉數快/FPS 多種方式',
       '每筆交易手續費透明，無隱藏收費',
     ],
-    accent: '#00E5CC',
+    accent: '#00C896',
   },
 ];
 
@@ -223,7 +242,7 @@ const FeatureShowcaseScreen: React.FC = () => {
         <Text style={styles.headerTagline}>安全 ・ 快速 ・ 全球行情</Text>
       </View>
 
-      {/* Stats strip */}
+      {/* Stats strip — elevated card with gold accents */}
       <View style={styles.statsStrip}>
         {[
           { val: '8+', label: '功能模組' },
@@ -263,56 +282,101 @@ const FeatureShowcaseScreen: React.FC = () => {
   );
 };
 
+// NEW: Obsidian Gallery design system
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A14' },
+  container: { flex: 1, backgroundColor: '#080810' },  // void background
   header: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 20, alignItems: 'center' },
-  logo: { color: '#FF3C3C', fontSize: 32, fontWeight: '900', fontStyle: 'italic', marginBottom: 6 },
-  headerSub: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginBottom: 4 },
-  headerTagline: { color: '#8888AA', fontSize: 13, letterSpacing: 2 },
+  logo: {
+    color: '#D4AF37',  // gold logo
+    fontSize: 32,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    marginBottom: 6,
+  },
+  headerSub: { color: '#F0F0FF', fontSize: 18, fontWeight: '700', marginBottom: 4 },
+  headerTagline: { color: '#8888CC', fontSize: 13, letterSpacing: 2 },
+  // Elevated stats strip with subtle border
   statsStrip: {
-    flexDirection: 'row', backgroundColor: '#1A1A2E',
-    marginHorizontal: 16, borderRadius: 16, padding: 16, marginBottom: 16,
-    borderWidth: 1, borderColor: '#2A2A3E',
+    flexDirection: 'row',
+    backgroundColor: '#14142A',  // card surface
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A50',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   stat: { flex: 1, alignItems: 'center' },
-  statVal: { color: '#FFFFFF', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  statLabel: { color: '#6666AA', fontSize: 10, textAlign: 'center' },
+  statVal: { color: '#F0F0FF', fontSize: 22, fontWeight: '900', marginBottom: 2 },
+  statLabel: { color: '#8888CC', fontSize: 10, textAlign: 'center' },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16 },
+  // Elevated card with subtle glow
   card: {
-    backgroundColor: '#12121F',
+    backgroundColor: '#14142A',  // card surface
     borderRadius: 20,
     padding: 20,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#1E1E2E',
+    borderColor: '#2A2A50',
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
   },
   cardGlow: {
-    position: 'absolute', top: -40, right: -40,
-    width: 160, height: 160, borderRadius: 80,
+    position: 'absolute',
+    top: -40,
+    right: -40,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
   },
   cardHeader: { marginBottom: 16 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   tag: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   tagText: { fontSize: 11, fontWeight: '800' },
   emoji: { fontSize: 32 },
-  cardTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '900', marginBottom: 4 },
-  cardSubtitle: { color: '#8888AA', fontSize: 12 },
+  cardTitle: { color: '#F0F0FF', fontSize: 18, fontWeight: '900', marginBottom: 4 },
+  cardSubtitle: { color: '#8888CC', fontSize: 12 },
   divider: { height: 1, marginBottom: 16 },
   bullets: { gap: 10 },
   bulletRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   bulletDot: { width: 6, height: 6, borderRadius: 3, marginTop: 7, flexShrink: 0 },
   bulletText: { color: '#CCCCEE', fontSize: 13, lineHeight: 20, flex: 1 },
   bottomAccent: { height: 3, borderRadius: 2, marginTop: 18, opacity: 0.6 },
-  ctaSection: { alignItems: 'center', marginTop: 30, paddingVertical: 30, backgroundColor: '#1A1A2E', borderRadius: 24, marginBottom: 10 },
-  ctaTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: '900', marginBottom: 8 },
-  ctaSub: { color: '#8888AA', fontSize: 13, marginBottom: 24 },
-  ctaBtn: {
-    backgroundColor: '#FF3C3C', borderRadius: 14, paddingVertical: 16,
-    paddingHorizontal: 40,
+  // CTA section — elevated with gold button
+  ctaSection: {
+    alignItems: 'center',
+    marginTop: 30,
+    paddingVertical: 30,
+    backgroundColor: '#14142A',
+    borderRadius: 24,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#2A2A50',
   },
-  ctaBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  ctaTitle: { color: '#F0F0FF', fontSize: 22, fontWeight: '900', marginBottom: 8 },
+  ctaSub: { color: '#8888CC', fontSize: 13, marginBottom: 24 },
+  ctaBtn: {
+    backgroundColor: '#D4AF37',  // gold CTA
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  ctaBtnText: { color: '#080810', fontSize: 16, fontWeight: '800' },
 });
 
 export default FeatureShowcaseScreen;

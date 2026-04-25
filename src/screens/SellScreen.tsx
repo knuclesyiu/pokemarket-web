@@ -333,7 +333,7 @@ const SellScreen: React.FC = () => {
 
           <View style={styles.photoGuide}>
             <Text style={styles.photoGuideTitle}>📸 需要上傳</Text>
-            <View style={styles.photoGuideList}>
+            <View style={styles.photoGuide}>
               <Text style={styles.photoGuideItem}>✅ 卡牌正面（光線均勻，無反光）</Text>
               <Text style={styles.photoGuideItem}>✅ 卡牌背面（可選，但推薦）</Text>
               <Text style={styles.photoGuideItem}>✅ 角落/邊緣特寫（如有損壞）</Text>
