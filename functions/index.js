@@ -134,30 +134,124 @@ exports.releasePayment = v2.https.onCall(
   { region: "us-central1" },
   async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
-    const { orderId, sellerStripeAccountId } = data;
+    const { orderId, sellerStripeAccountId, releaseAmountHkd } = data;
     const orderRef = db.collection("orders").doc(orderId);
     const order = await orderRef.get();
     if (!order.exists) throw new functions.https.HttpsError("not-found", "Order not found");
     const orderData = order.data();
     if (orderData.buyerId !== context.auth.uid) throw new functions.https.HttpsError("permission-denied", "Only buyer can release funds");
-    if (orderData.status !== "funds_escrowed") throw new functions.https.HttpsError("failed-precondition", `Cannot release — order status is "${orderData.status}"`);
-    if (!sellerStripeAccountId) throw new functions.https.HttpsError("invalid-argument", "Seller Stripe account ID required");
 
-    const transfer = await stripe.transfers.create({
-      amount: orderData.sellerNet, currency: "hkd", destination: sellerStripeAccountId,
-      source_transaction: orderData.paymentIntentId,
-      metadata: { orderId, buyerId: orderData.buyerId, platformFee: String(orderData.platformFee) },
-      description: `PokeMarket — Sale proceeds — ${orderData.cardName}`,
-    });
+    const validStatuses = ["funds_escrowed", "pending_seller_consent"];
+    if (!validStatuses.includes(orderData.status)) {
+      throw new functions.https.HttpsError("failed-precondition", `Cannot release — order status is "${orderData.status}"`);
+    }
 
+    const originalAmountHkd = Number(orderData.amountHkd);
+    const requestedAmountHkd = releaseAmountHkd ?? originalAmountHkd;
+
+    // ── Full amount or no modification: direct release ──────────────────────
+    if (requestedAmountHkd >= originalAmountHkd || orderData.status === "funds_escrowed") {
+      if (!sellerStripeAccountId) throw new functions.https.HttpsError("invalid-argument", "Seller Stripe account ID required");
+
+      const { sellerNet } = splitAmount(Math.round(originalAmountHkd * 100));
+      const transfer = await stripe.transfers.create({
+        amount: sellerNet, currency: "hkd", destination: sellerStripeAccountId,
+        source_transaction: orderData.paymentIntentId,
+        metadata: { orderId, buyerId: orderData.buyerId, platformFee: String(orderData.platformFee) },
+        description: `PokeMarket — Sale proceeds — ${orderData.cardName}`,
+      });
+
+      await orderRef.update({
+        status: "funds_released", transferId: transfer.id,
+        releasedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return { success: true, transferId: transfer.id, amountTransferred: sellerNet, orderId };
+    }
+
+    // ── Buyer reduced amount: pending seller consent (7-day auto-release) ──
     await orderRef.update({
-      status: "funds_released", transferId: transfer.id,
-      releasedAt: admin.firestore.FieldValue.serverTimestamp(),
+      status: "pending_seller_consent",
+      buyerRequestedAmountHkd: requestedAmountHkd,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
-    return { success: true, transferId: transfer.id, amountTransferred: orderData.sellerNet, orderId };
+
+    // Refund the difference back to buyer immediately (Stripe captures first, then refunds)
+    const originalCents = Math.round(originalAmountHkd * 100);
+    const requestedCents = Math.round(requestedAmountHkd * 100);
+    const refundCents = originalCents - requestedCents;
+    let refundId = null;
+    if (refundCents > 0) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(orderData.paymentIntentId);
+        const charge = pi.latest_charge;
+        if (charge) {
+          const refund = await stripe.refunds.create({ charge, amount: refundCents });
+          refundId = refund.id;
+        }
+      } catch (e) {
+        console.warn("[releasePayment] Refund failed:", e.message);
+      }
+    }
+
+    return {
+      success: true,
+      status: "pending_seller_consent",
+      orderId,
+      releaseAmountHkd: requestedAmountHkd,
+      refundId,
+      message: "Buyer requested lower amount — waiting for seller consent. Auto-releases at original amount in 7 days.",
+    };
   }
 );
+
+
+exports.sellerRespondToModification = v2.https.onCall(
+  { region: "us-central1" },
+  async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
+    const { orderId, accept, sellerStripeAccountId } = data;
+
+    const orderRef = db.collection("orders").doc(orderId);
+    const order = await orderRef.get();
+    if (!order.exists) throw new functions.https.HttpsError("not-found", "Order not found");
+    const orderData = order.data();
+    if (orderData.sellerId !== context.auth.uid) throw new functions.https.HttpsError("permission-denied", "Only seller can respond");
+    if (orderData.status !== "pending_seller_consent") {
+      throw new functions.https.HttpsError("failed-precondition", `Order is not pending seller consent — status: "${orderData.status}"`);
+    }
+    const requestedAmountHkd = Number(orderData.buyerRequestedAmountHkd);
+
+    if (accept) {
+      // Accept: release at reduced amount, refund excess to buyer
+      if (!sellerStripeAccountId) throw new functions.https.HttpsError("invalid-argument", "Seller Stripe account ID required");
+      const { sellerNet } = splitAmount(Math.round(requestedAmountHkd * 100));
+      const transfer = await stripe.transfers.create({
+        amount: sellerNet, currency: "hkd", destination: sellerStripeAccountId,
+        source_transaction: orderData.paymentIntentId,
+        metadata: { orderId, buyerId: orderData.buyerId, platformFee: String(orderData.platformFee) },
+        description: `PokeMarket — Sale proceeds (negotiated) — ${orderData.cardName}`,
+      });
+      await orderRef.update({
+        status: "funds_released",
+        transferId: transfer.id,
+        releasedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return { success: true, status: "funds_released", transferId: transfer.id, amountTransferred: sellerNet };
+    } else {
+      // Reject: open dispute, auto-resolve in 7 days (existing auto-release handles this)
+      // Keep at pending_seller_consent — auto-release cron will release at original amount after 7 days
+      await orderRef.update({
+        status: "pending_seller_consent",
+        sellerRejectedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return { success: true, status: "pending_seller_consent", message: "Seller rejected. Auto-release at original price in 7 days." };
+    }
+  }
+);
+
 
 exports.refundPayment = v2.https.onCall(
   { region: "us-central1" },

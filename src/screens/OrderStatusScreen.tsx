@@ -10,7 +10,7 @@ import { getAuth } from 'firebase/auth';
 
 type RouteProps = RouteProp<{ params: { txId: string } }, 'params'>;
 
-type EscrowStep = 'paid' | 'awaiting_ship' | 'shipped' | 'confirmed' | 'released' | 'disputed';
+type EscrowStep = 'paid' | 'awaiting_ship' | 'shipped' | 'confirmed' | 'released' | 'disputed' | 'pending_seller_consent';
 
 interface TimelineStep {
   key: EscrowStep;
@@ -35,6 +35,10 @@ const OrderStatusScreen: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<number>(2); // Demo: step 2 = shipped
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [showReleaseModal, setShowReleaseModal] = useState(false);
+  const [releaseAmountText, setReleaseAmountText] = useState('');
+  const [releasing, setReleasing] = useState(false);
+  const [showSellerConsentModal, setShowSellerConsentModal] = useState(false);
+  const [sellerConsenting, setSellerConsenting] = useState(false);
   const [disputeReason, setDisputeReason] = useState('');
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [isExtended, setIsExtended] = useState(false);
@@ -93,20 +97,54 @@ const OrderStatusScreen: React.FC = () => {
   };
 
   const handleReleaseFund = () => {
+    setReleaseAmountText(String(card.price));
     setShowReleaseModal(true);
   };
 
   const confirmRelease = async () => {
+    const enteredAmount = parseFloat(releaseAmountText);
+    if (isNaN(enteredAmount) || enteredAmount <= 0) return;
+    if (enteredAmount > card.price) return;
+    setReleasing(true);
     setShowReleaseModal(false);
-    // Call releasePayment cloud function
     try {
       const fn = getFunctions();
       const releaseFn = httpsCallable(fn, 'releasePayment');
-      await releaseFn({ orderId: txId });
+      const result: any = await releaseFn({ orderId: txId, releaseAmountHkd: enteredAmount });
+      const data = result?.data as any;
+      if (data?.status === 'pending_seller_consent') {
+        // Buyer modified amount — waiting for seller
+        setCurrentStep(5); // pending_seller_consent step
+        return;
+      }
     } catch (e) {
-      // Proceed optimistically in demo mode
+      // Demo mode fallback
     }
     setCurrentStep(4);
+  };
+
+  const handleSellerAccept = async () => {
+    setSellerConsenting(true);
+    setShowSellerConsentModal(false);
+    try {
+      const fn = getFunctions();
+      const fn2 = httpsCallable(fn, 'sellerRespondToModification');
+      await fn2({ orderId: txId, accept: true });
+    } catch (e) { /* demo */ }
+    setCurrentStep(4);
+    setSellerConsenting(false);
+  };
+
+  const handleSellerReject = async () => {
+    setSellerConsenting(true);
+    setShowSellerConsentModal(false);
+    try {
+      const fn = getFunctions();
+      const fn2 = httpsCallable(fn, 'sellerRespondToModification');
+      await fn2({ orderId: txId, accept: false });
+    } catch (e) { /* demo */ }
+    // Stay at step 5 — auto-release will handle in 7 days
+    setSellerConsenting(false);
   };
 
   return (
@@ -701,6 +739,22 @@ const modalStyles = StyleSheet.create({
     backgroundColor: '#D4AF37', borderRadius: 14, paddingVertical: 14, flex: 1, marginLeft: 8, alignItems: 'center',
   },
   releaseConfirmBtnText: { color: '#080810', fontSize: 15, fontWeight: '800' },
+  amountInputWrap: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#0E0E1A', borderRadius: 14, borderWidth: 1, borderColor: '#D4AF37',
+    paddingHorizontal: 16, paddingVertical: 14, marginBottom: 8,
+  },
+  currencyPrefix: { color: '#D4AF37', fontSize: 20, fontWeight: '700', marginRight: 6 },
+  amountInput: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', flex: 1, padding: 0 },
+  warningText: { color: '#FF6B35', fontSize: 12, marginBottom: 12, textAlign: 'center' },
+  btnDisabled: { opacity: 0.4 },
+  consentCard: {
+    backgroundColor: '#0E0E1A', borderRadius: 14, padding: 16,
+    borderWidth: 1, borderColor: '#2A2A50', marginBottom: 16,
+  },
+  consentLabel: { color: '#8888CC', fontSize: 11, marginBottom: 2 },
+  consentOriginal: { color: '#8888CC', fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  consentRequested: { color: '#D4AF37', fontSize: 24, fontWeight: '800' },
 });
 
 export default OrderStatusScreen;
