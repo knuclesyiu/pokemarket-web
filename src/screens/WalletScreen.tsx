@@ -1,14 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   FlatList,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../services/firebase';
 
 type NavProp = NativeStackNavigationProp<any>;
 
 type EscrowState = 'pending' | 'in_escrow' | 'released';
+
+interface WalletData {
+  balance: number;
+  pendingEscrow: number;
+  onboardingComplete: boolean;
+}
 
 interface EscrowTransaction {
   id: string;
@@ -62,8 +70,39 @@ const WalletScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
   const [activeTab, setActiveTab] = useState<EscrowState | 'all'>('all');
 
-  const balance = 12430;
-  const inEscrow = 4200;
+  // FIRESTORE: real data — wallet state (falls back to mock data)
+  const [walletData, setWalletData] = useState<WalletData>({
+    balance: 12430,
+    pendingEscrow: 4200,
+    onboardingComplete: false,
+  });
+
+  // FIRESTORE: real data — load wallet from Firestore users/{uid}/wallet
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const loadWallet = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'users', uid, 'wallet'));
+        if (snap.exists()) {
+          const data = snap.data() as WalletData;
+          setWalletData({
+            balance: data.balance ?? 12430,
+            pendingEscrow: data.pendingEscrow ?? 0,
+            onboardingComplete: data.onboardingComplete ?? false,
+          });
+        }
+      } catch (e) {
+        console.warn('[Wallet] Firestore load failed, using mock data:', e);
+      }
+    };
+
+    loadWallet();
+  }, []);
+
+  const balance = walletData.balance;
+  const inEscrow = walletData.pendingEscrow;
   const available = balance - inEscrow;
 
   const filtered = activeTab === 'all'

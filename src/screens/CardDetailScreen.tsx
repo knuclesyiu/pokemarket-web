@@ -8,6 +8,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import type { RouteProp } from '@react-navigation/native';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { auth } from '../services/firebase';
 import PriceChart from '../components/PriceChart';
 import { generatePriceHistory, MOCK_LISTINGS } from '../data/mockData';
 import { PokemonCard } from '../types';
@@ -163,12 +164,15 @@ const CardDetailScreen: React.FC = () => {
             try {
               const fns = getFunctions();
               const createChatThread = httpsCallable(fns, 'createChatThread');
+              // FIRESTORE: real data — use real uid, derive sellerId from card.id
+              const currentUid = auth.currentUser?.uid ?? 'placeholder_user';
+              const sellerId = `seller_${card.id}`;  // deterministic mock seller per card
               const result = await createChatThread({
                 listingId: card.id,
-                parties: ['placeholder_user', 'seller_placeholder'],
+                parties: [currentUid, sellerId],
               });
               const { threadId } = result.data as { threadId: string };
-              navigation.navigate('ChatDetail', { threadId, otherPartyId: 'seller_placeholder', otherPartyName: card.set });
+              navigation.navigate('ChatDetail', { threadId, otherPartyId: sellerId, otherPartyName: card.set });
             } catch {
               // Navigate to ChatList to show instructions
               navigation.navigate('ChatList');
