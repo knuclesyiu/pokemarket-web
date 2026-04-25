@@ -77,12 +77,12 @@ const ShimmerBar: React.FC<{ tier: RarityTier; color: string }> = ({ tier, color
           Animated.timing(shimmerAnim, {
             toValue: 1,
             duration: 1400,
-            useNativeDriver: true,
+            useNativeDriver: false, // RN 0.81+ Android fix
           }),
           Animated.timing(shimmerAnim, {
             toValue: 0,
             duration: 1400,
-            useNativeDriver: true,
+            useNativeDriver: false, // RN 0.81+ Android fix
           }),
         ])
       );
