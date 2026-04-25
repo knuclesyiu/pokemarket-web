@@ -1151,8 +1151,6 @@ async function fetchAndCache(setCode, cardNum, fallbackId) {
       change30d: cardmarket.trendPrice != null && cardmarket.averagePrice != null
         ? round(((cardmarket.trendPrice - cardmarket.averagePrice) / cardmarket.averagePrice) * 100 * 10) / 10
         : null,
-      // Grades (PSA multiplier — applied client-side)
-      gradeMultiplier: { psa10: 2.5, psa9: 1.8, bgs10: 2.3, bgs9: 1.6 },
       lastFetched: Date.now(),
     };
   } catch (e) {
@@ -1286,7 +1284,6 @@ async function fetchAndCache(setCode, cardNum, fallbackId) {
       priceEurUsd: { eur: priceEur, usd: priceUsd },
       priceHkd: bestHkd, cardmarketHkd: hkdMarket, tcgplayerHkd: hkdTcg,
       change24h,
-      gradeMultiplier: { psa10: 2.5, psa9: 1.8, bgs10: 2.3, bgs9: 1.6 },
       lastFetched: Date.now(),
     };
   } catch (e) {

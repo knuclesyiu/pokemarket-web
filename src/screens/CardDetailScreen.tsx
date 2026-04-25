@@ -109,35 +109,6 @@ const CardDetailScreen: React.FC = () => {
               </View>
             </View>
             <Text style={styles.listingCount}>📦 {card.listingCount} 個掛牌</Text>
-            {/* PSA/BGS Grade Price Table */}
-            <View style={styles.gradeTable}>
-              <Text style={styles.gradeTableTitle}>🏆 等級估價（HKD）</Text>
-              {[
-                { grade: 'PSA 10', mult: 2.5, label: 'Gem Mint' },
-                { grade: 'PSA 9',  mult: 1.8, label: 'Mint' },
-                { grade: 'BGS 10', mult: 2.3, label: 'Gem Mint' },
-                { grade: 'BGS 9.5', mult: 2.0, label: 'Mint+' },
-              ].map(g => {
-                const basePrice = priceData?.priceHkd ?? card.price;
-                const gradedPrice = Math.round(basePrice * g.mult);
-                return (
-                  <View key={g.grade} style={styles.gradeRow}>
-                    <Text style={styles.gradeLabel}>{g.grade} ({g.label})</Text>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                      <Text style={styles.gradeValue}>HK${gradedPrice.toLocaleString()}</Text>
-                      <Text style={styles.gradePremium}>×{g.mult}</Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-
-            {/* Disclaimer */}
-            <View style={styles.disclaimer}>
-              <Text style={styles.disclaimerText}>
-                💡 估值僅供參考，實際價格由買賣雙方自行商定。PSA/BGS 等級估價視卡牌人気程度而定。
-              </Text>
-            </View>
           </View>
         </View>
 

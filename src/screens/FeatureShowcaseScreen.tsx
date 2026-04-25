@@ -54,7 +54,7 @@ const FEATURES: FeatureCard[] = [
     bullets: [
       'TCGdex API CardMarket EUR + TCGPlayer USD',
       '每 6 小時自動同步 15 張熱門卡',
-      'PSA/BGS 等級估價倍數顯示',
+      '',
       '所有價格即時轉換為港幣（HKD）',
     ],
     accent: '#D4AF37',
