@@ -18,23 +18,23 @@ const db = admin.firestore();
 // ─────────────────────────────────────────────────────────────────────────────
 // PLATFORM FEE CONFIGURATION  (tunable — update before go-live)
 // ─────────────────────────────────────────────────────────────────────────────
-const PLATFORM_FEE_PERCENT = 0.015;   // 1.5% — set to 0 to disable platform fee
+const PLATFORM_FEE_PERCENT = 0.03;    // 3% platform fee — set to 0 to disable
 const STRIPE_PERCENT_FEE  = 0.029;    // Stripe: 2.9% + HK$2.35 per charge
 const STRIPE_FIXED_CENTS  = 235;      // HK$2.35 in cents
-const PLATFORM_MIN_FEE    = 500;      // Minimum platform fee in HKD cents (HK$5 floor)
-const ESCROW_MIN_HKD      = 2000;     // Escrow only enabled for listings >= HK$20 (2000 cents)
+const ORDER_MIN_FEE_HKD   = 20;       // Minimum total fee (Stripe + platform) = HK$20
+const ORDER_MIN_FEE_CENTS = 2000;     // HK$20 in cents
 
 function splitAmount(grossHkdCents) {
-  // grossHkdCents = buyer pays card price only (platform fee added separately at checkout)
-  // Stripe fee: 2.9% + HK$2.35 per successful charge
-  // Platform fee: PLATFORM_FEE_PERCENT of gross, with PLATFORM_MIN_FEE floor
+  // grossHkdCents = card price in HKD cents (buyer pays card price)
+  // Stripe fee: 2.9% + HK$2.35 per charge
+  // Platform fee: PLATFORM_FEE_PERCENT of gross, with ORDER_MIN_FEE floor
+  // Total fee (Stripe + platform) is capped at ORDER_MIN_FEE_HKD = HK$20
   const stripeFee = Math.round(grossHkdCents * STRIPE_PERCENT_FEE) + STRIPE_FIXED_CENTS;
-  const platformFee = Math.max(
-    Math.round(grossHkdCents * PLATFORM_FEE_PERCENT),
-    PLATFORM_MIN_FEE
-  );
+  const platformFeeRaw = Math.round(grossHkdCents * PLATFORM_FEE_PERCENT);
+  const totalFee = Math.max(stripeFee + platformFeeRaw, ORDER_MIN_FEE_CENTS);
+  const platformFee = Math.min(platformFeeRaw, totalFee - stripeFee);
   const sellerNet = grossHkdCents - platformFee;
-  return { platformFee, stripeFee, sellerNet, grossHkdCents };
+  return { platformFee, stripeFee, sellerNet, totalFee, grossHkdCents };
 }
 
 async function getOrCreateConnectAccount(sellerId, sellerEmail) {
