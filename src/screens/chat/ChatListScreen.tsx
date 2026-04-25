@@ -4,20 +4,29 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { onSnapshot, query, orderBy, where, collection } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { auth, db } from '../../services/firebase';
 import { ChatThread } from '../../types/chat';
 
 interface Props {
   onSelectThread?: (threadId: string) => void;
 }
 
-// Placeholder — replace with real auth UID
-const CURRENT_USER_ID = 'placeholder_user';
+// FIRESTORE: real data — uid from Firebase Auth
+const getCurrentUserId = (): string => {
+  try {
+    return auth.currentUser?.uid ?? 'placeholder_user';
+  } catch {
+    return 'placeholder_user';
+  }
+};
 
 const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
   const navigation = useNavigation<any>();
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // FIRESTORE: real data — resolved uid per render
+  const CURRENT_USER_ID = getCurrentUserId();
 
   useEffect(() => {
     if (CURRENT_USER_ID === 'placeholder_user') {

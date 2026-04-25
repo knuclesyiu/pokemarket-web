@@ -6,6 +6,8 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../services/firebase';
 import CardItem from '../components/CardItem';
 import SearchBar from '../components/search/SearchBar';
 import { MOCK_CARDS, MOCK_STATS } from '../data/mockData';
@@ -61,11 +63,7 @@ const HomeScreen: React.FC = () => {
 
   // Load real prices from Firestore for displayed cards
   const loadPrices = useCallback(async (cards: PokemonCard[]) => {
-    const { db } = await import('../services/firebase');
-    const { collection, query, where, getDocs } = await import('firebase/firestore');
-
-    const ids = cards.map(c => c.id).slice(0, 20);
-
+    const ids = cards.map(c => c.id).slice(0, 30);  // FIRESTORE: real data — expanded from 20→30
     const BATCH = 10;
     const batches = [];
     for (let i = 0; i < ids.length; i += BATCH) {

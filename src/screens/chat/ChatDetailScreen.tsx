@@ -5,13 +5,20 @@ import {
 } from 'react-native';
 import {
   onSnapshot, addDoc, collection, query, orderBy,
-  updateDoc, doc, serverTimestamp,
+  updateDoc, doc,
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { ChatMessage } from '../../types/chat';
 
-// Replace with real auth UID
-const CURRENT_USER_ID = 'placeholder_user';
+// FIRESTORE: real data — uid resolver (avoids stale closure in useEffect)
+const getCurrentUserId = (): string => {
+  try {
+    const { auth } = require('../../services/firebase');
+    return auth.currentUser?.uid ?? 'placeholder_user';
+  } catch {
+    return 'placeholder_user';
+  }
+};
 
 interface Props {
   route: {
@@ -30,6 +37,16 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
   const [sending, setSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
+  // FIRESTORE: real data — mark thread read using live uid
+  const markThreadRead = async (uid: string) => {
+    if (uid === 'placeholder_user') return;
+    try {
+      await updateDoc(doc(db, 'chat_threads', threadId), {
+        [`unreadCount.${uid}`]: 0,
+      });
+    } catch (_) {}
+  };
+
   // Real-time listener on messages subcollection
   useEffect(() => {
     const threadDoc = doc(db, 'chat_threads', threadId);
@@ -43,20 +60,11 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
       err => console.warn('[ChatDetail] snapshot error:', err)
     );
 
-    // Mark as read
-    markThreadRead();
+    // FIRESTORE: real data — mark as read after listener is live
+    markThreadRead(getCurrentUserId());
 
     return () => unsub();
   }, [threadId]);
-
-  const markThreadRead = async () => {
-    if (CURRENT_USER_ID === 'placeholder_user') return;
-    try {
-      await updateDoc(doc(db, 'chat_threads', threadId), {
-        [`unreadCount.${CURRENT_USER_ID}`]: 0,
-      });
-    } catch (_) {}
-  };
 
   const sendMessage = async () => {
     const text = inputText.trim();
@@ -66,14 +74,15 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
     setSending(true);
 
     try {
+      const uid = getCurrentUserId();
       const threadDoc = doc(db, 'chat_threads', threadId);
       const msgsRef = collection(threadDoc, 'messages');
       await addDoc(msgsRef, {
-        senderId: CURRENT_USER_ID,
+        senderId: uid,
         senderName: '我',
         text,
         createdAt: Date.now(),
-        readBy: [CURRENT_USER_ID],
+        readBy: [uid],
         type: 'text',
       });
 
@@ -82,9 +91,6 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
         lastMessage: text,
         lastMessageAt: Date.now(),
       });
-
-      // Increment other party's unread
-      const thread = messages[0]; // not needed here, just update
     } catch (err) {
       console.error('[sendMessage] error:', err);
       setInputText(text); // restore on failure
@@ -102,7 +108,7 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
       );
     }
 
-    const isMe = item.senderId === CURRENT_USER_ID;
+    const isMe = item.senderId === getCurrentUserId();
     const timeStr = new Date(item.createdAt).toLocaleTimeString('zh-HK', {
       hour: '2-digit', minute: '2-digit',
     });

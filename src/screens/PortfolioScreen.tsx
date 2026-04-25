@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image,
   TouchableOpacity, FlatList, Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MOCK_PORTFOLIO } from '../data/mockData';
+import { collection, doc, getDocs } from 'firebase/firestore';
+import { auth, db } from '../services/firebase';
+import { MOCK_PORTFOLIO, MOCK_CARDS } from '../data/mockData';
 import { PortfolioItem } from '../types';
 
 type NavProp = NativeStackNavigationProp<any>;
@@ -16,10 +18,50 @@ const PortfolioScreen: React.FC = () => {
   const [addCardId, setAddCardId] = useState('');
   const [addQty, setAddQty] = useState('1');
 
-  const totalValue = MOCK_PORTFOLIO.reduce((s, i) => s + i.currentValue, 0);
-  const totalCost = MOCK_PORTFOLIO.reduce((s, i) => s + i.avgBuyPrice * i.quantity, 0);
+  // FIRESTORE: real data — portfolio items state (falls back to MOCK_PORTFOLIO)
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(MOCK_PORTFOLIO);
+
+  // FIRESTORE: real data — load portfolio from Firestore users/{uid}/portfolio
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const loadPortfolio = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'users', uid, 'portfolio'));
+        if (snap.empty) return;
+
+        const loaded: PortfolioItem[] = snap.docs.map(d => {
+          const data = d.data() as { cardId: string; quantity: number; avgBuyPrice: number };
+          const card = MOCK_CARDS.find(c => c.id === data.cardId) ?? MOCK_CARDS[0];
+          const currentPrice = card.price;
+          const currentValue = data.quantity * currentPrice;
+          const totalCost = data.quantity * data.avgBuyPrice;
+          const pnl = currentValue - totalCost;
+          const pnlPercent = totalCost > 0 ? (pnl / totalCost) * 100 : 0;
+          return {
+            card,
+            quantity: data.quantity,
+            avgBuyPrice: data.avgBuyPrice,
+            currentValue,
+            pnl,
+            pnlPercent,
+          };
+        });
+
+        if (loaded.length > 0) setPortfolioItems(loaded);
+      } catch (e) {
+        console.warn('[Portfolio] Firestore load failed, using mock data:', e);
+      }
+    };
+
+    loadPortfolio();
+  }, []);
+
+  const totalValue = portfolioItems.reduce((s, i) => s + i.currentValue, 0);
+  const totalCost = portfolioItems.reduce((s, i) => s + i.avgBuyPrice * i.quantity, 0);
   const totalPnL = totalValue - totalCost;
-  const totalPnLPercent = ((totalValue - totalCost) / totalCost) * 100;
+  const totalPnLPercent = totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0;
   const isGain = totalPnL >= 0;
 
   return (
@@ -58,7 +100,7 @@ const PortfolioScreen: React.FC = () => {
           </View>
           <View>
             <Text style={styles.summarySub}>卡牌數量</Text>
-            <Text style={styles.summarySubValue}>{MOCK_PORTFOLIO.length}</Text>
+            <Text style={styles.summarySubValue}>{portfolioItems.length}</Text>
           </View>
         </View>
       </View>
@@ -66,10 +108,10 @@ const PortfolioScreen: React.FC = () => {
       {/* Holdings */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>💼 持有卡牌</Text>
-        <Text style={styles.count}>{MOCK_PORTFOLIO.length} 張</Text>
+        <Text style={styles.count}>{portfolioItems.length} 張</Text>
       </View>
 
-      {MOCK_PORTFOLIO.map((item: PortfolioItem) => (
+      {portfolioItems.map((item: PortfolioItem) => (
         <TouchableOpacity
           key={item.card.id}
           style={styles.holdingCard}
