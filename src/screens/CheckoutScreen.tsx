@@ -7,6 +7,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PokemonCard } from '../types';
+import { calculateFee, formatHkd } from '../utils/feeCalculator';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard; seller?: string } }, 'params'>;
 type NavProp = NativeStackNavigationProp<any>;
@@ -48,9 +49,10 @@ const CheckoutScreen: React.FC = () => {
   const [address, setAddress] = useState('');
   const [orderPlaced, setOrderPlaced] = useState(false);
 
-  const platformFee = Math.round(card.price * 0.03);
+  const fee = calculateFee(card.price);
+  const platformFee = fee.platformFeeHkd;
   const deliveryFee = delivery === 'sf' ? 35 : 0;
-  const total = card.price + platformFee + deliveryFee;
+  const total = fee.buyerTotalHkd + deliveryFee;
 
   const handlePlaceOrder = () => {
     if (!delivery || !payment) return;
@@ -223,8 +225,10 @@ const CheckoutScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>💰 金額明細</Text>
         <View style={styles.breakdown}>
           {[
-            ['商品金額', `HK$ ${card.price.toLocaleString()}`],
-            ['平台服務費 (3%)', `HK$ ${platformFee.toLocaleString()}`],
+            ['商品金額', formatHkd(fee.cardPriceHkd)],
+            ['Stripe 處理費 (2.9%)', formatHkd(fee.stripeFeeHkd)],
+            ['平台服務費 (3%)', formatHkd(fee.platformFeeHkd)],
+            ['最低手續費', formatHkd(fee.totalFeeHkd)],
             delivery === 'sf' ? ['運費（順豐到付）', `HK$ ${deliveryFee}`] : ['運費', '免費（面交）'],
           ].map(([label, value]) => (
             <View key={label as string} style={styles.breakdownRow}>
