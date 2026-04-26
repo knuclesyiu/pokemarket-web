@@ -271,7 +271,7 @@ const FeatureShowcaseScreen: React.FC = () => {
         <View style={styles.ctaSection}>
           <Text style={styles.ctaTitle}>準備好了嗎？</Text>
           <Text style={styles.ctaSub}>立即開始你的第一筆安全交易</Text>
-          <TouchableOpacity style={styles.ctaBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={styles.ctaBtn} onPress={() => navigation.navigate('Login')}>
             <Text style={styles.ctaBtnText}>進入市場 →</Text>
           </TouchableOpacity>
         </View>
