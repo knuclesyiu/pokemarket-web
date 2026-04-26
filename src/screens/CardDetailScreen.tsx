@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rareBadgeText: {
-    color: '#D4AF37',
+    color: '#FF3C3C',
     fontSize: 8,
     fontWeight: '800',
     backgroundColor: 'rgba(0,0,0,0.7)',
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   cardName: { color: '#F0F0FF', fontSize: 16, fontWeight: '800', lineHeight: 20 },
   cardSet: { color: '#8888CC', fontSize: 11, marginTop: 4 },
   cardRarity: {
-    color: '#D4AF37',
+    color: '#FF3C3C',
     fontSize: 11,
     fontWeight: '600',
     marginTop: 2,
@@ -391,14 +391,14 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
   },
-  buyBtn: { backgroundColor: '#D4AF37' },
+  buyBtn: { backgroundColor: '#FF3C3C' },
   sellBtn: {
     backgroundColor: '#14142A',
     borderWidth: 1.5,
-    borderColor: '#D4AF37',
+    borderColor: '#FF3C3C',
   },
   actionBtnText: { color: '#F0F0FF', fontSize: 15, fontWeight: '700' },
-  sellBtnText: { color: '#D4AF37', fontSize: 15, fontWeight: '700' },
+  sellBtnText: { color: '#FF3C3C', fontSize: 15, fontWeight: '700' },
   tabRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#14142A',
     alignItems: 'center',
   },
-  tabActive: { backgroundColor: '#D4AF37' },
+  tabActive: { backgroundColor: '#FF3C3C' },
   tabText: { color: '#8888CC', fontSize: 12, fontWeight: '600' },
   tabTextActive: { color: '#F0F0FF' },
   listingsSection: { paddingHorizontal: 16, gap: 10, display: 'flex' },
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
   listingRight: { alignItems: 'flex-end' },
   listingPrice: { color: '#F0F0FF', fontSize: 16, fontWeight: '700' },
   bidBtn: { marginTop: 6 },
-  bidBtnText: { color: '#D4AF37', fontSize: 12, fontWeight: '600' },
+  bidBtnText: { color: '#FF3C3C', fontSize: 12, fontWeight: '600' },
   chartSection: {
     marginHorizontal: 16,
     backgroundColor: '#14142A',

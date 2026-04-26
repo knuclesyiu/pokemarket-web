@@ -30,7 +30,7 @@ const COLORS = {
   textPrimary: '#F0F0FF',
   textSecondary: '#8888CC',
   textTertiary: '#4A4A70',
-  accentGold: '#D4AF37',
+  accentRed: '#FF3C3C',
   accentEmber: '#FF6B35',
   accentJade: '#00C896',
   accentRuby: '#FF4060',
@@ -177,8 +177,8 @@ const HomeScreen: React.FC = () => {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={COLORS.accentGold}
-          colors={[COLORS.accentGold]}
+          tintColor={COLORS.accentRed}
+          colors={[COLORS.accentRed]}
         />
       }
     >
@@ -357,11 +357,11 @@ const styles = StyleSheet.create({
   statItemClickable: { paddingVertical: 4 },
   statDivider: { width: 1, height: 40, backgroundColor: '#2A2A50' },
   statLabel: { color: '#8888CC', fontSize: 10, marginBottom: 4 },
-  statValueGold: { color: '#D4AF37', fontSize: 14, fontWeight: '800' },   // NEW: gold volume
+  statValueGold: { color: '#FF3C3C', fontSize: 14, fontWeight: '800' },   // NEW: gold volume
   statValueJade: { color: '#00C896', fontSize: 14, fontWeight: '700' },   // NEW: jade gain
   statValueRuby: { color: '#FF4060', fontSize: 14, fontWeight: '700' },   // NEW: ruby loss
   statSub: { color: '#8888CC', fontSize: 9, marginTop: 2 },
-  statSubLink: { color: '#D4AF37', fontSize: 9, marginTop: 2, textDecorationLine: 'underline' },
+  statSubLink: { color: '#FF3C3C', fontSize: 9, marginTop: 2, textDecorationLine: 'underline' },
   // NEW: gold active filter chips
   filterRow: { paddingLeft: 16, marginBottom: 12, maxHeight: 36 },
   filterChip: {
@@ -370,10 +370,10 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#2A2A50',
   },
   filterChipActive: {
-    backgroundColor: '#D4AF37',
-    borderColor: '#D4AF37',
+    backgroundColor: '#FF3C3C',
+    borderColor: '#FF3C3C',
     // subtle gold glow
-    shadowColor: '#D4AF37',
+    shadowColor: '#FF3C3C',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, marginTop: 20, marginBottom: 12,
   },
   sectionTitle: { color: '#F0F0FF', fontSize: 16, fontWeight: '700' },
-  seeAll: { color: '#D4AF37', fontSize: 12, fontWeight: '600' },   // NEW: gold link
+  seeAll: { color: '#FF3C3C', fontSize: 12, fontWeight: '600' },   // NEW: gold link
   cardList: { paddingHorizontal: 16 },
 });
 

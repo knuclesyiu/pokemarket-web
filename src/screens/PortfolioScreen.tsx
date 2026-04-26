@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
   addBtn: {
-    backgroundColor: '#D4AF37',   // NEW: gold primary CTA
+    backgroundColor: '#FF3C3C',   // NEW: gold primary CTA
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2A2A50',        // NEW: subtle border
     // NEW: premium elevation shadow with warm gold tint
-    shadowColor: '#D4AF37',
+    shadowColor: '#FF3C3C',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 20,
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   holdingLabel: { color: '#8888CC', fontSize: 9 },
   holdingQty: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
   holdingAvg: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
-  holdingValue: { color: '#D4AF37', fontSize: 13, fontWeight: '700' },   // NEW: gold price
+  holdingValue: { color: '#FF3C3C', fontSize: 13, fontWeight: '700' },   // NEW: gold price
   holdingTrophy: { fontSize: 14, marginLeft: 4 },
   pnlSection: {
     paddingRight: 14,
@@ -479,9 +479,9 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute', bottom: 90, right: 16, left: 16,
-    backgroundColor: '#D4AF37', borderRadius: 14, paddingVertical: 16,   // NEW: gold CTA
+    backgroundColor: '#FF3C3C', borderRadius: 14, paddingVertical: 16,   // NEW: gold CTA
     alignItems: 'center',
-    shadowColor: '#D4AF37',
+    shadowColor: '#FF3C3C',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -535,7 +535,7 @@ const addModalStyles = StyleSheet.create({
   inputText: { color: '#F0F0FF', fontSize: 14 },
   hint: { color: '#8888CC', fontSize: 11, marginBottom: 20, lineHeight: 16 },
   confirmBtn: {
-    backgroundColor: '#D4AF37',    // NEW: gold CTA
+    backgroundColor: '#FF3C3C',    // NEW: gold CTA
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
@@ -546,11 +546,11 @@ const addModalStyles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#D4AF37',
+    borderColor: '#FF3C3C',
     borderRadius: 14,
     paddingVertical: 14,
   },
-  cancelText: { color: '#D4AF37', fontSize: 14, fontWeight: '600' },
+  cancelText: { color: '#FF3C3C', fontSize: 14, fontWeight: '600' },
 });
   confirmBtnDisabled: { opacity: 0.4 },
   searchWrap: {
@@ -567,10 +567,10 @@ const addModalStyles = StyleSheet.create({
   resultThumb: { width: 40, height: 56, borderRadius: 6, backgroundColor: '#14142A', marginRight: 10 },
   resultName: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
   resultSet: { color: '#8888CC', fontSize: 10, marginTop: 1 },
-  resultPrice: { color: '#D4AF37', fontSize: 12, fontWeight: '700' },
+  resultPrice: { color: '#FF3C3C', fontSize: 12, fontWeight: '700' },
   selectedCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#14142A',
-    borderRadius: 12, padding: 10, marginBottom: 16, borderWidth: 1, borderColor: '#D4AF37',
+    borderRadius: 12, padding: 10, marginBottom: 16, borderWidth: 1, borderColor: '#FF3C3C',
   },
   selectedThumb: { width: 50, height: 70, borderRadius: 8, backgroundColor: '#1C1C38', marginRight: 12 },
   selectedName: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
@@ -585,7 +585,7 @@ const addModalStyles = StyleSheet.create({
     color: '#F0F0FF', fontSize: 16, fontWeight: '700', width: 60,
     borderWidth: 1, borderColor: '#2A2A50',
   },
-  totalText: { color: '#D4AF37', fontSize: 13, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
+  totalText: { color: '#FF3C3C', fontSize: 13, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
 
 
 export default PortfolioScreen;
