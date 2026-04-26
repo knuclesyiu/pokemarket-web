@@ -5,7 +5,7 @@
  * Deploy: firebase deploy --only functions --project pokemarket-255c6
  */
 
-require("dotenv").config({ path: __dirname + "/../../.env" });
+require("dotenv").config({ path: __dirname + "/../.env" });
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -378,17 +378,6 @@ exports.stripeWebhook = v2.https.onRequest(
     res.json({ received: true });
   }
 );
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ESCROW PROTECTION: Day-5 Warning + Extend + Dispute
-// ─────────────────────────────────────────────────────────────────────────────
-
-    .limit(limit)
-    .get();
-  return { notifications: snap.docs.map(d => ({ id: d.id, ...d.data() })) };
-});
 
 // AUTO-RELEASE SCHEDULED FUNCTION
 // Uses 1st-gen API to avoid 1st→2nd gen upgrade conflict with existing deployment.
