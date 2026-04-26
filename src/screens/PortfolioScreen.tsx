@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image,
   TouchableOpacity, FlatList, Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { collection, doc, getDocs } from 'firebase/firestore';
+import { collection, doc, getDocs, getDoc, query, where, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { MOCK_PORTFOLIO, MOCK_CARDS } from '../data/mockData';
 import { PortfolioItem } from '../types';
@@ -15,11 +15,77 @@ type NavProp = NativeStackNavigationProp<any>;
 const PortfolioScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addCardId, setAddCardId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<import('../types').PokemonCard[]>([]);
+  const [selectedCard, setSelectedCard] = useState<import('../types').PokemonCard | null>(null);
   const [addQty, setAddQty] = useState('1');
+  const [saving, setSaving] = useState(false);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(
+    MOCK_PORTFOLIO.length > 0 ? MOCK_PORTFOLIO : []
+  );
 
-  // FIRESTORE: real data — portfolio items state (falls back to MOCK_PORTFOLIO)
-  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(MOCK_PORTFOLIO);
+  // ── Card Search: real-time Firestore query ───────────────────────────
+  const searchCards = useCallback(async (q: string) => {
+    if (q.trim().length < 2) { setSearchResults([]); return; }
+    try {
+      const q_lower = q.toLowerCase();
+      const snap = await getDocs(
+        query(collection(db, 'card_prices'), where('imageUrl', '!=', ''), where('priceHkd', '>', 0))
+      );
+      const results: import('../types').PokemonCard[] = [];
+      snap.forEach(d => {
+        const p = d.data();
+        const name = (p.name ?? d.id).toLowerCase();
+        if (name.includes(q_lower) || (p.set ?? '').toLowerCase().includes(q_lower)) {
+          results.push({
+            id: d.id, name: p.name ?? d.id, set: p.set ?? '', setCode: p.setCode ?? '',
+            rarity: (p.rarity as any) ?? 'Common', series: p.series ?? 'Other', number: p.number ?? '',
+            price: p.priceHkd ?? 0, priceChange24h: p.change24h ?? 0, imageUrl: p.imageUrl ?? '',
+            condition: 'Near Mint' as any, language: (p.language as any) ?? 'English',
+            listed: true, listingCount: 0,
+          });
+        }
+        if (results.length >= 8) return;
+      });
+      setSearchResults(results.slice(0, 8));
+    } catch (e) { console.warn('[Portfolio search]', e); }
+  }, []);
+
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text);
+    setSelectedCard(null);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => searchCards(text), 300);
+  };
+
+  // Save selected card to Firestore portfolio
+  const handleAddCard = async () => {
+    if (!selectedCard || !auth.currentUser) return;
+    setSaving(true);
+    try {
+      const qty = Math.max(1, parseInt(addQty) || 1);
+      await setDoc(
+        doc(db, 'users', auth.currentUser.uid, 'portfolio', selectedCard.id),
+        { cardId: selectedCard.id, quantity: qty, avgBuyPrice: selectedCard.price, addedAt: Date.now() },
+        { merge: true }
+      );
+      const newItem: PortfolioItem = {
+        card: selectedCard, quantity: qty, avgBuyPrice: selectedCard.price,
+        currentValue: qty * selectedCard.price,
+        pnl: 0, pnlPercent: 0,
+      };
+      setPortfolioItems(prev => {
+        const exists = prev.find(i => i.card.id === selectedCard!.id);
+        if (exists) return prev.map(i => i.card.id === selectedCard!.id
+          ? { ...i, quantity: i.quantity + qty, currentValue: (i.quantity + qty) * selectedCard!.price }
+          : i);
+        return [...prev, newItem];
+      });
+      setShowAddModal(false); setSearchQuery(''); setSearchResults([]); setSelectedCard(null); setAddQty('1');
+    } catch (e) { console.warn('[Portfolio add]', e); }
+    finally { setSaving(false); }
+  };
 
   // FIRESTORE: real data — load portfolio from Firestore users/{uid}/portfolio
   useEffect(() => {
@@ -29,26 +95,28 @@ const PortfolioScreen: React.FC = () => {
     const loadPortfolio = async () => {
       try {
         const snap = await getDocs(collection(db, 'users', uid, 'portfolio'));
-        if (snap.empty) return;
+        if (snap.empty) { setPortfolioItems([]); return; }
 
-        const loaded: PortfolioItem[] = snap.docs.map(d => {
+        const loaded: PortfolioItem[] = [];
+        for (const d of snap.docs) {
           const data = d.data() as { cardId: string; quantity: number; avgBuyPrice: number };
-          const card = MOCK_CARDS.find(c => c.id === data.cardId) ?? MOCK_CARDS[0];
+          const cardSnap = await getDoc(doc(db, 'card_prices', data.cardId));
+          if (!cardSnap.exists()) continue;
+          const p = cardSnap.data();
+          const card = {
+            id: cardSnap.id, name: p.name ?? cardSnap.id, set: p.set ?? '', setCode: p.setCode ?? '',
+            rarity: (p.rarity as any) ?? 'Common', series: p.series ?? 'Other', number: p.number ?? '',
+            price: p.priceHkd ?? 0, priceChange24h: p.change24h ?? 0, imageUrl: p.imageUrl ?? '',
+            condition: 'Near Mint' as any, language: (p.language as any) ?? 'English',
+            listed: true, listingCount: 0,
+          };
           const currentPrice = card.price;
           const currentValue = data.quantity * currentPrice;
           const totalCost = data.quantity * data.avgBuyPrice;
           const pnl = currentValue - totalCost;
           const pnlPercent = totalCost > 0 ? (pnl / totalCost) * 100 : 0;
-          return {
-            card,
-            quantity: data.quantity,
-            avgBuyPrice: data.avgBuyPrice,
-            currentValue,
-            pnl,
-            pnlPercent,
-          };
-        });
-
+          loaded.push({ card, quantity: data.quantity, avgBuyPrice: data.avgBuyPrice, currentValue, pnl, pnlPercent });
+        }
         if (loaded.length > 0) setPortfolioItems(loaded);
       } catch (e) {
         console.warn('[Portfolio] Firestore load failed, using mock data:', e);
@@ -186,41 +254,94 @@ const PortfolioScreen: React.FC = () => {
         <Text style={styles.fabText}>📦 放售卡牌</Text>
       </TouchableOpacity>
 
-      {/* Add Card Modal */}
+      {/* ── P1.5: Real Card Add Modal with Firestore Search ── */}
       <Modal visible={showAddModal} animationType="slide" transparent>
         <View style={addModalStyles.overlay}>
           <View style={addModalStyles.sheet}>
             <View style={addModalStyles.handle} />
-            <Text style={addModalStyles.title}>添加卡牌</Text>
-            <View style={addModalStyles.field}>
-              <Text style={addModalStyles.label}>卡牌 ID</Text>
-              <View style={addModalStyles.input}>
-                <Text style={addModalStyles.inputText}>{addCardId || ' '}</Text>
-              </View>
+            <Text style={addModalStyles.title}>添加卡牌到收藏</Text>
+
+            {/* Search Bar */}
+            <View style={addModalStyles.searchWrap}>
+              <Text style={{ fontSize: 16, marginRight: 8 }}>🔍</Text>
+              <TextInput
+                style={addModalStyles.searchInput}
+                placeholder="搜尋卡名..."
+                placeholderTextColor="#4A4A70"
+                value={searchQuery}
+                onChangeText={handleSearchChange}
+                autoFocus
+              />
             </View>
+
+            {/* Search Results */}
+            {searchResults.length > 0 && !selectedCard && (
+              <View style={addModalStyles.resultsList}>
+                {searchResults.map(card => (
+                  <TouchableOpacity
+                    key={card.id}
+                    style={addModalStyles.resultItem}
+                    onPress={() => { setSelectedCard(card); setSearchResults([]); }}
+                  >
+                    <Image source={{ uri: card.imageUrl }} style={addModalStyles.resultThumb} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={addModalStyles.resultName} numberOfLines={1}>{card.name}</Text>
+                      <Text style={addModalStyles.resultSet}>{card.set}</Text>
+                    </View>
+                    <Text style={addModalStyles.resultPrice}>HK${card.price.toLocaleString()}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* Selected Card Preview */}
+            {selectedCard && (
+              <View style={addModalStyles.selectedCard}>
+                <Image source={{ uri: selectedCard.imageUrl }} style={addModalStyles.selectedThumb} />
+                <View style={{ flex: 1 }}>
+                  <Text style={addModalStyles.selectedName}>{selectedCard.name}</Text>
+                  <Text style={addModalStyles.selectedSet}>{selectedCard.set} · HK${selectedCard.price.toLocaleString()}</Text>
+                </View>
+                <TouchableOpacity onPress={() => { setSelectedCard(null); setSearchQuery(''); }}>
+                  <Text style={{ color: '#FF4060', fontSize: 13 }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Quantity */}
             <View style={addModalStyles.field}>
               <Text style={addModalStyles.label}>數量</Text>
-              <View style={addModalStyles.input}>
-                <Text style={addModalStyles.inputText}>{addQty || ' '}</Text>
+              <View style={addModalStyles.qtyRow}>
+                <TouchableOpacity style={addModalStyles.qtyBtn} onPress={() => setAddQty(v => String(Math.max(1, parseInt(v) - 1)))}>
+                  <Text style={{ color: '#F0F0FF', fontSize: 18 }}>−</Text>
+                </TouchableOpacity>
+                <TextInput
+                  style={addModalStyles.qtyInput}
+                  value={addQty}
+                  onChangeText={setAddQty}
+                  keyboardType="number-pad"
+                  textAlign="center"
+                />
+                <TouchableOpacity style={addModalStyles.qtyBtn} onPress={() => setAddQty(v => String(parseInt(v || '1') + 1))}>
+                  <Text style={{ color: '#F0F0FF', fontSize: 18 }}>+</Text>
+                </TouchableOpacity>
               </View>
             </View>
-            <Text style={addModalStyles.hint}>
-              請輸入卡牌 ID 和數量以添加到投資組合。
-            </Text>
+
+            {selectedCard && (
+              <Text style={addModalStyles.totalText}>
+                總值：HK$ {(parseInt(addQty) * selectedCard.price).toLocaleString()}
+              </Text>
+            )}
+
             <TouchableOpacity
-              style={addModalStyles.confirmBtn}
-              onPress={() => {
-                setShowAddModal(false);
-                setAddCardId('');
-                setAddQty('1');
-              }}
+              style={[addModalStyles.confirmBtn, (!selectedCard || saving) && addModalStyles.confirmBtnDisabled]}
+              onPress={handleAddCard}
+              disabled={!selectedCard || saving}
             >
-              <Text style={addModalStyles.confirmBtnText}>確認添加</Text>
+              <Text style={addModalStyles.confirmBtnText}>{saving ? '保存中...' : '確認添加'}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[addModalStyles.cancelBtn]}
-              onPress={() => setShowAddModal(false)}
-            >
+            <TouchableOpacity style={[addModalStyles.cancelBtn]} onPress={() => { setShowAddModal(false); setSearchQuery(''); setSearchResults([]); setSelectedCard(null); }}>
               <Text style={addModalStyles.cancelText}>取消</Text>
             </TouchableOpacity>
           </View>
@@ -431,5 +552,40 @@ const addModalStyles = StyleSheet.create({
   },
   cancelText: { color: '#D4AF37', fontSize: 14, fontWeight: '600' },
 });
+  confirmBtnDisabled: { opacity: 0.4 },
+  searchWrap: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#14142A', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
+    borderWidth: 1, borderColor: '#2A2A50', marginBottom: 12,
+  },
+  searchInput: { flex: 1, color: '#F0F0FF', fontSize: 14 },
+  resultsList: { maxHeight: 220, marginBottom: 12 },
+  resultItem: {
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 8,
+    borderBottomWidth: 1, borderBottomColor: '#1C1C38',
+  },
+  resultThumb: { width: 40, height: 56, borderRadius: 6, backgroundColor: '#14142A', marginRight: 10 },
+  resultName: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
+  resultSet: { color: '#8888CC', fontSize: 10, marginTop: 1 },
+  resultPrice: { color: '#D4AF37', fontSize: 12, fontWeight: '700' },
+  selectedCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#14142A',
+    borderRadius: 12, padding: 10, marginBottom: 16, borderWidth: 1, borderColor: '#D4AF37',
+  },
+  selectedThumb: { width: 50, height: 70, borderRadius: 8, backgroundColor: '#1C1C38', marginRight: 12 },
+  selectedName: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
+  selectedSet: { color: '#8888CC', fontSize: 11, marginTop: 2 },
+  qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 },
+  qtyBtn: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: '#14142A',
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A2A50',
+  },
+  qtyInput: {
+    backgroundColor: '#14142A', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8,
+    color: '#F0F0FF', fontSize: 16, fontWeight: '700', width: 60,
+    borderWidth: 1, borderColor: '#2A2A50',
+  },
+  totalText: { color: '#D4AF37', fontSize: 13, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
+
 
 export default PortfolioScreen;
