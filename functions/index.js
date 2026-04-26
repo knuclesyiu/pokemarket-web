@@ -11,6 +11,7 @@ const admin = require("firebase-admin");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const cors = require("cors")({ origin: true });
 const v2 = require("firebase-functions/v2");
+const { raw } = require("express");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -23,6 +24,7 @@ const STRIPE_PERCENT_FEE  = 0.029;    // Stripe: 2.9% + HK$2.35 per charge
 const STRIPE_FIXED_CENTS  = 235;      // HK$2.35 in cents
 const ORDER_MIN_FEE_HKD   = 20;       // Minimum total fee (Stripe + platform) = HK$20
 const ORDER_MIN_FEE_CENTS = 2000;     // HK$20 in cents
+const ESCROW_MIN_HKD = 20;           // HK$20 — below this, no escrow hold
 
 function splitAmount(grossHkdCents) {
   // grossHkdCents = card price in HKD cents (buyer pays card price)
@@ -312,7 +314,7 @@ exports.createWithdrawal = v2.https.onCall(
 );
 
 exports.stripeWebhook = v2.https.onRequest(
-  { region: "us-central1" },
+  raw({ type: 'application/json' }),
   async (req, res) => {
     const sig = req.headers["stripe-signature"];
     let event;
@@ -380,116 +382,6 @@ exports.stripeWebhook = v2.https.onRequest(
 // ESCROW PROTECTION: Day-5 Warning + Extend + Dispute
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Send warning notifications for escrow orders approaching 7-day auto-release (Day 5)
- * Runs daily alongside dailyAutoRelease.
- */
-exports.sendEscrowWarning = functions.pubsub
-  .schedule("every 24 hours")
-  .timeZone("Asia/Hong_Kong")
-  .onRun(async (message) => {
-    const FIVE_DAYS_AGO = new Date();
-    FIVE_DAYS_AGO.setDate(FIVE_DAYS_AGO.getDate() - 5);
-    const SEVEN_DAYS_AGO = new Date();
-    SEVEN_DAYS_AGO.setDate(SEVEN_DAYS_AGO.getDate() - 7);
-
-    const snap = await db.collection("orders")
-      .where("status", "==", "funds_escrowed")
-      .where("updatedAt", "<", admin.firestore.Timestamp.fromDate(FIVE_DAYS_AGO))
-      .where("updatedAt", ">", admin.firestore.Timestamp.fromDate(SEVEN_DAYS_AGO))
-      .get();
-
-    let sent = 0;
-    for (const doc of snap.docs) {
-      const order = doc.data();
-      if (order.releaseWarningSentAt) continue; // already sent
-
-      const daysLeft = Math.ceil((order.updatedAt?.toMillis?.() ?? Date.now()) / 86400000) - 5;
-      const daysRemaining = Math.max(0, 7 - 5 - Math.floor((Date.now() - (order.updatedAt?.toMillis?.() ?? Date.now())) / 86400000));
-
-      const notifRef = db.collection("notifications").doc();
-      await notifRef.set({
-        id: notifRef.id,
-        oderId: order.buyerId,
-        type: "escrow_warning",
-        title: "⚠️ 即將自動釋放款項",
-        body: `你的 HK$${order.amount?.toLocaleString()} 款項將於 ${daysRemaining} 日後自動釋放給賣家。如未收到卡，請立即報告問題。`,
-        orderId: doc.id,
-        cardName: order.cardName ?? "",
-        read: false,
-        createdAt: Date.now(),
-      });
-
-      await doc.ref.update({ releaseWarningSentAt: Date.now() });
-      sent++;
-    }
-    console.log(`[sendEscrowWarning] ${sent} warnings sent`);
-    return null;
-  });
-
-/**
- * Buyer extends escrow deadline by 7 more days (max 14 days from payment)
- * Input: { orderId: string }
- */
-exports.extendEscrow = v2.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "must be signed in");
-  const { orderId } = data;
-  if (!orderId) throw new functions.https.HttpsError("invalid-argument", "orderId required");
-
-  const orderRef = db.collection("orders").doc(orderId);
-  const order = await orderRef.get();
-  if (!order.exists) throw new functions.https.HttpsError("not-found", "order not found");
-  const d = order.data();
-  if (d.buyerId !== context.auth.uid) throw new functions.https.HttpsError("permission-denied", "not your order");
-  if (d.status !== "funds_escrowed") throw new functions.https.HttpsError("failed-precondition", `order status is ${d.status}`);
-  if (d.extendedUntil) throw new functions.https.HttpsError("failed-precondition", "already extended");
-
-  const newReleaseAt = Date.now() + 14 * 86400000;
-  await orderRef.update({ extendedUntil: newReleaseAt });
-  return { success: true, newReleaseAt, daysExtended: 14 };
-});
-
-/**
- * Create a dispute for a released or released-but-problematic order
- * Input: { orderId: string, reason: string }
- */
-exports.createDispute = v2.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "must be signed in");
-  const { orderId, reason } = data;
-  if (!orderId || !reason) throw new functions.https.HttpsError("invalid-argument", "orderId and reason required");
-
-  const orderRef = db.collection("orders").doc(orderId);
-  const order = await orderRef.get();
-  if (!order.exists) throw new functions.https.HttpsError("not-found", "order not found");
-  const d = order.data();
-  if (d.buyerId !== context.auth.uid && d.sellerId !== context.auth.uid) {
-    throw new functions.https.HttpsError("permission-denied", "not a participant");
-  }
-
-  const disputeRef = db.collection("disputes").doc();
-  await disputeRef.set({
-    id: disputeRef.id,
-    orderId,
-    reporterId: context.auth.uid,
-    reason,
-    status: "open",
-    createdAt: Date.now(),
-  });
-
-  await orderRef.update({ status: "disputed", disputeId: disputeRef.id });
-  return { disputeId: disputeRef.id, status: "open" };
-});
-
-/**
- * Get notifications for current user
- * Input: { limit?: number }
- */
-exports.getNotifications = v2.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "must be signed in");
-  const { limit = 50 } = data;
-  const snap = await db.collection("notifications")
-    .where("oderId", "==", context.auth.uid)
-    .orderBy("createdAt", "desc")
     .limit(limit)
     .get();
   return { notifications: snap.docs.map(d => ({ id: d.id, ...d.data() })) };
@@ -544,6 +436,7 @@ exports.dailyAutoRelease = functions.pubsub
 exports.getMarketListings = v2.https.onCall(
   { region: "us-central1" },
   async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
     const { series, rarity, condition, minPrice, maxPrice, limit = 50 } = data;
     let q = db.collection("listings").where("status", "==", "active");
     const snaps = await q.get();
@@ -732,70 +625,6 @@ exports.cancelOffer = v2.https.onCall(
 // ─────────────────────────────────────────────────────────────────────────────
 // FEATURE 1 — Version Search (searchCards)
 // ─────────────────────────────────────────────────────────────────────────────
-
-exports.searchCards = v2.https.onCall(async (data, context) => {
-  const { query, language } = data;
-
-  if (!query || query.trim().length < 1) {
-    return { cards: [], total: 0 };
-  }
-
-  const searchTerm = query.trim();
-
-  // Try Firestore full-text search first
-  let cards = [];
-  try {
-    const cardsSnapshot = await db.collection('cards')
-      .where('nameLower', '>=', searchTerm.toLowerCase())
-      .where('nameLower', '<=', searchTerm.toLowerCase() + '\uf8ff')
-      .limit(30)
-      .get();
-
-    if (!cardsSnapshot.empty) {
-      cards = cardsSnapshot.docs.map(doc => {
-        const d = doc.data();
-        return {
-          id: doc.id,
-          name: d.name,
-          set: d.set,
-          setCode: d.setCode,
-          rarity: d.rarity,
-          price: d.price,
-          priceChange24h: d.priceChange24h ?? 0,
-          imageUrl: d.imageUrl,
-          series: d.series,
-          number: d.number,
-          condition: d.condition,
-          listed: d.listed ?? true,
-          listingCount: d.listingCount ?? 0,
-          language: d.language ?? 'English',
-          grade: d.grade,
-        };
-      });
-    }
-  } catch (err) {
-    // Index not configured — fall through to keyword scan
-    console.warn('[searchCards] Firestore query failed:', err.message);
-  }
-
-  // If no results from Firestore (or error), scan mock data for development
-  if (cards.length === 0) {
-    const { MOCK_CARDS } = require('./src/data/mockData');
-    const lang = language ?? null;
-    cards = MOCK_CARDS
-      .filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
-      .filter(c => !lang || c.language === lang)
-      .slice(0, 20)
-      .map(c => ({ ...c }));
-  } else if (language) {
-    // Filter Firestore results by language
-    cards = cards.filter(c => c.language === language);
-  }
-
-  return { cards, total: cards.length };
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // FEATURE 2 — Card Quality Review
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -863,8 +692,8 @@ exports.castReviewVote = v2.https.onCall(async (data, context) => {
 
   // Record vote
   await reviewRef.collection('votes').add({
-    oderId: context.auth.uid,
-    oderName: userDoc.data().displayName ?? 'Unknown',
+    userId: context.auth.uid,
+    userName: userDoc.data().displayName ?? 'Unknown',
     grade,
     votedAt: Date.now(),
   });
@@ -1095,189 +924,6 @@ async function refreshFxRates() {
 }
 
 // Call on module load
-refreshFxRates();
-
-// Supported currencies in TCGdex response
-const MARKET_NAMES = ['cardmarket', 'tcgplayer'];
-
-/**
- * Fetch and store prices for a batch of cards (used by Cloud Scheduler)
- * Input: { cardIds: string[] }
- * Output: { updated: number, failed: number }
- */
-exports.syncCardPrices = v2.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'admin only');
-
-  const { cardIds = [] } = data;
-  let updated = 0, failed = 0;
-
-  for (const cardId of cardIds) {
-    try {
-      const priceData = await fetchTcgdexPrice(cardId);
-      if (priceData) {
-        await db.collection('card_prices').doc(cardId).set({
-          ...priceData,
-          updatedAt: Date.now(),
-        }, { merge: true });
-        updated++;
-      } else {
-        failed++;
-      }
-      await sleep(500); // be kind to TCGdex — 2 req/sec max
-    } catch (e) {
-      console.warn(`[syncCardPrices] failed ${cardId}:`, e.message);
-      failed++;
-    }
-  }
-
-  return { updated, failed };
-});
-
-/**
- * Get price for a single card (on-demand, with cache)
- * Input: { cardId: string }
- * Output: CardPrice document
- */
-exports.getCardPrice = v2.https.onCall(async (data, context) => {
-  const { cardId } = data;
-  if (!cardId) throw new functions.https.HttpsError('invalid-argument', 'cardId required');
-
-  // Try Firestore cache first
-  const cached = await db.collection('card_prices').doc(cardId).get();
-  const cacheAge = cached.exists ? (Date.now() - cached.data().updatedAt) : Infinity;
-  const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
-
-  // Fresh enough? Return cached
-  if (cached.exists && cacheAge < CACHE_TTL) {
-    return { source: 'cache', ageMs: cacheAge, ...cached.data() };
-  }
-
-  // Stale or missing — fetch fresh from TCGdex
-  const priceData = await fetchTcgdexPrice(cardId);
-  if (priceData) {
-    await db.collection('card_prices').doc(cardId).set({
-      ...priceData,
-      updatedAt: Date.now(),
-    }, { merge: true });
-  }
-
-  return { source: 'live', ...(priceData ?? { error: 'price not found' }) };
-});
-
-/**
- * Bulk search cards + get their prices
- * Input: { query: string, language?: 'en' | 'ja' | 'fr' | ... }
- * Output: { cards: CardSearchResult[] }
- */
-exports.searchCardsWithPrices = v2.https.onCall(async (data, context) => {
-  const { query, language = 'en', limit = 20 } = data;
-  if (!query) throw new functions.https.HttpsError('invalid-argument', 'query required');
-
-  // Search via TCGdex card search
-  const searchUrl = `https://api.tcgdex.dev/v2/cards?name=${encodeURIComponent(query)}&lang=${language}`;
-  const searchResp = await fetch(searchUrl, { timeout: 8000 });
-  if (!searchResp.ok) throw new functions.https.HttpsError('unavailable', 'TCGdex search failed');
-
-  const cards = await searchResp.json();
-  const results = Array.isArray(cards) ? cards.slice(0, limit) : [cards].filter(Boolean);
-
-  // Enrich each card with cached price (don't call TCGdex per card — too slow)
-  const enriched = await Promise.all(results.map(async (card) => {
-    const cardId = `${card.id}`;
-    const cached = await db.collection('card_prices').doc(cardId).get();
-    return {
-      id: card.id,
-      name: card.name,
-      set: card.set?.name ?? card.set,
-      setCode: card.set?.id ?? card.set,
-      imageUrl: card.image ?? card.smallImage ?? card.largeImage,
-      rarity: card.rarity,
-      language,
-      price: cached.exists ? cached.data() : null,
-    };
-  }));
-
-  return { cards: enriched, total: enriched.length };
-});
-
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-
-async function fetchTcgdexPrice(cardId) {
-  // cardId format: "swsh5-115" → set=swsh5, number=115
-  // Normalise from either "set-number" or Firestore document id
-  const [setCode, cardNum] = (cardId.includes('-') && !cardId.match(/^[a-z]+\d+/))
-    ? cardId.split('-')
-    : [null, null];
-
-  if (!setCode || !cardNum) {
-    // Try to look up from Firestore cards collection by document id
-    const cardDoc = await db.collection('cards').doc(cardId).get();
-    if (!cardDoc.exists) return null;
-    const d = cardDoc.data();
-    return fetchAndCache(setCode || d.setCode, cardNum || d.number, cardId);
-  }
-
-  return fetchAndCache(setCode, cardNum, cardId);
-}
-
-async function fetchAndCache(setCode, cardNum, fallbackId) {
-  try {
-    const url = `https://api.tcgdex.dev/v2/cards/${setCode}/${cardNum}?lang=en`;
-    const resp = await fetch(url, { timeout: 8000 });
-    if (!resp.ok) return null;
-
-    const card = await resp.json();
-    const markets = card.markets ?? {};
-
-    const cardmarket = markets.cardmarket ?? {};
-    const tcgplayer = markets.tcgplayer ?? {};
-
-    const priceEur = cardmarket.averagePrice ?? 0;
-    const priceUsd = tcgplayer.averagePrice ?? 0;
-    const trendEur = cardmarket.priceChange?.priceChange ?? 0;
-    const trendUsd = tcgplayer.priceChange?.priceChange ?? 0;
-
-    // Convert to HKD
-    const hkdMarket = round(priceEur * FX_EUR_TO_HKD);
-    const hkdTcg = round(priceUsd * FX_USD_TO_HKD);
-    // Prefer CardMarket for Japanese cards, TCGPlayer for English
-    const bestHkd = Math.max(hkdMarket, hkdTcg);
-
-    return {
-      id: fallbackId,
-      setCode,
-      cardNumber: cardNum,
-      // Raw source prices
-      priceEurUsd: { eur: priceEur, usd: priceUsd },
-      // HKD prices
-      priceHkd: bestHkd,
-      cardmarketHkd: hkdMarket,
-      tcgplayerHkd: hkdTcg,
-      // 24h change (percentage — from market data or approximate from trend)
-      change24h: round(((trendEur / (priceEur || 1)) * 100) * 10) / 10,
-      change30d: cardmarket.trendPrice != null && cardmarket.averagePrice != null
-        ? round(((cardmarket.trendPrice - cardmarket.averagePrice) / cardmarket.averagePrice) * 100 * 10) / 10
-        : null,
-      lastFetched: Date.now(),
-    };
-  } catch (e) {
-    console.warn('[fetchAndCache]', setCode, cardNum, e.message);
-    return null;
-  }
-}
-
-function round(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FEATURE — Card Price API (TCGdex)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Sync prices for a batch of card IDs (Cloud Scheduler calls this)
- * Input: { cardIds: string[] }
- */
 exports.syncCardPrices = v2.https.onCall(async (data, context) => {
   if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "admin only");
   const { cardIds = [] } = data;
@@ -1537,16 +1183,15 @@ exports.extendEscrow = v2.https.onCall(
   { region: "us-central1" },
   async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
-    const { orderId, buyerId } = data;
-
+    const { orderId } = data;
     if (!orderId) throw new functions.https.HttpsError("invalid-argument", "orderId required");
-    if (context.auth.uid !== buyerId) throw new functions.https.HttpsError("permission-denied", "Only buyer can extend");
 
     const orderRef = db.collection("orders").doc(orderId);
     const orderSnap = await orderRef.get();
     if (!orderSnap.exists) throw new functions.https.HttpsError("not-found", "Order not found");
-
     const order = orderSnap.data();
+    if (order.buyerId !== context.auth.uid) throw new functions.https.HttpsError("permission-denied", "Only buyer can extend");
+
     if (order.status !== "funds_escrowed") {
       throw new functions.https.HttpsError("failed-precondition", "Cannot extend - order status is " + order.status);
     }
@@ -1573,18 +1218,15 @@ exports.createDispute = v2.https.onCall(
   { region: "us-central1" },
   async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be logged in");
-    const { orderId, reason, buyerId } = data;
-
-    if (!orderId || !reason) {
-      throw new functions.https.HttpsError("invalid-argument", "orderId and reason required");
-    }
-    if (context.auth.uid !== buyerId) throw new functions.https.HttpsError("permission-denied", "Only buyer can dispute");
+    const { orderId, reason } = data;
+    if (!orderId || !reason) throw new functions.https.HttpsError("invalid-argument", "orderId and reason required");
 
     const orderRef = db.collection("orders").doc(orderId);
     const orderSnap = await orderRef.get();
     if (!orderSnap.exists) throw new functions.https.HttpsError("not-found", "Order not found");
-
     const order = orderSnap.data();
+    if (order.buyerId !== context.auth.uid) throw new functions.https.HttpsError("permission-denied", "Only buyer can dispute");
+
     const validStatuses = ["funds_escrowed", "funds_released"];
     if (!validStatuses.includes(order.status)) {
       throw new functions.https.HttpsError("failed-precondition", "Cannot dispute - order status is " + order.status);
@@ -1602,7 +1244,7 @@ exports.createDispute = v2.https.onCall(
     await disputeRef.set({
       id: disputeRef.id,
       orderId,
-      buyerId,
+      buyerId: context.auth.uid,
       sellerId: order.sellerId,
       reason,
       cardName: order.cardName || "",

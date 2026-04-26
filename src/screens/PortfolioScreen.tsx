@@ -551,7 +551,6 @@ const addModalStyles = StyleSheet.create({
     paddingVertical: 14,
   },
   cancelText: { color: '#FF3C3C', fontSize: 14, fontWeight: '600' },
-});
   confirmBtnDisabled: { opacity: 0.4 },
   searchWrap: {
     flexDirection: 'row', alignItems: 'center',
@@ -586,6 +585,7 @@ const addModalStyles = StyleSheet.create({
     borderWidth: 1, borderColor: '#2A2A50',
   },
   totalText: { color: '#FF3C3C', fontSize: 13, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
+});
 
 
 export default PortfolioScreen;
