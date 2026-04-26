@@ -328,10 +328,13 @@ exports.stripeWebhook = v2.https.onRequest(
       case "payment_intent.succeeded": {
         const pi = event.data.object;
         if (pi.metadata?.orderId) {
-          await db.collection("orders").doc(pi.metadata.orderId).update({
-            status: "funds_escrowed",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
+          const orderSnap = await db.collection("orders").doc(pi.metadata.orderId).get();
+          if (orderSnap.exists && orderSnap.data().status !== "funds_escrowed") {
+            await db.collection("orders").doc(pi.metadata.orderId).update({
+              status: "funds_escrowed",
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
         }
         break;
       }

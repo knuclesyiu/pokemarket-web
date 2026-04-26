@@ -95,7 +95,7 @@ service cloud.firestore {
       // Update: only buyer can confirm receipt (release funds)
       //        only buyer can raise dispute
       //        only system/Cloud Function can update status transitions
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.buyerId == uid();
       allow update: if isAuthenticated() && (
         resource.data.buyerId == uid() ||
         resource.data.sellerId == uid()
@@ -111,7 +111,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         resource.data.buyerId == uid() || resource.data.sellerId == uid()
       );
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.buyerId == uid();
       allow update: if isAuthenticated() && (
         resource.data.buyerId == uid() ||
         resource.data.sellerId == uid()
@@ -189,8 +189,8 @@ service cloud.firestore {
 
     match /chat_threads/{threadId} {
       // Only participants can read/write the thread
-      allow read: if isAuthenticated() && uid() in resource.data.participantIds;
-      allow update: if isAuthenticated() && uid() in resource.data.participantIds;
+      allow read: if isAuthenticated() && uid() in resource.data.parties;
+      allow update: if isAuthenticated() && uid() in resource.data.parties;
     }
 
     match /chat_messages/{threadId}/messages/{messageId} {
