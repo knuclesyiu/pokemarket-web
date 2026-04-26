@@ -21,8 +21,19 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#12121F"
       },
-      "package": "com.pokemarket.app"
+      "package": "com.pokemarket.app",
+      "usesCleartextTraffic": true
     },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "pokemarket-255c6"

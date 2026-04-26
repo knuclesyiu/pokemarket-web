@@ -14,8 +14,8 @@ const PHONE_REGEX = /^\+?[0-9]{7,15}$/;
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { signInWithPhone, signInWithEmail, currentUser } = useAuth();
-  const [mode, setMode] = useState<'phone' | 'email'>('phone');
+  const { signInWithPhone, signInWithEmail, signInWithGoogle, currentUser } = useAuth();
+  const [mode, setMode] = useState<'phone' | 'email' | 'google'>('phone');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -109,6 +109,12 @@ const LoginScreen: React.FC = () => {
           >
             <Text style={[styles.toggleTxt, mode === 'email' && styles.toggleTxtActive]}>✉️ Email</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, mode === 'google' && styles.toggleBtnActive]}
+            onPress={() => setMode('google')}
+          >
+            <Text style={[styles.toggleTxt, mode === 'google' && styles.toggleTxtActive]}>🔵 Google</Text>
+          </TouchableOpacity>
         </View>
 
         {mode === 'phone' ? (
@@ -182,6 +188,22 @@ const LoginScreen: React.FC = () => {
               <Text style={styles.linkText}>未有帳戶？立即註冊 →</Text>
             </TouchableOpacity>
           </>
+        ) : (
+          <>
+            <TouchableOpacity
+              style={styles.googleBtn}
+              onPress={async () => {
+                setLoading(true);
+                try { await signInWithGoogle(); } catch (e: any) { Alert.alert('Google 登入失敗', e.message); } finally { setLoading(false); }
+              }}
+              disabled={loading}
+            >
+              {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.googleBtnText}>🔵 用 Google 帳戶登入</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.linkBtn} onPress={() => setMode('email')}>
+              <Text style={styles.linkText}>改用 Email 登入 →</Text>
+            </TouchableOpacity>
+          </>
         )}
       </View>
 
@@ -219,6 +241,11 @@ const styles = StyleSheet.create({
   linkBtn: { alignItems: 'center', marginTop: 20 },
   linkText: { color: '#8888AA', fontSize: 13 },
   legal: { color: '#4444AA', fontSize: 11, textAlign: 'center', marginTop: 24, lineHeight: 16 },
+  googleBtn: {
+    backgroundColor: '#1E1E2E', borderRadius: 14, paddingVertical: 16,
+    alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: '#4A4A70',
+  },
+  googleBtnText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
 });
 
 export default LoginScreen;

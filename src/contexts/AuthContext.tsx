@@ -13,6 +13,7 @@ interface AuthContextValue {
   loading: boolean;
   signInWithPhone: (phone: string) => Promise<ConfirmationResult>;
   signInWithEmail: (email: string, password: string) => Promise<User>;
+  signInWithGoogle: () => Promise<User>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   setTransactionPin: (pin: string) => Promise<void>;
@@ -97,6 +98,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await auth.signOut();
   };
 
+  const signInWithGoogle = async () => {
+    const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+    const provider = new GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
+    const result = await signInWithPopup(auth, provider);
+    return result.user;
+  };
+
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (!currentUser) throw new Error('Not logged in');
     await setDoc(doc(db, 'users', currentUser.uid), data, { merge: true });
@@ -118,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{
       currentUser, userProfile, loading,
-      signInWithPhone, signInWithEmail, signOut,
+      signInWithPhone, signInWithEmail, signInWithGoogle, signOut,
       updateProfile, setTransactionPin, verifyTransactionPin,
     }}>
       {children}
