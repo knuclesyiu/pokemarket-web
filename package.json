@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
+    "@react-native-google-signin/google-signin": "^16.1.2",
     "@react-navigation/bottom-tabs": "^7.15.9",
     "@react-navigation/native": "^7.2.2",
     "@react-navigation/native-stack": "^7.14.11",
@@ -17,6 +18,7 @@
     "expo": "~54.0.33",
     "expo-status-bar": "~3.0.9",
     "firebase": "^12.12.1",
+    "firebase-admin": "^13.8.0",
     "react": "19.1.0",
     "react-dom": "^19.1.0",
     "react-native": "0.81.5",
@@ -28,6 +30,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "playwright": "^1.59.1",
     "typescript": "~5.9.2"
   },
   "private": true

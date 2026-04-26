@@ -132,12 +132,18 @@ const CardDetailScreen: React.FC = () => {
         <TouchableOpacity
           style={styles.contactBtn}
           onPress={async () => {
+            if (!auth.currentUser) {
+              Alert.alert('需要登入', '請先登入再聯絡賣家', [
+                { text: '登入', onPress: () => navigation.navigate('Login') },
+                { text: '取消' },
+              ]);
+              return;
+            }
             try {
               const fns = getFunctions();
               const createChatThread = httpsCallable(fns, 'createChatThread');
-              // FIRESTORE: real data — use real uid, derive sellerId from card.id
-              const currentUid = auth.currentUser?.uid ?? 'placeholder_user';
-              const sellerId = `seller_${card.id}`;  // deterministic mock seller per card
+              const currentUid = auth.currentUser.uid;
+              const sellerId = `seller_${card.id}`;
               const result = await createChatThread({
                 listingId: card.id,
                 parties: [currentUid, sellerId],
@@ -145,7 +151,6 @@ const CardDetailScreen: React.FC = () => {
               const { threadId } = result.data as { threadId: string };
               navigation.navigate('ChatDetail', { threadId, otherPartyId: sellerId, otherPartyName: card.set });
             } catch {
-              // Navigate to ChatList to show instructions
               navigation.navigate('ChatList');
             }
           }}

@@ -14,6 +14,7 @@ import {
   ORDER_MIN_FEE_HKD,
   STRIPE_PERCENT_FEE,
   STRIPE_FIXED_CENTS,
+  ESCROW_MIN_HKD,
 } from '../config/platform';
 
 const ORDER_MIN_FEE_CENTS = Math.round(ORDER_MIN_FEE_HKD * 100);
@@ -69,7 +70,7 @@ export function calculateFee(cardPriceHkd: number): FeeBreakdown {
     totalFeeHkd,
     buyerTotalHkd,
     sellerNetHkd,
-    escrowRequired: cardPriceHkd >= 20,
+    escrowRequired: cardPriceHkd >= ESCROW_MIN_HKD,
   };
 }
 

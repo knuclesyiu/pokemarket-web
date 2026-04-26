@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, StyleSheet,
   FlatList, TouchableOpacity, Dimensions,
@@ -47,30 +47,58 @@ const HomeScreen: React.FC = () => {
   }>>({});
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [realCards, setRealCards] = useState<PokemonCard[]>([]);
 
-  // Cache warmup on mount — prime card_prices cache
+  // ── P0: Load real cards from Firestore on mount (not MOCK_CARDS) ─────────
   useEffect(() => {
-    if (displayCards.length === 0) return;
-    const primeCache = async () => {
-      const ids = displayCards.map(c => c.id).slice(0, 30);
+    const loadRealCards = async () => {
       try {
-        setSyncing(true);
-        const fn = getFunctions();
-        const syncFn = httpsCallable(fn, 'syncCardPrices');
-        await syncFn({ cardIds: ids });
+        const q = query(collection(db, 'card_prices'), where('imageUrl', '!=', ''), where('priceHkd', '>', 0));
+        const snap = await getDocs(q);
+        const cards: PokemonCard[] = [];
+        snap.forEach(d => {
+          const p = d.data();
+          cards.push({
+            id: d.id,
+            name: p.name ?? d.id,
+            set: p.set ?? '',
+            setCode: p.setCode ?? '',
+            rarity: p.rarity ?? 'Common',
+            series: p.series ?? 'Other',
+            number: p.number ?? '',
+            price: p.priceHkd ?? 0,
+            priceChange24h: p.change24h ?? 0,
+            imageUrl: p.imageUrl ?? '',
+            condition: 'Near Mint',
+            language: (p.language as PokemonCard['language']) ?? 'English',
+            listed: true,
+            listingCount: 0,
+          });
+        });
+        setRealCards(cards);
+        if (cards.length > 0) loadPrices(cards.slice(0, 30));
       } catch (e) {
-        console.warn('[Home] cache warmup failed:', e);
-      } finally {
-        setTimeout(() => setSyncing(false), 2000);
+        console.warn('[Home] Firestore load failed:', e);
+        setRealCards(MOCK_CARDS);
       }
     };
-    primeCache();
+    loadRealCards();
   }, []);
 
-  const displayCards = searchResults !== null ? searchResults : MOCK_CARDS;
+  // P0: displayCards = searchResults > realCards > MOCK_CARDS
+  const displayCards = useMemo(() => {
+    if (searchResults !== null) return searchResults;
+    if (realCards.length > 0) return realCards;
+    return MOCK_CARDS;
+  }, [searchResults, realCards]);
+
   const filtered = activeFilter === '全部'
     ? displayCards
-    : displayCards.filter(c => c.series === activeFilter);
+    : displayCards.filter(c =>
+        c.series?.toLowerCase().includes(activeFilter.toLowerCase()) ||
+        c.set?.toLowerCase().includes(activeFilter.toLowerCase())
+      );
 
   const { topGainer, topLoser, totalVolume24h } = MOCK_STATS;
 
@@ -82,42 +110,35 @@ const HomeScreen: React.FC = () => {
   const formatVol = (v: number) =>
     v >= 1000000 ? `$${(v / 1000000).toFixed(1)}M` : `$${(v / 1000).toFixed(0)}K`;
 
-  // Load real prices from Firestore for displayed cards
+  // P1.4: single-batch price load — all 30 cards in ONE Firestore round-trip
   const loadPrices = useCallback(async (cards: PokemonCard[]) => {
-    const ids = cards.map(c => c.id).slice(0, 30);  // FIRESTORE: real data — expanded from 20→30
-    const BATCH = 10;
-    const batches = [];
+    const ids = cards.map(c => c.id).filter(Boolean);
+    if (ids.length === 0) return;
+    const BATCH = 30;
+    const results: typeof priceMap = {};
     for (let i = 0; i < ids.length; i += BATCH) {
-      batches.push(ids.slice(i, i + BATCH));
+      try {
+        const batch = ids.slice(i, i + BATCH);
+        const snap = await getDocs(query(collection(db, 'card_prices'), where('id', 'in', batch)));
+        snap.forEach(d => {
+          const p = d.data();
+          results[d.id] = {
+            priceHkd: p.priceHkd ?? 0,
+            change24h: p.change24h ?? 0,
+            source: p.source ?? 'cache',
+            ageMs: p.updatedAt ? Date.now() - p.updatedAt : 0,
+          };
+        });
+      } catch (e) { console.warn('[loadPrices] batch error:', e); }
     }
-
-    const newMap: typeof priceMap = {};
-    await Promise.allSettled(
-      batches.map(batch =>
-        getDocs(query(collection(db, 'card_prices'), where('id', 'in', batch)))
-          .then(snap => {
-            snap.docs.forEach(d => {
-              const p = d.data();
-              newMap[d.id] = {
-                priceHkd: p.priceHkd ?? p.price ?? 0,
-                change24h: p.change24h ?? 0,
-                source: p.source ?? 'cache',
-                ageMs: p.updatedAt ? Date.now() - p.updatedAt : 0,
-              };
-            });
-          })
-      )
-    );
-
-    if (Object.keys(newMap).length > 0) {
-      setPriceMap(prev => ({ ...prev, ...newMap }));
+    if (Object.keys(results).length > 0) {
+      setPriceMap(prev => ({ ...prev, ...results }));
+      setLastUpdated(new Date());
     }
   }, []);
 
   useEffect(() => {
-    if (displayCards.length > 0) {
-      loadPrices(displayCards);
-    }
+    if (displayCards.length > 0) loadPrices(displayCards);
   }, [displayCards, loadPrices]);
 
   const onRefresh = useCallback(async () => {
@@ -125,6 +146,15 @@ const HomeScreen: React.FC = () => {
     await loadPrices(displayCards);
     setRefreshing(false);
   }, [displayCards, loadPrices]);
+
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return null;
+    const diff = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+    if (diff < 60) return '剛剛';
+    if (diff < 3600) return `${Math.floor(diff / 60)} 分鐘前`;
+    return `${Math.floor(diff / 3600)} 小時前`;
+  };
+  const fmtLastUpdated = useMemo(() => formatLastUpdated(), [lastUpdated]);
 
   // Enrich cards with real prices
   const enrichCard = (card: PokemonCard) => {
@@ -229,7 +259,9 @@ const HomeScreen: React.FC = () => {
       {Object.keys(priceMap).length > 0 && (
         <View style={styles.priceIndicator}>
           <View style={styles.livePulse} />
-          <Text style={styles.priceIndicatorText}>實時行情 · TCGdex 數據</Text>
+          <Text style={styles.priceIndicatorText}>
+            實時行情 · TCGdex{fmtLastUpdated ? ` · 更新於 ${fmtLastUpdated}` : ''}
+          </Text>
         </View>
       )}
 

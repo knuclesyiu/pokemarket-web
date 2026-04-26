@@ -14,7 +14,7 @@ const PHONE_REGEX = /^\+?[0-9]{7,15}$/;
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { signInWithPhone, signInWithEmail, currentUser } = useAuth();
+  const { signInWithPhone, signInWithEmail, signInWithGoogle, currentUser } = useAuth();
   const [mode, setMode] = useState<'phone' | 'email'>('phone');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -128,6 +128,26 @@ const LoginScreen: React.FC = () => {
                 <TouchableOpacity style={styles.primaryBtn} onPress={handleSendOTP} disabled={loading}>
                   {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.primaryBtnText}>發送驗證碼</Text>}
                 </TouchableOpacity>
+
+                {/* ── Google Sign-In ── */}
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>或</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+                <TouchableOpacity
+                  style={styles.googleBtn}
+                  onPress={async () => {
+                    setLoading(true);
+                    try { await signInWithGoogle(); } catch (e: any) {
+                      Alert.alert('Google 登入失敗', e.message ?? '請稍後再試');
+                    } finally { setLoading(false); }
+                  }}
+                  disabled={loading}
+                >
+                  <Text style={styles.googleBtnIcon}>🌐</Text>
+                  <Text style={styles.googleBtnText}>以 Google 帳戶繼續</Text>
+                </TouchableOpacity>
               </>
             ) : (
               <>
@@ -216,6 +236,16 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
   resend: { color: '#6666AA', fontSize: 12, textAlign: 'center', marginTop: 12 },
   resendLink: { color: '#FF3C3C', fontSize: 12, textAlign: 'center', marginTop: 12 },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 16 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#2A2A3E' },
+  dividerText: { color: '#6666AA', fontSize: 12, paddingHorizontal: 12 },
+  googleBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#1E1E2E', borderRadius: 14, paddingVertical: 14,
+    borderWidth: 1.5, borderColor: '#2A2A3E', gap: 10,
+  },
+  googleBtnIcon: { fontSize: 20 },
+  googleBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   linkBtn: { alignItems: 'center', marginTop: 20 },
   linkText: { color: '#8888AA', fontSize: 13 },
   legal: { color: '#4444AA', fontSize: 11, textAlign: 'center', marginTop: 24, lineHeight: 16 },

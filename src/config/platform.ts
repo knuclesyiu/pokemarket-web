@@ -27,4 +27,4 @@ export const ORDER_MIN_FEE_HKD = parseFloat(
 // ─── CONSTANTS (do not adjust) ──────────────────────────────────────────────
 export const STRIPE_PERCENT_FEE = 0.029;   // Stripe: 2.9%
 export const STRIPE_FIXED_CENTS = 235;     // Stripe: HK$2.35 per charge
-export const ESCROW_MIN_HKD    = 2000;    // Escrow enabled for listings >= HK$20
+export const ESCROW_MIN_HKD    = 20;     // Escrow enabled for listings >= HK$20
