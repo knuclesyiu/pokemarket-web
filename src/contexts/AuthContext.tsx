@@ -2,7 +2,7 @@
  * AuthContext — manages Firebase Auth state + user profile from Firestore
  */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, ConfirmationResult, GoogleAuthProvider } from 'firebase/auth';
+import { User, ConfirmationResult } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { UserProfile } from '../types/user';
@@ -94,20 +94,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithGoogle = async () => {
-    const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
-    const { signInWithCredential } = await import('firebase/auth');
-    await GoogleSignin.configure({
-      webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    });
-    await GoogleSignin.hasPlayServices();
-    const userInfo = await GoogleSignin.signIn();
-    const credential = GoogleAuthProvider.credential(userInfo.user.idToken);
-    return (await signInWithCredential(auth, credential)).user;
-  };
-
   const signOut = async () => {
     await auth.signOut();
+  };
+
+  const signInWithGoogle = async () => {
+    const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+    const provider = new GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
+    const result = await signInWithPopup(auth, provider);
+    return result.user;
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
