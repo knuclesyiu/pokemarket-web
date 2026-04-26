@@ -3,7 +3,10 @@ import {
   View, Text, ScrollView, StyleSheet, Image,
   TextInput, TouchableOpacity, Modal, Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { auth } from '../services/firebase';
 import { MOCK_CARDS } from '../data/mockData';
 import ReviewBadge from '../components/ReviewBadge';
 import type { CardCondition } from '../types';
@@ -31,6 +34,7 @@ const COLORS = {
 const REVIEW_THRESHOLD = 500;
 
 const SellScreen: React.FC = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [step, setStep] = useState(1);
   const [selectedCard, setSelectedCard] = useState<typeof MOCK_CARDS[0] | null>(null);
   const [priceType, setPriceType] = useState<'fixed' | 'auction'>('fixed');
@@ -43,7 +47,23 @@ const SellScreen: React.FC = () => {
   const needsReview = selectedCard && Number(price) >= REVIEW_THRESHOLD;
   const totalSteps = needsReview ? 4 : 3;
 
+  const handleCardSelect = (card: typeof MOCK_CARDS[0]) => {
+    if (!auth.currentUser) {
+      Alert.alert('需要登入', '請先登入再放售卡牌', [
+        { text: '登入', onPress: () => navigation.navigate('Login') },
+        { text: '取消' },
+      ]);
+      return;
+    }
+    setSelectedCard(card);
+    setStep(2);
+  };
+
   const handleConfirmListing = async () => {
+    if (!auth.currentUser) {
+      Alert.alert('需要登入', '請先登入');
+      return;
+    }
     if (!selectedCard || !price) return;
     setSubmitting(true);
     try {
@@ -53,6 +73,7 @@ const SellScreen: React.FC = () => {
         price: Number(price),
         condition,
         type: priceType,
+        sellerId: auth.currentUser.uid,
       });
       const data = result.data as any;
       if (needsReview && !listing?.isVerified) {
