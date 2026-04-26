@@ -156,7 +156,7 @@ const SellScreen: React.FC = () => {
               <TouchableOpacity
                 key={card.id}
                 style={[styles.quickCard, selectedCard?.id === card.id && styles.quickCardSelected]}
-                onPress={() => setSelectedCard(card)}
+                onPress={() => handleCardSelect(card)}
               >
                 <Image source={{ uri: card.imageUrl }} style={styles.quickImage} />
                 <Text style={styles.quickName} numberOfLines={1}>{card.name}</Text>
