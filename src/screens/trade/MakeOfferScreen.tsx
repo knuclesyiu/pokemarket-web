@@ -289,7 +289,7 @@ const MakeOfferScreen: React.FC = () => {
       {/* ── Submit Button ── */}
       <View style={styles.bottomBar}>
         <TouchableOpacity
-          style={[styles.submitBtn, !isValid ? styles.submitBtnDisabled]}
+          style={[styles.submitBtn, !isValid ? styles.submitBtnDisabled : null]}
           disabled={!isValid || submitting}
           onPress={handleSubmit}
         >

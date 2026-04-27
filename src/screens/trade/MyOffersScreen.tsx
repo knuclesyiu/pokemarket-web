@@ -227,7 +227,7 @@ const MyOffersScreen: React.FC = () => {
       {/* Tabs */}
       <View style={styles.tabBar}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'received' ? styles.tabActive]}
+          style={[styles.tab, activeTab === 'received' ? styles.tabActive : null]}
           onPress={() => setActiveTab('received')}
         >
           <Text style={[styles.tabText, activeTab === 'received' ? styles.tabTextActive]}>
@@ -235,7 +235,7 @@ const MyOffersScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'sent' ? styles.tabActive]}
+          style={[styles.tab, activeTab === 'sent' ? styles.tabActive : null]}
           onPress={() => setActiveTab('sent')}
         >
           <Text style={[styles.tabText, activeTab === 'sent' ? styles.tabTextActive]}>

@@ -199,7 +199,7 @@ const TradeScreen: React.FC = () => {
         contentContainerStyle={{ paddingHorizontal: 16 }}
       >
         <TouchableOpacity
-          style={[styles.chip, seriesFilter !== '全部' ? styles.chipActive]}
+          style={[styles.chip, seriesFilter !== '全部' ? styles.chipActive : null]}
           onPress={() => setSeriesFilter('全部')}
         >
           <Text style={[styles.chipText, seriesFilter !== '全部' ? styles.chipTextActive]}>
@@ -207,7 +207,7 @@ const TradeScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.chip, rarityFilter !== '全部' ? styles.chipActive]}
+          style={[styles.chip, rarityFilter !== '全部' ? styles.chipActive : null]}
           onPress={() => setRarityFilter('全部')}
         >
           <Text style={[styles.chipText, rarityFilter !== '全部' ? styles.chipTextActive]}>
