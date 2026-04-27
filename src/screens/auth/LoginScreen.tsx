@@ -117,7 +117,8 @@ const LoginScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {mode === 'phone' ? (
+        {/* Phone mode */}
+        {mode === 'phone' && (
           <>
             {!otpSent ? (
               <>
@@ -160,7 +161,11 @@ const LoginScreen: React.FC = () => {
               </>
             )}
           </>
-        ) : (
+        )}
+
+
+        {/* Email mode */}
+        {mode === 'email' && (
           <>
             <Text style={styles.label}>Email</Text>
             <TextInput
@@ -188,7 +193,10 @@ const LoginScreen: React.FC = () => {
               <Text style={styles.linkText}>未有帳戶？立即註冊 →</Text>
             </TouchableOpacity>
           </>
-        ) : (
+        )}
+
+        {/* Google mode */}
+        {mode === 'google' && (
           <>
             <TouchableOpacity
               style={styles.googleBtn}

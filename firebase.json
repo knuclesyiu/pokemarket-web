@@ -12,5 +12,8 @@
         "*.local"
       ]
     }
-  ]
+  ],
+  "hosting": {
+    "public": "public"
+  }
 }
