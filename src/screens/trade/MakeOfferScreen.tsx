@@ -244,7 +244,7 @@ const MakeOfferScreen: React.FC = () => {
                 style={[styles.cashChip, cashAddHkd === amt ? styles.cashChipActive : null]}
                 onPress={() => setCashAddHkd(amt === cashAddHkd ? 0 : amt)}
               >
-                <Text style={[styles.cashChipText, cashAddHkd === amt ? styles.cashChipTextActive]}>
+                <Text style={[styles.cashChipText, cashAddHkd === amt ? styles.cashChipTextActive : null]}>
                   {amt === 0 ? '無' : `HK$${amt}`}
                 </Text>
               </TouchableOpacity>
@@ -253,7 +253,7 @@ const MakeOfferScreen: React.FC = () => {
               style={[styles.cashChip, showCashInput ? styles.cashChipActive : null]}
               onPress={() => setShowCashInput(v => !v)}
             >
-              <Text style={[styles.cashChipText, showCashInput ? styles.cashChipTextActive]}>自訂</Text>
+              <Text style={[styles.cashChipText, showCashInput ? styles.cashChipTextActive : null]}>自訂</Text>
             </TouchableOpacity>
           </View>
           {showCashInput && (

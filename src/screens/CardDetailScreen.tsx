@@ -166,7 +166,7 @@ const CardDetailScreen: React.FC = () => {
               style={[styles.tab, activeTab === t ? styles.tabActive : null]}
               onPress={() => setActiveTab(t)}
             >
-              <Text style={[styles.tabText, activeTab === t ? styles.tabTextActive]}>
+              <Text style={[styles.tabText, activeTab === t ? styles.tabTextActive : null]}>
                 {t === 'listings' ? '📋 掛牌列表' : '📈 歷史價格'}
               </Text>
             </TouchableOpacity>

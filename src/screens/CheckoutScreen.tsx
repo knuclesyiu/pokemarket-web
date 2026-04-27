@@ -132,11 +132,11 @@ const CheckoutScreen: React.FC = () => {
             onPress={() => { setDelivery('meetup'); setShowMeetupModal(true); }}
           >
             <Text style={styles.optionIcon}>🤝</Text>
-            <Text style={[styles.optionLabel, delivery === 'meetup' ? styles.optionLabelActive]}>
+            <Text style={[styles.optionLabel, delivery === 'meetup' ? styles.optionLabelActive : null]}>
               面交
             </Text>
             <Text style={styles.optionDesc}>地鐵站當面交收</Text>
-            <Text style={[styles.optionPrice, delivery === 'meetup' ? styles.optionPriceActive]}>
+            <Text style={[styles.optionPrice, delivery === 'meetup' ? styles.optionPriceActive : null]}>
               免費
             </Text>
           </TouchableOpacity>
@@ -145,11 +145,11 @@ const CheckoutScreen: React.FC = () => {
             onPress={() => { setDelivery('sf'); setShowAddressModal(true); }}
           >
             <Text style={styles.optionIcon}>📦</Text>
-            <Text style={[styles.optionLabel, delivery === 'sf' ? styles.optionLabelActive]}>
+            <Text style={[styles.optionLabel, delivery === 'sf' ? styles.optionLabelActive : null]}>
               順豐快遞
             </Text>
             <Text style={styles.optionDesc}>送貨上門</Text>
-            <Text style={[styles.optionPrice, delivery === 'sf' ? styles.optionPriceActive]}>
+            <Text style={[styles.optionPrice, delivery === 'sf' ? styles.optionPriceActive : null]}>
               HK$ 35
             </Text>
           </TouchableOpacity>
@@ -189,7 +189,7 @@ const CheckoutScreen: React.FC = () => {
             <View style={styles.paymentLeft}>
               <Text style={styles.paymentIcon}>🏧</Text>
               <View>
-                <Text style={[styles.paymentLabel, payment === 'fps' ? styles.paymentLabelActive]}>
+                <Text style={[styles.paymentLabel, payment === 'fps' ? styles.paymentLabelActive : null]}>
                   FPS 轉數快
                 </Text>
                 <Text style={styles.paymentSub}>即時轉帳</Text>
@@ -207,7 +207,7 @@ const CheckoutScreen: React.FC = () => {
             <View style={styles.paymentLeft}>
               <Text style={styles.paymentIcon}>💳</Text>
               <View>
-                <Text style={[styles.paymentLabel, payment === 'card' ? styles.paymentLabelActive]}>
+                <Text style={[styles.paymentLabel, payment === 'card' ? styles.paymentLabelActive : null]}>
                   信用卡 / 扣帳卡
                 </Text>
                 <Text style={styles.paymentSub}>Visa / Mastercard</Text>

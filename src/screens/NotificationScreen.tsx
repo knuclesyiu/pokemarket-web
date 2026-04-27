@@ -52,7 +52,7 @@ const NotificationScreen: React.FC = () => {
     >
       {!item.read && <View style={styles.unreadDot} />}
       <View style={styles.notifContent}>
-        <Text style={[styles.notifTitle, !item.read ? styles.notifTitleUnread]}>
+        <Text style={[styles.notifTitle, !item.read ? styles.notifTitleUnread: null]}>
           {item.title ?? '通知'}
         </Text>
         <Text style={styles.notifBody} numberOfLines={2}>

@@ -248,7 +248,7 @@ const HomeScreen: React.FC = () => {
             style={[styles.filterChip, activeFilter === f ? styles.filterChipActive : null]}
             onPress={() => setActiveFilter(f)}
           >
-            <Text style={[styles.filterText, activeFilter === f ? styles.filterTextActive]}>
+            <Text style={[styles.filterText, activeFilter === f ? styles.filterTextActive: null]}>
               {f}
             </Text>
           </TouchableOpacity>

@@ -188,10 +188,10 @@ const WalletScreen: React.FC = () => {
         {tabs.map(tab => (
           <TouchableOpacity
             key={tab.key}
-            style={[styles.tab, activeTab === tab.key ? styles.tabActive]}
+            style={[styles.tab, activeTab === tab.key ? styles.tabActive : null]}
             onPress={() => setActiveTab(tab.key)}
           >
-            <Text style={[styles.tabText, activeTab === tab.key ? styles.tabTextActive]}>
+            <Text style={[styles.tabText, activeTab === tab.key ? styles.tabTextActive : null]}>
               {tab.label}
             </Text>
             {tab.count > 0 && (
