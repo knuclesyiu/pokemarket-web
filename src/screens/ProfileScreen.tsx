@@ -189,11 +189,11 @@ const ProfileScreen: React.FC = () => {
             {LANGUAGES.map(lang => (
               <TouchableOpacity
                 key={lang.value}
-                style={[styles.langBtn, profile.language === lang.value ? styles.langBtnActive]}
+                style={[styles.langBtn, profile.language === lang.value ? styles.langBtnActive : null]}
                 onPress={() => handleChangeLanguage(lang.value)}
                 disabled={changingLang}
               >
-                <Text style={[styles.langBtnText, profile.language === lang.value ? styles.langBtnTextActive]}>
+                <Text style={[styles.langBtnText, profile.language === lang.value ? styles.langBtnTextActive : null]}>
                   {lang.label}
                 </Text>
               </TouchableOpacity>
