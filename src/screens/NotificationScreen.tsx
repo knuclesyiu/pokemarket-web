@@ -41,7 +41,7 @@ const NotificationScreen: React.FC = () => {
 
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
-      style={[styles.notifItem, !item.read ? styles.notifItemUnread]}
+      style={[styles.notifItem, !item.read ? styles.notifItemUnread : null]}
       onPress={() => {
         markRead(item.id);
         if (item.orderId) {

@@ -152,7 +152,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
         <Text style={styles.compactName} numberOfLines={1}>
           {card.name.replace(' VMAX', '\nVMAX')}
         </Text>
-        <Text style={[styles.compactPrice, tier !== 'standard' ? styles.priceGold]}>
+        <Text style={[styles.compactPrice, tier !== 'standard' ? styles.priceGold : null]}>
           {formatPrice(card.price)}
         </Text>
         <View style={[styles.badge, isGain ? styles.badgeGain : styles.badgeLoss]}>
@@ -215,7 +215,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
         <Text style={styles.set}>{card.set} · {card.number}</Text>
 
         <View style={styles.priceRow}>
-          <Text style={[styles.price, tier !== 'standard' ? styles.priceGold]}>
+          <Text style={[styles.price, tier !== 'standard' ? styles.priceGold : null]}>
             {formatPrice(card.price)}
           </Text>
           {isTopCard && <Text style={styles.trophyIcon}>🏆</Text>}

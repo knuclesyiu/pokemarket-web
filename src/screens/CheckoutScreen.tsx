@@ -128,7 +128,7 @@ const CheckoutScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>📦 交收方式</Text>
         <View style={styles.optionGrid}>
           <TouchableOpacity
-            style={[styles.optionCard, delivery === 'meetup' ? styles.optionCardActive]}
+            style={[styles.optionCard, delivery === 'meetup' ? styles.optionCardActive : null]}
             onPress={() => { setDelivery('meetup'); setShowMeetupModal(true); }}
           >
             <Text style={styles.optionIcon}>🤝</Text>
@@ -141,7 +141,7 @@ const CheckoutScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.optionCard, delivery === 'sf' ? styles.optionCardActive]}
+            style={[styles.optionCard, delivery === 'sf' ? styles.optionCardActive : null]}
             onPress={() => { setDelivery('sf'); setShowAddressModal(true); }}
           >
             <Text style={styles.optionIcon}>📦</Text>
@@ -183,7 +183,7 @@ const CheckoutScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>💳 支付方式</Text>
         <View style={styles.paymentOptions}>
           <TouchableOpacity
-            style={[styles.paymentCard, payment === 'fps' ? styles.paymentCardActive]}
+            style={[styles.paymentCard, payment === 'fps' ? styles.paymentCardActive : null]}
             onPress={() => setPayment('fps')}
           >
             <View style={styles.paymentLeft}>
@@ -195,13 +195,13 @@ const CheckoutScreen: React.FC = () => {
                 <Text style={styles.paymentSub}>即時轉帳</Text>
               </View>
             </View>
-            <View style={[styles.paymentRadio, payment === 'fps' ? styles.paymentRadioActive]}>
+            <View style={[styles.paymentRadio, payment === 'fps' ? styles.paymentRadioActive : null]}>
               {payment === 'fps' && <View style={styles.paymentRadioDot} />}
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.paymentCard, payment === 'card' ? styles.paymentCardActive]}
+            style={[styles.paymentCard, payment === 'card' ? styles.paymentCardActive : null]}
             onPress={() => setPayment('card')}
           >
             <View style={styles.paymentLeft}>
@@ -213,7 +213,7 @@ const CheckoutScreen: React.FC = () => {
                 <Text style={styles.paymentSub}>Visa / Mastercard</Text>
               </View>
             </View>
-            <View style={[styles.paymentRadio, payment === 'card' ? styles.paymentRadioActive]}>
+            <View style={[styles.paymentRadio, payment === 'card' ? styles.paymentRadioActive : null]}>
               {payment === 'card' && <View style={styles.paymentRadioDot} />}
             </View>
           </TouchableOpacity>
@@ -251,7 +251,7 @@ const CheckoutScreen: React.FC = () => {
           </Text>
         </View>
         <TouchableOpacity
-          style={[styles.confirmBtn, (!delivery || !payment) ? styles.confirmBtnDisabled]}
+          style={[styles.confirmBtn, (!delivery || !payment) ? styles.confirmBtnDisabled : null]}
           onPress={handlePlaceOrder}
           disabled={!delivery || !payment}
         >

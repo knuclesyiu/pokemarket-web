@@ -207,8 +207,8 @@ const ProfileScreen: React.FC = () => {
             <Text style={styles.prefLabel}>🔔 通知</Text>
             <Text style={styles.prefSub}>接收交易及價格更新通知</Text>
           </View>
-          <View style={[styles.toggle, profile.notificationsEnabled ? styles.toggleActive]}>
-            <View style={[styles.toggleKnob, profile.notificationsEnabled ? styles.toggleKnobActive]} />
+          <View style={[styles.toggle, profile.notificationsEnabled ? styles.toggleActive : null]}>
+            <View style={[styles.toggleKnob, profile.notificationsEnabled ? styles.toggleKnobActive : null]} />
           </View>
         </TouchableOpacity>
       </View>

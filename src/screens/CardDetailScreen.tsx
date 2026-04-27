@@ -163,7 +163,7 @@ const CardDetailScreen: React.FC = () => {
           {(['listings', 'history'] as const).map(t => (
             <TouchableOpacity
               key={t}
-              style={[styles.tab, activeTab === t ? styles.tabActive]}
+              style={[styles.tab, activeTab === t ? styles.tabActive : null]}
               onPress={() => setActiveTab(t)}
             >
               <Text style={[styles.tabText, activeTab === t ? styles.tabTextActive]}>

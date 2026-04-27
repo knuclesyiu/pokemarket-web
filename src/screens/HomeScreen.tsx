@@ -245,7 +245,7 @@ const HomeScreen: React.FC = () => {
         {SERIES_FILTER.map(f => (
           <TouchableOpacity
             key={f}
-            style={[styles.filterChip, activeFilter === f ? styles.filterChipActive]}
+            style={[styles.filterChip, activeFilter === f ? styles.filterChipActive : null]}
             onPress={() => setActiveFilter(f)}
           >
             <Text style={[styles.filterText, activeFilter === f ? styles.filterTextActive]}>

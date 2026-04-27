@@ -178,7 +178,7 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
           onSubmitEditing={sendMessage}
         />
         <TouchableOpacity
-          style={[styles.sendBtn, (!inputText.trim() || sending) ? styles.sendBtnDisabled]}
+          style={[styles.sendBtn, (!inputText.trim() || sending) ? styles.sendBtnDisabled : null]}
           onPress={sendMessage}
           disabled={!inputText.trim() || sending}
         >

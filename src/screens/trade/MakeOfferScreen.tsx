@@ -34,7 +34,7 @@ const SelectableCard: React.FC<{
   onToggle: () => void;
 }> = ({ userCard, selected, onToggle }) => (
   <TouchableOpacity
-    style={[styles.selectableCard, selected ? styles.selectableCardActive]}
+    style={[styles.selectableCard, selected ? styles.selectableCardActive : null]}
     onPress={onToggle}
     activeOpacity={0.75}
   >
@@ -57,7 +57,7 @@ const SelectableCard: React.FC<{
         {userCard.card?.set}
       </Text>
     </View>
-    <View style={[styles.checkbox, selected ? styles.checkboxActive]}>
+    <View style={[styles.checkbox, selected ? styles.checkboxActive : null]}>
       {selected && <Text style={styles.checkmark}>✓</Text>}
     </View>
   </TouchableOpacity>
@@ -241,7 +241,7 @@ const MakeOfferScreen: React.FC = () => {
             {CASH_QUICK_ADD.map(amt => (
               <TouchableOpacity
                 key={amt}
-                style={[styles.cashChip, cashAddHkd === amt ? styles.cashChipActive]}
+                style={[styles.cashChip, cashAddHkd === amt ? styles.cashChipActive : null]}
                 onPress={() => setCashAddHkd(amt === cashAddHkd ? 0 : amt)}
               >
                 <Text style={[styles.cashChipText, cashAddHkd === amt ? styles.cashChipTextActive]}>
@@ -250,7 +250,7 @@ const MakeOfferScreen: React.FC = () => {
               </TouchableOpacity>
             ))}
             <TouchableOpacity
-              style={[styles.cashChip, showCashInput ? styles.cashChipActive]}
+              style={[styles.cashChip, showCashInput ? styles.cashChipActive : null]}
               onPress={() => setShowCashInput(v => !v)}
             >
               <Text style={[styles.cashChipText, showCashInput ? styles.cashChipTextActive]}>自訂</Text>
