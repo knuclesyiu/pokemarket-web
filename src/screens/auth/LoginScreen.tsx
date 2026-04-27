@@ -98,22 +98,22 @@ const LoginScreen: React.FC = () => {
         {/* Mode Toggle */}
         <View style={styles.toggle}>
           <TouchableOpacity
-            style={[styles.toggleBtn, mode === 'phone' && styles.toggleBtnActive]}
+            style={[styles.toggleBtn, mode === 'phone' ? styles.toggleBtnActive : null]}
             onPress={() => setMode('phone')}
           >
-            <Text style={[styles.toggleTxt, mode === 'phone' && styles.toggleTxtActive]}>📱 電話</Text>
+            <Text style={[styles.toggleTxt, mode === 'phone' ? styles.toggleTxtActive : null]}>📱 電話</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.toggleBtn, mode === 'email' && styles.toggleBtnActive]}
+            style={[styles.toggleBtn, mode === 'email' ? styles.toggleBtnActive : null]}
             onPress={() => setMode('email')}
           >
-            <Text style={[styles.toggleTxt, mode === 'email' && styles.toggleTxtActive]}>✉️ Email</Text>
+            <Text style={[styles.toggleTxt, mode === 'email' ? styles.toggleTxtActive : null]}>✉️ Email</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.toggleBtn, mode === 'google' && styles.toggleBtnActive]}
+            style={[styles.toggleBtn, mode === 'google' ? styles.toggleBtnActive : null]}
             onPress={() => setMode('google')}
           >
-            <Text style={[styles.toggleTxt, mode === 'google' && styles.toggleTxtActive]}>🔵 Google</Text>
+            <Text style={[styles.toggleTxt, mode === 'google' ? styles.toggleTxtActive : null]}>🔵 Google</Text>
           </TouchableOpacity>
         </View>
 
