@@ -34,7 +34,7 @@ const SelectableCard: React.FC<{
   onToggle: () => void;
 }> = ({ userCard, selected, onToggle }) => (
   <TouchableOpacity
-    style={[styles.selectableCard, selected && styles.selectableCardActive]}
+    style={[styles.selectableCard, selected ? styles.selectableCardActive]}
     onPress={onToggle}
     activeOpacity={0.75}
   >
@@ -57,7 +57,7 @@ const SelectableCard: React.FC<{
         {userCard.card?.set}
       </Text>
     </View>
-    <View style={[styles.checkbox, selected && styles.checkboxActive]}>
+    <View style={[styles.checkbox, selected ? styles.checkboxActive]}>
       {selected && <Text style={styles.checkmark}>✓</Text>}
     </View>
   </TouchableOpacity>
@@ -241,19 +241,19 @@ const MakeOfferScreen: React.FC = () => {
             {CASH_QUICK_ADD.map(amt => (
               <TouchableOpacity
                 key={amt}
-                style={[styles.cashChip, cashAddHkd === amt && styles.cashChipActive]}
+                style={[styles.cashChip, cashAddHkd === amt ? styles.cashChipActive]}
                 onPress={() => setCashAddHkd(amt === cashAddHkd ? 0 : amt)}
               >
-                <Text style={[styles.cashChipText, cashAddHkd === amt && styles.cashChipTextActive]}>
+                <Text style={[styles.cashChipText, cashAddHkd === amt ? styles.cashChipTextActive]}>
                   {amt === 0 ? '無' : `HK$${amt}`}
                 </Text>
               </TouchableOpacity>
             ))}
             <TouchableOpacity
-              style={[styles.cashChip, showCashInput && styles.cashChipActive]}
+              style={[styles.cashChip, showCashInput ? styles.cashChipActive]}
               onPress={() => setShowCashInput(v => !v)}
             >
-              <Text style={[styles.cashChipText, showCashInput && styles.cashChipTextActive]}>自訂</Text>
+              <Text style={[styles.cashChipText, showCashInput ? styles.cashChipTextActive]}>自訂</Text>
             </TouchableOpacity>
           </View>
           {showCashInput && (
@@ -289,7 +289,7 @@ const MakeOfferScreen: React.FC = () => {
       {/* ── Submit Button ── */}
       <View style={styles.bottomBar}>
         <TouchableOpacity
-          style={[styles.submitBtn, !isValid && styles.submitBtnDisabled]}
+          style={[styles.submitBtn, !isValid ? styles.submitBtnDisabled]}
           disabled={!isValid || submitting}
           onPress={handleSubmit}
         >

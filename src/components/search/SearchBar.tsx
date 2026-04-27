@@ -122,7 +122,7 @@ const SearchBar: React.FC<Props> = ({
             key={v}
             style={[
               styles.versionChip,
-              activeVersion === v && styles.versionChipActive,
+              activeVersion === v ? styles.versionChipActive,
             ]}
             onPress={() => setActiveVersion(v)}
             activeOpacity={0.7}
@@ -130,7 +130,7 @@ const SearchBar: React.FC<Props> = ({
             <Text style={styles.versionEmoji}>{VERSION_EMOJI[v]}</Text>
             <Text style={[
               styles.versionText,
-              activeVersion === v && styles.versionTextActive,
+              activeVersion === v ? styles.versionTextActive,
             ]}>
               {v}
             </Text>

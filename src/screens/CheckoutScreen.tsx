@@ -128,28 +128,28 @@ const CheckoutScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>📦 交收方式</Text>
         <View style={styles.optionGrid}>
           <TouchableOpacity
-            style={[styles.optionCard, delivery === 'meetup' && styles.optionCardActive]}
+            style={[styles.optionCard, delivery === 'meetup' ? styles.optionCardActive]}
             onPress={() => { setDelivery('meetup'); setShowMeetupModal(true); }}
           >
             <Text style={styles.optionIcon}>🤝</Text>
-            <Text style={[styles.optionLabel, delivery === 'meetup' && styles.optionLabelActive]}>
+            <Text style={[styles.optionLabel, delivery === 'meetup' ? styles.optionLabelActive]}>
               面交
             </Text>
             <Text style={styles.optionDesc}>地鐵站當面交收</Text>
-            <Text style={[styles.optionPrice, delivery === 'meetup' && styles.optionPriceActive]}>
+            <Text style={[styles.optionPrice, delivery === 'meetup' ? styles.optionPriceActive]}>
               免費
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.optionCard, delivery === 'sf' && styles.optionCardActive]}
+            style={[styles.optionCard, delivery === 'sf' ? styles.optionCardActive]}
             onPress={() => { setDelivery('sf'); setShowAddressModal(true); }}
           >
             <Text style={styles.optionIcon}>📦</Text>
-            <Text style={[styles.optionLabel, delivery === 'sf' && styles.optionLabelActive]}>
+            <Text style={[styles.optionLabel, delivery === 'sf' ? styles.optionLabelActive]}>
               順豐快遞
             </Text>
             <Text style={styles.optionDesc}>送貨上門</Text>
-            <Text style={[styles.optionPrice, delivery === 'sf' && styles.optionPriceActive]}>
+            <Text style={[styles.optionPrice, delivery === 'sf' ? styles.optionPriceActive]}>
               HK$ 35
             </Text>
           </TouchableOpacity>
@@ -183,37 +183,37 @@ const CheckoutScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>💳 支付方式</Text>
         <View style={styles.paymentOptions}>
           <TouchableOpacity
-            style={[styles.paymentCard, payment === 'fps' && styles.paymentCardActive]}
+            style={[styles.paymentCard, payment === 'fps' ? styles.paymentCardActive]}
             onPress={() => setPayment('fps')}
           >
             <View style={styles.paymentLeft}>
               <Text style={styles.paymentIcon}>🏧</Text>
               <View>
-                <Text style={[styles.paymentLabel, payment === 'fps' && styles.paymentLabelActive]}>
+                <Text style={[styles.paymentLabel, payment === 'fps' ? styles.paymentLabelActive]}>
                   FPS 轉數快
                 </Text>
                 <Text style={styles.paymentSub}>即時轉帳</Text>
               </View>
             </View>
-            <View style={[styles.paymentRadio, payment === 'fps' && styles.paymentRadioActive]}>
+            <View style={[styles.paymentRadio, payment === 'fps' ? styles.paymentRadioActive]}>
               {payment === 'fps' && <View style={styles.paymentRadioDot} />}
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.paymentCard, payment === 'card' && styles.paymentCardActive]}
+            style={[styles.paymentCard, payment === 'card' ? styles.paymentCardActive]}
             onPress={() => setPayment('card')}
           >
             <View style={styles.paymentLeft}>
               <Text style={styles.paymentIcon}>💳</Text>
               <View>
-                <Text style={[styles.paymentLabel, payment === 'card' && styles.paymentLabelActive]}>
+                <Text style={[styles.paymentLabel, payment === 'card' ? styles.paymentLabelActive]}>
                   信用卡 / 扣帳卡
                 </Text>
                 <Text style={styles.paymentSub}>Visa / Mastercard</Text>
               </View>
             </View>
-            <View style={[styles.paymentRadio, payment === 'card' && styles.paymentRadioActive]}>
+            <View style={[styles.paymentRadio, payment === 'card' ? styles.paymentRadioActive]}>
               {payment === 'card' && <View style={styles.paymentRadioDot} />}
             </View>
           </TouchableOpacity>
@@ -251,7 +251,7 @@ const CheckoutScreen: React.FC = () => {
           </Text>
         </View>
         <TouchableOpacity
-          style={[styles.confirmBtn, (!delivery || !payment) && styles.confirmBtnDisabled]}
+          style={[styles.confirmBtn, (!delivery || !payment) ? styles.confirmBtnDisabled]}
           onPress={handlePlaceOrder}
           disabled={!delivery || !payment}
         >

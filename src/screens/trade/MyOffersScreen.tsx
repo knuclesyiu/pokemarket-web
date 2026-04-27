@@ -227,18 +227,18 @@ const MyOffersScreen: React.FC = () => {
       {/* Tabs */}
       <View style={styles.tabBar}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'received' && styles.tabActive]}
+          style={[styles.tab, activeTab === 'received' ? styles.tabActive]}
           onPress={() => setActiveTab('received')}
         >
-          <Text style={[styles.tabText, activeTab === 'received' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, activeTab === 'received' ? styles.tabTextActive]}>
             📥 收到的
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'sent' && styles.tabActive]}
+          style={[styles.tab, activeTab === 'sent' ? styles.tabActive]}
           onPress={() => setActiveTab('sent')}
         >
-          <Text style={[styles.tabText, activeTab === 'sent' && styles.tabTextActive]}>
+          <Text style={[styles.tabText, activeTab === 'sent' ? styles.tabTextActive]}>
             📤 發出的
           </Text>
         </TouchableOpacity>

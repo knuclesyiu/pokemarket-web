@@ -130,7 +130,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
       <TouchableOpacity
         style={[
           styles.compactCard,
-          isLegendary && styles.compactCardLegendary,
+          isLegendary ? styles.compactCardLegendary,
           { borderColor, shadowColor: borderColor },
           glowColor !== 'transparent' && { shadowColor: borderColor, shadowOpacity: 0.4 },
         ]}
@@ -152,7 +152,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
         <Text style={styles.compactName} numberOfLines={1}>
           {card.name.replace(' VMAX', '\nVMAX')}
         </Text>
-        <Text style={[styles.compactPrice, tier !== 'standard' && styles.priceGold]}>
+        <Text style={[styles.compactPrice, tier !== 'standard' ? styles.priceGold]}>
           {formatPrice(card.price)}
         </Text>
         <View style={[styles.badge, isGain ? styles.badgeGain : styles.badgeLoss]}>
@@ -179,7 +179,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
           shadowOpacity: 0.35,
           shadowRadius: tier === 'legendary' ? 20 : 12,
         },
-        isLegendary && styles.cardLegendary,
+        isLegendary ? styles.cardLegendary,
       ]}
       onPress={onPress}
       activeOpacity={0.7}
@@ -215,7 +215,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
         <Text style={styles.set}>{card.set} · {card.number}</Text>
 
         <View style={styles.priceRow}>
-          <Text style={[styles.price, tier !== 'standard' && styles.priceGold]}>
+          <Text style={[styles.price, tier !== 'standard' ? styles.priceGold]}>
             {formatPrice(card.price)}
           </Text>
           {isTopCard && <Text style={styles.trophyIcon}>🏆</Text>}

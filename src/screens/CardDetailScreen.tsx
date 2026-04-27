@@ -163,10 +163,10 @@ const CardDetailScreen: React.FC = () => {
           {(['listings', 'history'] as const).map(t => (
             <TouchableOpacity
               key={t}
-              style={[styles.tab, activeTab === t && styles.tabActive]}
+              style={[styles.tab, activeTab === t ? styles.tabActive]}
               onPress={() => setActiveTab(t)}
             >
-              <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]}>
+              <Text style={[styles.tabText, activeTab === t ? styles.tabTextActive]}>
                 {t === 'listings' ? '📋 掛牌列表' : '📈 歷史價格'}
               </Text>
             </TouchableOpacity>

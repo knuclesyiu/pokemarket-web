@@ -108,12 +108,12 @@ const SellScreen: React.FC = () => {
             const s = i + 1;
             return (
               <View key={s} style={styles.progressStep}>
-                <View style={[styles.stepCircle, step >= s && styles.stepCircleActive]}>
-                  <Text style={[styles.stepNum, step >= s && styles.stepNumActive]}>
+                <View style={[styles.stepCircle, step >= s ? styles.stepCircleActive]}>
+                  <Text style={[styles.stepNum, step >= s ? styles.stepNumActive]}>
                     {step > s ? '✓' : s}
                   </Text>
                 </View>
-                <Text style={[styles.stepLabel, step >= s && styles.stepLabelActive]}>{label}</Text>
+                <Text style={[styles.stepLabel, step >= s ? styles.stepLabelActive]}>{label}</Text>
               </View>
             );
           })}
@@ -155,7 +155,7 @@ const SellScreen: React.FC = () => {
             {MOCK_CARDS.slice(0, 4).map(card => (
               <TouchableOpacity
                 key={card.id}
-                style={[styles.quickCard, selectedCard?.id === card.id && styles.quickCardSelected]}
+                style={[styles.quickCard, selectedCard?.id === card.id ? styles.quickCardSelected]}
                 onPress={() => handleCardSelect(card)}
               >
                 <Image source={{ uri: card.imageUrl }} style={styles.quickImage} />
@@ -166,7 +166,7 @@ const SellScreen: React.FC = () => {
           </View>
 
           <TouchableOpacity
-            style={[styles.nextBtn, !selectedCard && styles.nextBtnDisabled]}
+            style={[styles.nextBtn, !selectedCard ? styles.nextBtnDisabled]}
             onPress={() => selectedCard && setStep(2)}
             disabled={!selectedCard}
           >
@@ -189,10 +189,10 @@ const SellScreen: React.FC = () => {
             {(['fixed', 'auction'] as const).map(t => (
               <TouchableOpacity
                 key={t}
-                style={[styles.typeBtn, priceType === t && styles.typeBtnActive]}
+                style={[styles.typeBtn, priceType === t ? styles.typeBtnActive]}
                 onPress={() => setPriceType(t)}
               >
-                <Text style={[styles.typeBtnText, priceType === t && styles.typeBtnTextActive]}>
+                <Text style={[styles.typeBtnText, priceType === t ? styles.typeBtnTextActive]}>
                   {t === 'fixed' ? '💰 定價出售' : '🏷️ 拍賣'}
                 </Text>
               </TouchableOpacity>
@@ -237,10 +237,10 @@ const SellScreen: React.FC = () => {
             {CONDITIONS.map(c => (
               <TouchableOpacity
                 key={c}
-                style={[styles.conditionChip, condition === c && styles.conditionChipActive]}
+                style={[styles.conditionChip, condition === c ? styles.conditionChipActive]}
                 onPress={() => setCondition(c)}
               >
-                <Text style={[styles.conditionText, condition === c && styles.conditionTextActive]}>{c}</Text>
+                <Text style={[styles.conditionText, condition === c ? styles.conditionTextActive]}>{c}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -261,7 +261,7 @@ const SellScreen: React.FC = () => {
               <Text style={styles.backBtnText}>← 上一步</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.nextBtn, !price && styles.nextBtnDisabled]}
+              style={[styles.nextBtn, !price ? styles.nextBtnDisabled]}
               onPress={() => price && setStep(3)}
               disabled={!price}
             >
@@ -322,7 +322,7 @@ const SellScreen: React.FC = () => {
           )}
 
           <TouchableOpacity
-            style={[styles.listBtn, submitting && styles.listBtnDisabled]}
+            style={[styles.listBtn, submitting ? styles.listBtnDisabled]}
             onPress={handleConfirmListing}
             disabled={submitting}
           >

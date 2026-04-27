@@ -199,34 +199,34 @@ const TradeScreen: React.FC = () => {
         contentContainerStyle={{ paddingHorizontal: 16 }}
       >
         <TouchableOpacity
-          style={[styles.chip, seriesFilter !== '全部' && styles.chipActive]}
+          style={[styles.chip, seriesFilter !== '全部' ? styles.chipActive]}
           onPress={() => setSeriesFilter('全部')}
         >
-          <Text style={[styles.chipText, seriesFilter !== '全部' && styles.chipTextActive]}>
+          <Text style={[styles.chipText, seriesFilter !== '全部' ? styles.chipTextActive]}>
             {seriesFilter}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.chip, rarityFilter !== '全部' && styles.chipActive]}
+          style={[styles.chip, rarityFilter !== '全部' ? styles.chipActive]}
           onPress={() => setRarityFilter('全部')}
         >
-          <Text style={[styles.chipText, rarityFilter !== '全部' && styles.chipTextActive]}>
+          <Text style={[styles.chipText, rarityFilter !== '全部' ? styles.chipTextActive]}>
             {rarityFilter}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.chip, conditionFilter !== '全部' && styles.chipActive]}
+          style={[styles.chip, conditionFilter !== '全部' ? styles.chipActive]}
           onPress={() => setConditionFilter('全部')}
         >
-          <Text style={[styles.chipText, conditionFilter !== '全部' && styles.chipTextActive]}>
+          <Text style={[styles.chipText, conditionFilter !== '全部' ? styles.chipTextActive]}>
             {conditionFilter}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.chip, priceIdx !== 0 && styles.chipActive]}
+          style={[styles.chip, priceIdx !== 0 ? styles.chipActive]}
           onPress={() => setPriceIdx(0)}
         >
-          <Text style={[styles.chipText, priceIdx !== 0 && styles.chipTextActive]}>
+          <Text style={[styles.chipText, priceIdx !== 0 ? styles.chipTextActive]}>
             {PRICE_OPTIONS[priceIdx].label}
           </Text>
         </TouchableOpacity>
@@ -327,10 +327,10 @@ const FilterModal: React.FC<{
 
   const Chip: React.FC<{ label: string; selected: boolean; onPress: () => void }> = ({ label, selected, onPress }) => (
     <TouchableOpacity
-      style={[styles.modalChip, selected && styles.modalChipActive]}
+      style={[styles.modalChip, selected ? styles.modalChipActive]}
       onPress={onPress}
     >
-      <Text style={[styles.modalChipText, selected && styles.modalChipTextActive]}>{label}</Text>
+      <Text style={[styles.modalChipText, selected ? styles.modalChipTextActive]}>{label}</Text>
     </TouchableOpacity>
   );
 

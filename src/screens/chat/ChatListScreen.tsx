@@ -95,7 +95,7 @@ const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
               <Text style={styles.threadTime}>{timeLabel}</Text>
             )}
           </View>
-          <Text style={[styles.lastMessage, unread > 0 && styles.lastMessageUnread]} numberOfLines={1}>
+          <Text style={[styles.lastMessage, unread > 0 ? styles.lastMessageUnread]} numberOfLines={1}>
             {item.lastMessage ?? '尚無訊息'}
           </Text>
         </View>

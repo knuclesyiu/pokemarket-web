@@ -41,7 +41,7 @@ const NotificationScreen: React.FC = () => {
 
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
-      style={[styles.notifItem, !item.read && styles.notifItemUnread]}
+      style={[styles.notifItem, !item.read ? styles.notifItemUnread]}
       onPress={() => {
         markRead(item.id);
         if (item.orderId) {
@@ -52,7 +52,7 @@ const NotificationScreen: React.FC = () => {
     >
       {!item.read && <View style={styles.unreadDot} />}
       <View style={styles.notifContent}>
-        <Text style={[styles.notifTitle, !item.read && styles.notifTitleUnread]}>
+        <Text style={[styles.notifTitle, !item.read ? styles.notifTitleUnread]}>
           {item.title ?? '通知'}
         </Text>
         <Text style={styles.notifBody} numberOfLines={2}>

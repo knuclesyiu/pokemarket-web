@@ -189,11 +189,11 @@ const ProfileScreen: React.FC = () => {
             {LANGUAGES.map(lang => (
               <TouchableOpacity
                 key={lang.value}
-                style={[styles.langBtn, profile.language === lang.value && styles.langBtnActive]}
+                style={[styles.langBtn, profile.language === lang.value ? styles.langBtnActive]}
                 onPress={() => handleChangeLanguage(lang.value)}
                 disabled={changingLang}
               >
-                <Text style={[styles.langBtnText, profile.language === lang.value && styles.langBtnTextActive]}>
+                <Text style={[styles.langBtnText, profile.language === lang.value ? styles.langBtnTextActive]}>
                   {lang.label}
                 </Text>
               </TouchableOpacity>
@@ -207,8 +207,8 @@ const ProfileScreen: React.FC = () => {
             <Text style={styles.prefLabel}>🔔 通知</Text>
             <Text style={styles.prefSub}>接收交易及價格更新通知</Text>
           </View>
-          <View style={[styles.toggle, profile.notificationsEnabled && styles.toggleActive]}>
-            <View style={[styles.toggleKnob, profile.notificationsEnabled && styles.toggleKnobActive]} />
+          <View style={[styles.toggle, profile.notificationsEnabled ? styles.toggleActive]}>
+            <View style={[styles.toggleKnob, profile.notificationsEnabled ? styles.toggleKnobActive]} />
           </View>
         </TouchableOpacity>
       </View>
