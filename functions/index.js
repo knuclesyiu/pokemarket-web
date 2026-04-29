@@ -1093,6 +1093,12 @@ exports.syncCardPricesScheduled = functions.pubsub
       "swsh7-75",    // Sylveon VMAX (Evolving Skies)
       // Brilliant Stars — Galarian Birds
       "swsh9-182",   // Galarian Zapdos V (Brilliant Stars)
+      // Crown Zenith — Ice Rider Calyrex VMAX
+      "swsh6-46",    // Ice Rider Calyrex VMAX (Crown Zenith)
+      // Astral Radiance — high-value cards
+      "swsh12-172",  // Reshiram V (Astral Radiance)
+      "swsh12-173",  // Alolan Vulpix V (Astral Radiance)
+      // Champion's Path
       "swsh6-53",    // Zeraora V (Champion's Path)
     ];
 
