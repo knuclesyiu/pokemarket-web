@@ -130,7 +130,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
       <TouchableOpacity
         style={[
           styles.compactCard,
-          isLegendary ? styles.compactCardLegendary,
+          isLegendary ? styles.compactCardLegendary : null,
           { borderColor, shadowColor: borderColor },
           glowColor !== 'transparent' && { shadowColor: borderColor, shadowOpacity: 0.4 },
         ]}
@@ -179,7 +179,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
           shadowOpacity: 0.35,
           shadowRadius: tier === 'legendary' ? 20 : 12,
         },
-        isLegendary ? styles.cardLegendary,
+        isLegendary ? styles.cardLegendary : null,
       ]}
       onPress={onPress}
       activeOpacity={0.7}

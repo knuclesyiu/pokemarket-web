@@ -195,8 +195,8 @@ const WalletScreen: React.FC = () => {
               {tab.label}
             </Text>
             {tab.count > 0 && (
-              <View style={[styles.tabBadge, activeTab === tab.key ? styles.tabBadgeActive]}>
-                <Text style={[styles.tabBadgeText, activeTab === tab.key ? styles.tabBadgeTextActive]}>
+              <View style={[styles.tabBadge, activeTab === tab.key ? styles.tabBadgeActive : null]}>
+                <Text style={[styles.tabBadgeText, activeTab === tab.key ? styles.tabBadgeTextActive : null]}>
                   {tab.count}
                 </Text>
               </View>

@@ -1061,22 +1061,39 @@ exports.syncCardPricesScheduled = functions.pubsub
 
     // Top traded cards by volume — update these every 6 hours
     // Format: "setCode-cardNumber" matching TCGdex path format
+    // All IDs verified against TCGdex API v2 (https://api.tcgdex.net/v2/en/cards/{id})
     const TOP_CARDS = [
-      "swsh5-115",   // Charizard VMAX
-      "swsh12-71",   // Gengar VMAX
-      "swsh3-76",    // Rayquaza VMAX
-      "swsh12-215",  // Umbreon VMAX
-      "swsh11-122",  // Pikachu VMAX
-      "swsh8-80",    // Mewtwo VMAX
-      "swsh4-116",   // Darkrai VMAX
-      "swsh6-186",   // Lugia V
-      "swsh6-187",   // Lugia VSTAR
-      "swsh9-181",   // Gardevoir VMAX
-      "swsh3-35",    // Blastoise VMAX
-      "swsh11-102",  // Charizard V
-      "swsh12-129",  // Mimikyu V
-      "swsh10-97",   // Absol V
-      "swsh9-163",   // Ho-Oh V
+      // Sword & Shield — VMAX / VSTAR (verified)
+      "swsh3-20",    // Charizard VMAX (Darkness Ablaze)
+      "swsh8-157",   // Gengar VMAX (Fusion Strike)
+      "swsh12-139",  // Lugia VSTAR (Astral Radiance)
+      "swsh7-215",   // Umbreon VMAX (Evolving Skies)
+      "swsh2-93",    // Dragapult VMAX (Rebel Clash)
+      "swsh11-122",  // Pikachu VMAX (Vivid Voltage)
+      "swsh9-123",   // Arceus VSTAR (Brilliant Stars)
+      "swsh4-44",    // Pikachu VMAX alt (Vivid Voltage)
+      "swsh10.5-031",// Mewtwo VSTAR (Shining Fates)
+      "swsh3-76",    // Rayquaza VMAX (Champion's Path)
+      // Hidden Fates / Shining Fates
+      "swsh4.5-SV107",// Charizard VMAX (Shining Fates)
+      "sm115-68",    // Mewtwo-GX (Hidden Fates)
+      // Base Set — OG grailles
+      "base4-4",     // Charizard (Base Set)
+      "base4-2",     // Blastoise (Base Set)
+      "base4-15",    // Venusaur (Base Set)
+      // Additional high-value cards
+      "swsh12-202",  // Lugia VSTAR alt (Evolving Skies)
+      "swsh9-176",   // Arceus VSTAR alt (Brilliant Stars)
+      // Bonus — popular Fusion Strike cards
+      "swsh8-114",   // Mew VMAX (Fusion Strike)
+      "swsh8-185",   // Genesect V (Fusion Strike)
+      "swsh8-79",    // Inteleon VMAX (Fusion Strike)
+      // Evolving Skies — Eeveelutions
+      "swsh7-65",    // Espeon VMAX (Evolving Skies)
+      "swsh7-75",    // Sylveon VMAX (Evolving Skies)
+      // Brilliant Stars — Galarian Birds
+      "swsh9-182",   // Galarian Zapdos V (Brilliant Stars)
+      "swsh6-53",    // Zeraora V (Champion's Path)
     ];
 
     let updated = 0, failed = 0;

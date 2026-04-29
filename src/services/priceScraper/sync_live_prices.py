@@ -34,13 +34,12 @@ HK_POPULAR_CARDS = [
     ("swsh7-215",  "Umbreon VMAX",         "Evolving Skies",        "Secret Rare"),
     ("swsh2-93",   "Dragapult VMAX",       "Rebel Clash",           "Holo Rare VMAX"),
     ("swsh11-122", "Pikachu VMAX",         "Vivid Voltage",         "Holo Rare VMAX"),
-    ("swsh12-71",  "Gengar VMAX",          "Evolving Skies",       "Holo Rare VMAX"),  # alt ID
     ("swsh9-123",  "Arceus VSTAR",         "Brilliant Stars",       "Rare Ultra"),
     ("swsh4-44",   "Pikachu VMAX",         "Vivid Voltage",         "Holo Rare VMAX"),  # alt
     ("swsh10.5-031","Mewtwo VSTAR",        "Shining Fates",         "Rare Secret"),
     ("swsh3-76",   "Rayquaza VMAX",        "Champion's Path",       "Holo Rare VMAX"),
     # Hidden Fates / Shiny Vault
-    ("swsh5-SV107","Charizard VMAX",       "Shiny Vault",           "Holo Rare VMAX"),
+    ("swsh4.5-SV107","Charizard VMAX",      "Shining Fates",         "Shiny Rare VMAX"),
     ("sm115-68",   "Mewtwo-GX",            "Hidden Fates",          "Rare Ultra"),
     # Base Set — OG grailles
     ("base4-4",    "Charizard",            "Base Set",              "Rare"),
@@ -60,17 +59,17 @@ CARDS_NEED_VERIFY = [
 # ─── FX Rate Fetcher ──────────────────────────────────────────────────────────
 
 def get_fx_rates():
-    """Fetch live EUR→HKD and USD→HKD from Frankfurter API."""
+    """Fetch live EUR→HKD and USD→HKD from exchangerate-api.com."""
     try:
         with urllib.request.urlopen(
-            "https://api.frankfurter.app/latest?from=EUR&to=HKD&to=USD",
+            "https://api.exchangerate-api.com/v4/latest/USD",
             timeout=8
         ) as r:
             data = json.loads(r.read())
-        eur_to_hkd = float(data["rates"]["HKD"])
-        eur_to_usd = float(data["rates"]["USD"])
-        usd_to_hkd = eur_to_hkd / eur_to_usd
-        return {"EUR_TO_HKD": eur_to_hkd, "USD_TO_HKD": usd_to_hkd}
+        usd_to_hkd = float(data["rates"]["HKD"])
+        eur_to_usd = float(data["rates"]["EUR"])
+        eur_to_hkd = usd_to_hkd / eur_to_usd
+        return {"EUR_TO_HKD": round(eur_to_hkd, 4), "USD_TO_HKD": round(usd_to_hkd, 4)}
     except Exception as e:
         print(f"[FX] Fallback rates used: {e}")
         return {"EUR_TO_HKD": 8.48, "USD_TO_HKD": 7.78}

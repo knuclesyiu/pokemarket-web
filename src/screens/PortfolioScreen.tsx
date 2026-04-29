@@ -335,7 +335,7 @@ const PortfolioScreen: React.FC = () => {
             )}
 
             <TouchableOpacity
-              style={[addModalStyles.confirmBtn, (!selectedCard || saving) && addModalStyles.confirmBtnDisabled]}
+              style={[addModalStyles.confirmBtn, (!selectedCard || saving) ? addModalStyles.confirmBtnDisabled : null]}
               onPress={handleAddCard}
               disabled={!selectedCard || saving}
             >

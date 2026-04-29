@@ -208,15 +208,15 @@ const OrderStatusScreen: React.FC = () => {
                 {index > 0 && (
                   <View style={[
                     styles.timelineConnector,
-                    isCompleted ? styles.timelineConnectorDone,
+                    isCompleted ? styles.timelineConnectorDone : null
                   ]} />
                 )}
                 {/* Step circle */}
                 <View style={[
                   styles.stepCircle,
-                  isCompleted ? styles.stepCircleDone,
-                  isCurrent ? styles.stepCircleCurrent,
-                  isPending ? styles.stepCirclePending,
+                  isCompleted ? styles.stepCircleDone : null,
+                  isCurrent ? styles.stepCircleCurrent : null,
+                  isPending ? styles.stepCirclePending : null,
                 ]}>
                   {isCompleted ? (
                     <Text style={styles.stepCheck}>✓</Text>
@@ -228,9 +228,9 @@ const OrderStatusScreen: React.FC = () => {
                 <View style={styles.stepContent}>
                   <Text style={[
                     styles.stepLabel,
-                    isCompleted ? styles.stepLabelDone,
-                    isCurrent ? styles.stepLabelCurrent,
-                    isPending ? styles.stepLabelPending,
+                    isCompleted ? styles.stepLabelDone : null,
+                    isCurrent ? styles.stepLabelCurrent : null,
+                    isPending ? styles.stepLabelPending : null,
                   ]}>
                     {step.label}
                   </Text>

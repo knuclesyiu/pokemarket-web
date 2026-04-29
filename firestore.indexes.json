@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "card_prices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "imageUrl", "order": "ASCENDING" },
+        { "fieldPath": "priceHkd", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
