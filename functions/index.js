@@ -963,7 +963,7 @@ exports.searchCardsWithPrices = v2.https.onCall(async (data, context) => {
   const input = data?.data ?? data; const { query, language = "en", limit = 20 } = input;
   console.log('[searchCardsWithPrices] query:', query, 'lang:', language, 'limit:', limit);
   if (!query) throw new functions.https.HttpsError("invalid-argument", "search query is required");
-  const searchUrl = `https://api.tcgdex.net/v2/${language}/cards?name=${encodeURIComponent(query)}&limit=${limit}`;
+  const searchUrl = `https://api.tcgdex.net/v2/${language}/cards?name=${encodeURIComponent(query.toLowerCase())}`;
   const searchResp = await fetch(searchUrl, { timeout: 8000 });
   if (!searchResp.ok) {
     console.warn('[searchCardsWithPrices] TCGdex API failed, status:', searchResp.status);
