@@ -56,6 +56,7 @@ const SearchBar: React.FC<Props> = ({
       const raw = result.data as any;
       // Firebase callable SDK wraps in {result: ...} on web; server returns raw {cards}
       const cards = raw?.result?.cards ?? raw?.cards ?? (Array.isArray(raw) ? raw : []);
+      onResults(cards);
     } catch (err) {
       console.warn('[SearchBar] searchCards error:', err);
       onResults([]);
