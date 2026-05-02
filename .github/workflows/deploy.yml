@@ -15,8 +15,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -34,6 +32,10 @@ jobs:
         run: npx expo export --platform web
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Add SPA redirect
+        run: |
+          echo "/*    /index.html   200" > dist/_redirects
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
