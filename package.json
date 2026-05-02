@@ -1,6 +1,7 @@
 {
   "name": "pokemarket",
   "version": "1.0.0",
+  "homepage": "https://knuclesyiu.github.io/pokemarket-app/",
   "main": "node_modules/expo/AppEntry",
   "scripts": {
     "start": "expo start",
