@@ -54,7 +54,7 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     const loadRealCards = async () => {
       try {
-        const q = query(collection(db, 'card_prices'), where('priceHkd', '>', 0));
+        const q = query(collection(db, 'card_prices'), where('cardmarketHkd', '>', 0));
         const snap = await getDocs(q);
         const cards: PokemonCard[] = [];
         snap.forEach(d => {
@@ -67,7 +67,7 @@ const HomeScreen: React.FC = () => {
             rarity: p.rarity ?? 'Common',
             series: p.series ?? 'Other',
             number: p.number ?? '',
-            price: p.priceHkd ?? 0,
+            price: p.cardmarketHkd ?? p.priceHkd ?? 0,
             priceChange24h: p.change24h ?? 0,
             imageUrl: p.imageUrl ?? '',
             condition: 'Near Mint',
