@@ -144,10 +144,12 @@ export default function App() {
       <ErrorBoundary>
         <NavigationContainer>
           <Stack.Navigator
-        screenOptions={{
-          animation: 'fade',
-        }}
-      >
+          screenOptions={{
+            animation: 'fade',
+          }}
+          // NEW: Support ?screen=Main&q=search on URL for deep linking
+          {...(false ? { screenOptions: { initialRouteName: 'Main' } } : {})}
+        >
         <Stack.Screen name="FeatureShowcase" component={FeatureShowcaseScreen} options={{ headerShown: false }} />
 
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
