@@ -5,7 +5,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "imageUrl", "order": "ASCENDING" },
-        { "fieldPath": "priceHkd", "order": "ASCENDING" }
+        { "fieldPath": "priceHkd", "order": "DESCENDING" }
       ]
     }
   ],
