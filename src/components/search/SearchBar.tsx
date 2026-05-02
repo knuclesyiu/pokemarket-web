@@ -54,13 +54,8 @@ const SearchBar: React.FC<Props> = ({
       const searchCards = httpsCallable(getFunctions(), 'searchCardsWithPrices');
       const result = await searchCards({ query: q.trim(), language: lang });
       const raw = result.data as any;
-      // Firebase callable SDK wraps in {result: ...} — access .result.cards
+      // Firebase callable SDK wraps in {result: ...} on web; server returns raw {cards}
       const cards = raw?.result?.cards ?? raw?.cards ?? (Array.isArray(raw) ? raw : []);
-      console.log('[SearchBar] raw keys:', raw ? Object.keys(raw) : 'null');
-      console.log('[SearchBar] result.result.cards count:', raw?.result?.cards?.length ?? 'none');
-      console.log('[SearchBar] calling onResults with', cards.length, 'cards');
-      onResults(cards);
-      console.log('[SearchBar] onResults called');
     } catch (err) {
       console.warn('[SearchBar] searchCards error:', err);
       onResults([]);
