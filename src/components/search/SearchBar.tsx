@@ -41,7 +41,7 @@ const SearchBar: React.FC<Props> = ({
   const doSearch = useCallback(async (q: string, lang: string | null) => {
     // No query → show empty / all cards handled by parent
     if (!q.trim()) {
-      onResults([]);
+      onResults(null);  // null → displayCards falls back to realCards
       setLoading(false);
       onLoadingChange?.(false);
       return;
