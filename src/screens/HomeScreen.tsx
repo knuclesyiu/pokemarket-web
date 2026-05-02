@@ -265,7 +265,7 @@ const HomeScreen: React.FC = () => {
       {/* Trending Cards */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>🔥 熱門卡</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Main')}>
           <Text style={styles.seeAll}>查看全部 →</Text>
         </TouchableOpacity>
       </View>
