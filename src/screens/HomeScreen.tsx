@@ -54,7 +54,7 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     const loadRealCards = async () => {
       try {
-        const q = query(collection(db, 'card_prices'), where('cardmarketHkd', '>', 0));
+        const q = query(collection(db, 'card_prices'), orderBy('name'), limit(100));
         const snap = await getDocs(q);
         const cards: PokemonCard[] = [];
         snap.forEach(d => {
