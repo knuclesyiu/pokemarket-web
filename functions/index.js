@@ -16,8 +16,13 @@ const { raw } = require("express");
 admin.initializeApp();
 const db = admin.firestore();
 
-// Global HTTPS agent that accepts self-signed certs (for TCGdex API)
-const httpsAgent = new require('https').Agent({ rejectUnauthorized: false });
+// Bypass self-signed certificate for TCGdex API (Node 22 + undici)
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PLATFORM FEE CONFIGURATION  (tunable — update before go-live)
+// ─────────────────────────────────────────────────────────────────────────────
+const PLATFORM_FEE_PERCENT = 0.03;    // 3% platform fee — set to 0 to disable
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PLATFORM FEE CONFIGURATION  (tunable — update before go-live)
@@ -964,7 +969,7 @@ exports.searchCardsWithPrices = v2.https.onCall(async (data, context) => {
   console.log('[searchCardsWithPrices] query:', query, 'lang:', language, 'limit:', limit);
   if (!query) throw new functions.https.HttpsError("invalid-argument", "search query is required");
   const searchUrl = `https://api.tcgdex.dev/v2/cards?name=${encodeURIComponent(query)}&lang=${language}`;
-  const searchResp = await fetch(searchUrl, { timeout: 8000, agent: httpsAgent });
+  const searchResp = await fetch(searchUrl, { timeout: 8000 });
   if (!searchResp.ok) {
     console.warn('[searchCardsWithPrices] TCGdex API failed, status:', searchResp.status);
     // Return empty results instead of throwing - degraded mode
@@ -1019,7 +1024,7 @@ async function fetchTcgdexPrice(cardId) {
 async function fetchAndCache(setCode, cardNum, fallbackId) {
   try {
     const url = `https://api.tcgdex.dev/v2/cards/${setCode}/${cardNum}?lang=en`;
-    const resp = await fetch(url, { timeout: 8000, agent: httpsAgent });
+    const resp = await fetch(url, { timeout: 8000 });
     if (!resp.ok) return null;
     const card = await resp.json();
     const markets = card.markets ?? {};
