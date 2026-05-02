@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Image,
+  View, Text, TextInput, ScrollView, StyleSheet, Image,
   TouchableOpacity, FlatList, Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
