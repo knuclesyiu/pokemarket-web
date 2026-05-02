@@ -9,6 +9,7 @@ import {
   Dimensions, Animated, Easing,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../contexts/AuthContext';
 
 const { width } = Dimensions.get('window');
 const CARD_W = width - 32;
@@ -232,6 +233,7 @@ const FeatureCard: React.FC<{ feature: FeatureCard; index: number }> = ({ featur
 
 const FeatureShowcaseScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const { currentUser, isAnonymous } = useAuth();
 
   return (
     <View style={styles.container}>
@@ -271,7 +273,13 @@ const FeatureShowcaseScreen: React.FC = () => {
         <View style={styles.ctaSection}>
           <Text style={styles.ctaTitle}>準備好了嗎？</Text>
           <Text style={styles.ctaSub}>立即開始你的第一筆安全交易</Text>
-          <TouchableOpacity style={styles.ctaBtn} onPress={() => navigation.navigate('Login')}>
+          <TouchableOpacity style={styles.ctaBtn} onPress={() => {
+            if (currentUser) {
+              navigation.navigate('Main');
+            } else {
+              navigation.navigate('Login');
+            }
+          }}>
             <Text style={styles.ctaBtnText}>進入市場 →</Text>
           </TouchableOpacity>
         </View>
