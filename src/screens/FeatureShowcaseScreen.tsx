@@ -5,7 +5,7 @@
  */
 import React, { useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
   Dimensions, Animated, Easing,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
