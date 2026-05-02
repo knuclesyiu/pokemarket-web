@@ -51,7 +51,7 @@ const SearchBar: React.FC<Props> = ({
     onLoadingChange?.(true);
 
     try {
-      const searchCards = httpsCallable(getFunctions(), 'searchCards');
+      const searchCards = httpsCallable(getFunctions(), 'searchCardsWithPrices');
       const result = await searchCards({ query: q.trim(), language: lang });
       onResults((result.data as any).cards ?? []);
     } catch (err) {
