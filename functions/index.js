@@ -16,6 +16,9 @@ const { raw } = require("express");
 admin.initializeApp();
 const db = admin.firestore();
 
+// Global HTTPS agent that accepts self-signed certs (for TCGdex API)
+const httpsAgent = new require('https').Agent({ rejectUnauthorized: false });
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PLATFORM FEE CONFIGURATION  (tunable — update before go-live)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -957,17 +960,28 @@ exports.getCardPrice = v2.https.onCall(async (data, context) => {
  * Input: { query: string, language?: string, limit?: number }
  */
 exports.searchCardsWithPrices = v2.https.onCall(async (data, context) => {
-  const { query, language = "en", limit = 20 } = data;
-  if (!query) throw new functions.https.HttpsError("invalid-argument", "query required");
+  const input = data?.data ?? data; const { query, language = "en", limit = 20 } = input;
+  console.log('[searchCardsWithPrices] query:', query, 'lang:', language, 'limit:', limit);
+  if (!query) throw new functions.https.HttpsError("invalid-argument", "search query is required");
   const searchUrl = `https://api.tcgdex.dev/v2/cards?name=${encodeURIComponent(query)}&lang=${language}`;
-  const searchResp = await fetch(searchUrl, { timeout: 8000 });
-  if (!searchResp.ok) throw new functions.https.HttpsError("unavailable", "TCGdex failed");
+  const searchResp = await fetch(searchUrl, { timeout: 8000, agent: httpsAgent });
+  if (!searchResp.ok) {
+    console.warn('[searchCardsWithPrices] TCGdex API failed, status:', searchResp.status);
+    // Return empty results instead of throwing - degraded mode
+    return { cards: [], total: 0, error: "TCGdex API unavailable" };
+  }
   let cards = await searchResp.json();
   if (!Array.isArray(cards)) cards = [cards];
   const results = cards.slice(0, limit);
   const enriched = await Promise.all(results.map(async (card) => {
     const cid = card.id;
-    const cached = await db.collection("card_prices").doc(cid).get();
+    let cached = null;
+    try {
+      const cachedDoc = await db.collection("card_prices").doc(cid).get();
+      cached = cachedDoc.exists ? cachedDoc.data() : null;
+    } catch(e) {
+      // Firestore lookup failed - continue without cache
+    }
     return {
       id: cid, name: card.name,
       set: card.set?.name ?? card.set ?? "",
@@ -975,7 +989,7 @@ exports.searchCardsWithPrices = v2.https.onCall(async (data, context) => {
       imageUrl: card.image ?? card.smallImage ?? card.largeImage ?? "",
       rarity: card.rarity ?? "",
       language,
-      price: cached.exists ? cached.data() : null,
+      price: cached ?? null,
     };
   }));
   return { cards: enriched, total: enriched.length };
@@ -1005,7 +1019,7 @@ async function fetchTcgdexPrice(cardId) {
 async function fetchAndCache(setCode, cardNum, fallbackId) {
   try {
     const url = `https://api.tcgdex.dev/v2/cards/${setCode}/${cardNum}?lang=en`;
-    const resp = await fetch(url, { timeout: 8000 });
+    const resp = await fetch(url, { timeout: 8000, agent: httpsAgent });
     if (!resp.ok) return null;
     const card = await resp.json();
     const markets = card.markets ?? {};
