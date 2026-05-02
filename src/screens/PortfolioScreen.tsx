@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { collection, doc, getDocs, getDoc, query, where, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
-import { MOCK_PORTFOLIO, MOCK_CARDS } from '../data/mockData';
+
 import { PortfolioItem } from '../types';
 
 type NavProp = NativeStackNavigationProp<any>;
@@ -22,7 +22,7 @@ const PortfolioScreen: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(
-    MOCK_PORTFOLIO.length > 0 ? MOCK_PORTFOLIO : []
+    []
   );
 
   // ── Card Search: real-time Firestore query ───────────────────────────

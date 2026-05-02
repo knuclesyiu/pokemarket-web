@@ -10,7 +10,7 @@ import type { RouteProp } from '@react-navigation/native';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { auth } from '../services/firebase';
 import PriceChart from '../components/PriceChart';
-import { generatePriceHistory, MOCK_LISTINGS } from '../data/mockData';
+
 import { PokemonCard } from '../types';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard } }, 'params'>;
@@ -175,7 +175,7 @@ const CardDetailScreen: React.FC = () => {
 
         {activeTab === 'listings' && (
           <View style={styles.listingsSection}>
-            {MOCK_LISTINGS.filter(l => l.cardId === card.id || true).map(listing => (
+            {[].map(listing => (
               <View key={listing.id} style={styles.listingCard}>
                 <View style={styles.listingLeft}>
                   <Text style={styles.listingSeller}>{listing.sellerName}</Text>

@@ -11,7 +11,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db } from '../services/firebase';
 import CardItem from '../components/CardItem';
 import SearchBar from '../components/search/SearchBar';
-import { MOCK_CARDS, MOCK_STATS } from '../data/mockData';
+
 import { PokemonCard } from '../types';
 
 type NavProp = NativeStackNavigationProp<any>;
@@ -80,17 +80,16 @@ const HomeScreen: React.FC = () => {
         if (cards.length > 0) loadPrices(cards.slice(0, 30));
       } catch (e) {
         console.warn('[Home] Firestore load failed:', e);
-        setRealCards(MOCK_CARDS);
       }
     };
     loadRealCards();
   }, []);
 
-  // P0: displayCards = searchResults > realCards > MOCK_CARDS
+  // displayCards = searchResults > realCards > []
   const displayCards = useMemo(() => {
     if (searchResults !== null) return searchResults;
     if (realCards.length > 0) return realCards;
-    return MOCK_CARDS;
+    return [];
   }, [searchResults, realCards]);
 
   const filtered = activeFilter === '全部'
@@ -99,8 +98,6 @@ const HomeScreen: React.FC = () => {
         c.series?.toLowerCase().includes(activeFilter.toLowerCase()) ||
         c.set?.toLowerCase().includes(activeFilter.toLowerCase())
       );
-
-  const { topGainer, topLoser, totalVolume24h } = MOCK_STATS;
 
   const now = new Date();
   const timeLabel = now.getMinutes() < 5
@@ -167,7 +164,7 @@ const HomeScreen: React.FC = () => {
   };
 
   const enrichedFiltered = filtered.map(enrichCard);
-  const enrichedTrending = MOCK_STATS.trendingCards.map(enrichCard);
+  const enrichedTrending = (displayCards.length > 0 ? displayCards.slice(0, 20) : []).map(enrichCard);
 
   return (
     <ScrollView

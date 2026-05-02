@@ -19,7 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { MarketListing } from '../../types/trade';
-import { MOCK_CARDS } from '../../data/mockData';
+import { [] } from '../../data/mockData';
 
 type NavProp = NativeStackNavigationProp<any>;
 const { width } = Dimensions.get('window');

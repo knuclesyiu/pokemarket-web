@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { auth } from '../services/firebase';
-import { MOCK_CARDS } from '../data/mockData';
+import { PokemonCard } from '../types';
 import ReviewBadge from '../components/ReviewBadge';
 import type { CardCondition } from '../types';
 
@@ -36,7 +36,7 @@ const REVIEW_THRESHOLD = 500;
 const SellScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [step, setStep] = useState(1);
-  const [selectedCard, setSelectedCard] = useState<typeof MOCK_CARDS[0] | null>(null);
+  const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null);
   const [priceType, setPriceType] = useState<'fixed' | 'auction'>('fixed');
   const [price, setPrice] = useState('');
   const [condition, setCondition] = useState<CardCondition>('Near Mint');
@@ -47,7 +47,7 @@ const SellScreen: React.FC = () => {
   const needsReview = selectedCard && Number(price) >= REVIEW_THRESHOLD;
   const totalSteps = needsReview ? 4 : 3;
 
-  const handleCardSelect = (card: typeof MOCK_CARDS[0]) => {
+  const handleCardSelect = (card: PokemonCard) => {
     if (!auth.currentUser) {
       Alert.alert('需要登入', '請先登入再放售卡牌', [
         { text: '登入', onPress: () => navigation.navigate('Login') },
@@ -152,7 +152,7 @@ const SellScreen: React.FC = () => {
 
           <Text style={styles.sectionLabel}>或從列表選擇</Text>
           <View style={styles.quickGrid}>
-            {MOCK_CARDS.slice(0, 4).map(card => (
+            {[].slice(0, 4).map(card => (
               <TouchableOpacity
                 key={card.id}
                 style={[styles.quickCard, selectedCard?.id === card.id ? styles.quickCardSelected : null]}
@@ -412,7 +412,7 @@ const SellScreen: React.FC = () => {
               <TextInput style={modalStyles.searchInput} placeholder="輸入卡名..." placeholderTextColor="#6666AA" />
             </View>
             <ScrollView>
-              {MOCK_CARDS.map(card => (
+              {[].map(card => (
                 <TouchableOpacity
                   key={card.id}
                   style={modalStyles.cardRow}

@@ -56,13 +56,7 @@ const SearchBar: React.FC<Props> = ({
       onResults((result.data as any).cards ?? []);
     } catch (err) {
       console.warn('[SearchBar] searchCards error:', err);
-      // Fallback: client-side filter on MOCK_CARDS (dev mode)
-      const { MOCK_CARDS } = await import('../../data/mockData');
-      const filtered = MOCK_CARDS.filter(c =>
-        c.name.toLowerCase().includes(q.toLowerCase()) &&
-        (!lang || c.language === lang)
-      );
-      onResults(filtered);
+      onResults([]);
     } finally {
       setLoading(false);
       onLoadingChange?.(false);

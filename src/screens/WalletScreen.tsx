@@ -31,33 +31,7 @@ interface EscrowTransaction {
   autoReleaseAt?: number;
 }
 
-const MOCK_TRANSACTIONS: EscrowTransaction[] = [
-  {
-    id: 't1', type: 'sell', cardName: 'Charizard VMAX',
-    cardImage: 'https://images.pokemontcg.io/swsh5/115.png',
-    counterparty: 'CardMaster_HK', amount: 4200,
-    state: 'in_escrow', date: '2 小時前', daysLeft: 2,
-    autoReleaseAt: Date.now() + 3 * 24 * 60 * 60 * 1000,
-  },
-  {
-    id: 't2', type: 'sell', cardName: 'Gengar VMAX',
-    cardImage: 'https://images.pokemontcg.io/swsh12/71.png',
-    counterparty: 'PokemonCollector', amount: 3150,
-    state: 'released', date: '1 日前',
-  },
-  {
-    id: 't3', type: 'buy', cardName: 'Umbreon VMAX',
-    cardImage: 'https://images.pokemontcg.io/swsh12/215.png',
-    counterparty: 'RareCards_HK', amount: 3420,
-    state: 'pending', date: '30 分鐘前',
-  },
-  {
-    id: 't4', type: 'sell', cardName: 'Tyranitar VMAX',
-    cardImage: 'https://images.pokemontcg.io/swsh4/116.png',
-    counterparty: 'HKCardDealer', amount: 980,
-    state: 'released', date: '3 日前',
-  },
-];
+const MOCK_TRANSACTIONS: EscrowTransaction[] = [];
 
 // NEW: Obsidian Gallery — jade/ruby state colors, gold active tab
 const STATE_LABELS: Record<EscrowState, { zh: string; color: string; bg: string }> = {
