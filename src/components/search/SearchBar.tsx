@@ -54,6 +54,8 @@ const SearchBar: React.FC<Props> = ({
       const searchCards = httpsCallable(getFunctions(), 'searchCardsWithPrices');
       const result = await searchCards({ query: q.trim(), language: lang });
       const cards = (result.data as any).cards ?? [];
+      console.log('[SearchBar] searchCards result keys:', result.data ? Object.keys(result.data) : 'no data');
+      console.log('[SearchBar] result.full:', JSON.stringify(result).substring(0, 200));
       console.log('[SearchBar] searchCards success, cards:', cards.length);
       console.log('[SearchBar] calling onResults with', cards.length, 'cards');
       onResults(cards);
