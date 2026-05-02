@@ -57,6 +57,7 @@ const SearchBar: React.FC<Props> = ({
       console.log('[SearchBar] searchCards success, cards:', cards.length);
       console.log('[SearchBar] calling onResults with', cards.length, 'cards');
       onResults(cards);
+      console.log('[SearchBar] onResults called');
     } catch (err) {
       console.warn('[SearchBar] searchCards error:', err);
       onResults([]);
