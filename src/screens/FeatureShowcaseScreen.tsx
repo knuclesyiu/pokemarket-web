@@ -233,7 +233,13 @@ const FeatureCard: React.FC<{ feature: FeatureCard; index: number }> = ({ featur
 
 const FeatureShowcaseScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { currentUser, isAnonymous } = useAuth();
+  const { currentUser, isAnonymous, loading } = useAuth();
+
+  if (loading) return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#080810' }}>
+      <ActivityIndicator size="large" color="#D4AF37" />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
