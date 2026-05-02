@@ -23,11 +23,6 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 // PLATFORM FEE CONFIGURATION  (tunable — update before go-live)
 // ─────────────────────────────────────────────────────────────────────────────
 const PLATFORM_FEE_PERCENT = 0.03;    // 3% platform fee — set to 0 to disable
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PLATFORM FEE CONFIGURATION  (tunable — update before go-live)
-// ─────────────────────────────────────────────────────────────────────────────
-const PLATFORM_FEE_PERCENT = 0.03;    // 3% platform fee — set to 0 to disable
 const STRIPE_PERCENT_FEE  = 0.029;    // Stripe: 2.9% + HK$2.35 per charge
 const STRIPE_FIXED_CENTS  = 235;      // HK$2.35 in cents
 const ORDER_MIN_FEE_HKD   = 20;       // Minimum total fee (Stripe + platform) = HK$20
@@ -968,7 +963,7 @@ exports.searchCardsWithPrices = v2.https.onCall(async (data, context) => {
   const input = data?.data ?? data; const { query, language = "en", limit = 20 } = input;
   console.log('[searchCardsWithPrices] query:', query, 'lang:', language, 'limit:', limit);
   if (!query) throw new functions.https.HttpsError("invalid-argument", "search query is required");
-  const searchUrl = `https://api.tcgdex.dev/v2/cards?name=${encodeURIComponent(query)}&lang=${language}`;
+  const searchUrl = `https://api.tcgdex.net/v2/cards?name=${encodeURIComponent(query)}&lang=${language}`;
   const searchResp = await fetch(searchUrl, { timeout: 8000 });
   if (!searchResp.ok) {
     console.warn('[searchCardsWithPrices] TCGdex API failed, status:', searchResp.status);
@@ -1023,7 +1018,7 @@ async function fetchTcgdexPrice(cardId) {
 
 async function fetchAndCache(setCode, cardNum, fallbackId) {
   try {
-    const url = `https://api.tcgdex.dev/v2/cards/${setCode}/${cardNum}?lang=en`;
+    const url = `https://api.tcgdex.net/v2/cards/${setCode}/${cardNum}?lang=en`;
     const resp = await fetch(url, { timeout: 8000 });
     if (!resp.ok) return null;
     const card = await resp.json();
