@@ -38,8 +38,13 @@ jobs:
           EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           EXPO_PUBLIC_FIREBASE_APP_ID: ${{ secrets.EXPO_PUBLIC_FIREBASE_APP_ID }}
 
-      - name: Add SPA redirect
+      - name: Fix asset paths for subfolder deploy
         run: |
+          # Fix absolute paths in index.html to relative paths
+          sed -i 's|src="/_expo/|src="_expo/|g' dist/index.html
+          sed -i 's|href="/_expo/|href="_expo/|g' dist/index.html
+          sed -i 's|src="/favicon.ico"|src="favicon.ico"|g' dist/index.html
+          # Add SPA redirect for client-side routing
           echo "/*    /index.html   200" > dist/_redirects
 
       - name: Setup Pages
