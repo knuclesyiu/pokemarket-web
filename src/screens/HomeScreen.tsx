@@ -200,34 +200,26 @@ const HomeScreen: React.FC = () => {
       <View style={styles.statsBar}>
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>24h 成交量</Text>
-          <Text style={styles.statValueGold}>HK${formatVol(totalVolume24h)}</Text>
+          <Text style={styles.statValueGold}>--</Text>
           <Text style={styles.statSub}>上次更新：{timeLabel}</Text>
         </View>
         <View style={styles.statDivider} />
         <TouchableOpacity
           style={[styles.statItem, styles.statItemClickable]}
-          onPress={() => navigation.navigate('CardDetail', { card: enrichCard(topGainer) })}
+          onPress={() => {}}
         >
           <Text style={styles.statLabel}>🚀 今日升幅</Text>
-          <Text style={styles.statValueJade}>
-            ▲ {enrichCard(topGainer).priceChange24h.toFixed(1)}%
-          </Text>
-          <Text style={styles.statSubLink} numberOfLines={1}>
-            {topGainer.name} →
-          </Text>
+          <Text style={styles.statValueJade}>--</Text>
+          <Text style={styles.statSubLink} numberOfLines={1}>-</Text>
         </TouchableOpacity>
         <View style={styles.statDivider} />
         <TouchableOpacity
           style={[styles.statItem, styles.statItemClickable]}
-          onPress={() => navigation.navigate('CardDetail', { card: enrichCard(topLoser) })}
+          onPress={() => {}}
         >
           <Text style={styles.statLabel}>📉 今日跌幅</Text>
-          <Text style={styles.statValueRuby}>
-            ▼ {enrichCard(topLoser).priceChange24h.toFixed(1)}%
-          </Text>
-          <Text style={styles.statSubLink} numberOfLines={1}>
-            {topLoser.name} →
-          </Text>
+          <Text style={styles.statValueRuby}>--</Text>
+          <Text style={styles.statSubLink} numberOfLines={1}>-</Text>
         </TouchableOpacity>
       </View>
 
