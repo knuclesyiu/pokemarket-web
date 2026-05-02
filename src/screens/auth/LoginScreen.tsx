@@ -30,6 +30,27 @@ const LoginScreen: React.FC = () => {
     if (currentUser) navigation.replace('MainTabs');
   }, [currentUser]);
 
+  // Initialize reCAPTCHA for Phone Auth (web only)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const initRecaptcha = async () => {
+      try {
+        const { auth } = await import('../../services/firebase');
+        const { RecaptchaVerifier } = await import('firebase/auth');
+        if (!(window as any).recaptchaVerifier) {
+          (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            size: 'invisible',
+            callback: () => {},
+            'expired-callback': () => {},
+          });
+        }
+      } catch (e) {
+        console.warn('reCAPTCHA init failed:', e);
+      }
+    };
+    initRecaptcha();
+  }, []);
+
   // OTP countdown
   useEffect(() => {
     if (countdown <= 0) return;
@@ -94,6 +115,9 @@ const LoginScreen: React.FC = () => {
       <View style={styles.card}>
         <Text style={styles.title}>登入 / 註冊</Text>
         <Text style={styles.subtitle}>電話或 Email 均可登入</Text>
+
+        {/* reCAPTCHA container for Phone Auth (web) */}
+        <View id="recaptcha-container" />
 
         {/* Mode Toggle */}
         <View style={styles.toggle}>
