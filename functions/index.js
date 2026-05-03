@@ -1035,12 +1035,12 @@ async function fetchAndCache(setCode, cardNum, fallbackId) {
     const resp = await fetch(url, { timeout: 8000 });
     if (!resp.ok) return null;
     const card = await resp.json();
-    const markets = card.markets ?? {};
-    const cm = markets.cardmarket ?? {};
-    const tcg = markets.tcgplayer ?? {};
+    const pricing = card.pricing ?? {};
+    const cm = pricing.cardmarket ?? {};
+    const tcg = pricing.tcgplayer ?? {};
 
-    const priceEur = parseFloat(cm.averagePrice) || 0;
-    const priceUsd = parseFloat(tcg.averagePrice) || 0;
+    const priceEur = parseFloat(cm.avg) || 0;
+    const priceUsd = parseFloat(tcg.avg) || 0;
     const trendEur = parseFloat(cm.priceChange?.priceChange) || 0;
 
     const hkdMarket = Math.round(priceEur * FX_EUR_TO_HKD * 100) / 100;
