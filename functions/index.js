@@ -977,6 +977,17 @@ exports.searchCardsWithPrices = v2.https.onCall(async (data, context) => {
   const results = cards.slice(0, limit);
   const enriched = await Promise.all(results.map(async (card) => {
     const cid = card.id;
+    // Fetch card detail to get image URL (search endpoint doesn't include images)
+    let imageUrl = card.image ?? card.smallImage ?? card.largeImage ?? "";
+    if (!imageUrl) {
+      try {
+        const detailResp = await fetch(`https://api.tcgdex.net/v2/${language}/cards/${cid}`, { timeout: 5000 });
+        if (detailResp.ok) {
+          const detail = await detailResp.json();
+          imageUrl = detail.image ?? detail.smallImage ?? detail.largeImage ?? "";
+        }
+      } catch(e) { /* ignore detail fetch errors */ }
+    }
     let cached = null;
     try {
       const cachedDoc = await db.collection("card_prices").doc(cid).get();
@@ -988,7 +999,7 @@ exports.searchCardsWithPrices = v2.https.onCall(async (data, context) => {
       id: cid, name: card.name,
       set: card.set?.name ?? card.set ?? "",
       setCode: card.set?.id ?? "",
-      imageUrl: card.image ?? card.smallImage ?? card.largeImage ?? "",
+      imageUrl,
       rarity: card.rarity ?? "",
       language,
       price: cached ?? null,
@@ -1405,3 +1416,46 @@ exports.getUserReviews = v2.https.onCall(async (data, context) => {
   return { reviews: snap.docs.map(d => ({ id: d.id, ...d.data() })) };
 });
 
+
+exports.seedCardPrices = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+  if (req.method === "OPTIONS") { res.json({ ok: true }); return; }
+
+  const TOP_CARDS = [
+    "swsh3-20","swsh8-157","swsh12-139","swsh7-215","swsh2-93",
+    "swsh11-122","swsh9-123","swsh10.5-031","swsh3-76",
+    "swsh4.5-SV107","sm115-68","base4-4","base4-2","base4-15",
+    "swsh12-202","swsh9-176","swsh8-114","swsh8-185","swsh8-79",
+    "swsh7-65","swsh7-75","swsh9-182","swsh6-46","swsh12-172",
+    "swsh12-173","swsh6-53",
+    "base1-4","base1-1","base1-58","base1-84","base1-83",
+    "base1-10","base1-22","base1-36","base1-45","base1-62",
+    "swsh1-1","swsh5-1","swsh5-383","swsh4-1","swsh3-1",
+    "swsh3-159","swsh3-185","swsh3-187","swsh4-17","swsh4-25",
+    "swsh4-185","swsh4-201","swsh4-217","swsh4-246","swsh4-254","swsh3-25",
+  ];
+
+  let updated = 0, failed = 0;
+  const results = [];
+
+  for (const cardId of TOP_CARDS) {
+    const parts = cardId.split("-");
+    const setCode = parts.slice(0, -1).join("-");
+    const cardNum = parts[parts.length - 1];
+    const priceData = await fetchAndCache(setCode, cardNum, cardId);
+    if (priceData) {
+      await db.collection("card_prices").doc(cardId).set({
+        ...priceData, updatedAt: Date.now(), lastScheduledSync: Date.now(),
+      }, { merge: true });
+      updated++;
+      results.push(cardId + ": HK$" + priceData.priceHkd);
+    } else {
+      failed++;
+      results.push(cardId + ": FAILED");
+    }
+    await sleep(500);
+  }
+
+  res.json({ success: true, updated, failed, results });
+});
