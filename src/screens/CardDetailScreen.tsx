@@ -12,6 +12,7 @@ import { auth } from '../services/firebase';
 import PriceChart from '../components/PriceChart';
 
 import { PokemonCard } from '../types';
+import { generatePriceHistory } from '../data/mockData';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard } }, 'params'>;
 const { width } = Dimensions.get('window');
