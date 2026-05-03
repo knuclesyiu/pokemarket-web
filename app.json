@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "PokeMarket",
+    "slug": "PokeMarket",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#12121F"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pokemarket.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#12121F"
+      },
+      "package": "com.pokemarket.app",
+      "usesCleartextTraffic": true
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "pokemarket-255c6"
+      }
+    },
+    "owner": "knucles",
+    "privacy": "unlisted"
+  }
+}
