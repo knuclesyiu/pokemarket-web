@@ -1447,8 +1447,6 @@ exports.seedCardPrices = functions.https.onRequest(async (req, res) => {
     "swsh7-75",    // Sylveon VMAX
     // Brilliant Stars Galarian Birds
     "swsh9-182",   // Galarian Zapdos V
-    "swsh9-187",   // Galarian Moltres V
-    "swsh9-195",   // Galarian Articuno V
     // Crown Zenith
     "swsh6-46",    // Ice Rider Calyrex VMAX
     "swsh6-45",    // Shadow Rider Calyrex VMAX
@@ -1478,10 +1476,6 @@ exports.seedCardPrices = functions.https.onRequest(async (req, res) => {
     // Sun & Moon Tag Team GX
     "sm115-35",    // Charizard-GX (Burning Shadows)
     "sm115-36",    // Charizard-GX alt
-    "sm115-34",    // Charizard-GX alt
-    "sm35-1",      // Gyarados-GX (Guardians Rising)
-    "sm35-2",      // Gyarados-GX alt
-    "sm215-1",     // Magearna-EX (Crimson Invasion)
   ];
 
   let updated = 0, failed = 0;
