@@ -1423,17 +1423,65 @@ exports.seedCardPrices = functions.https.onRequest(async (req, res) => {
   if (req.method === "OPTIONS") { res.json({ ok: true }); return; }
 
   const TOP_CARDS = [
-    "swsh3-20","swsh8-157","swsh12-139","swsh7-215","swsh2-93",
-    "swsh11-122","swsh9-123","swsh10.5-031","swsh3-76",
-    "swsh4.5-SV107","sm115-68","base4-4","base4-2","base4-15",
-    "swsh12-202","swsh9-176","swsh8-114","swsh8-185","swsh8-79",
-    "swsh7-65","swsh7-75","swsh9-182","swsh6-46","swsh12-172",
-    "swsh12-173","swsh6-53",
-    "base1-4","base1-1","base1-58","base1-84","base1-83",
-    "base1-10","base1-22","base1-36","base1-45","base1-62",
-    "swsh1-1","swsh5-1","swsh5-383","swsh4-1","swsh3-1",
-    "swsh3-159","swsh3-185","swsh3-187","swsh4-17","swsh4-25",
-    "swsh4-185","swsh4-201","swsh4-217","swsh4-246","swsh4-254","swsh3-25",
+    // Sword & Shield VMAX / VSTAR
+    "swsh3-20",    // Charizard VMAX (Darkness Ablaze)
+    "swsh8-157",   // Gengar VMAX (Fusion Strike)
+    "swsh12-139",  // Lugia VSTAR (Astral Radiance)
+    "swsh7-215",   // Umbreon VMAX (Evolving Skies)
+    "swsh2-93",    // Dragapult VMAX (Rebel Clash)
+    "swsh11-122",  // Pikachu VMAX (Vivid Voltage)
+    "swsh9-123",   // Arceus VSTAR (Brilliant Stars)
+    "swsh10.5-031",// Mewtwo VSTAR (Shining Fates)
+    "swsh3-76",    // Rayquaza VMAX (Champion's Path)
+    "swsh12-202",  // Lugia VSTAR alt
+    "swsh9-176",   // Arceus VSTAR alt
+    // Hidden Fates / Shining Fates
+    "swsh4.5-SV107",// Charizard VMAX (Shining Fates)
+    "sm115-68",    // Mewtwo-GX (Hidden Fates)
+    // Fusion Strike
+    "swsh8-114",   // Mew VMAX
+    "swsh8-185",   // Genesect V
+    "swsh8-79",    // Inteleon VMAX
+    // Evolving Skies Eeveelutions
+    "swsh7-65",    // Espeon VMAX
+    "swsh7-75",    // Sylveon VMAX
+    // Brilliant Stars Galarian Birds
+    "swsh9-182",   // Galarian Zapdos V
+    "swsh9-187",   // Galarian Moltres V
+    "swsh9-195",   // Galarian Articuno V
+    // Crown Zenith
+    "swsh6-46",    // Ice Rider Calyrex VMAX
+    "swsh6-45",    // Shadow Rider Calyrex VMAX
+    // Astral Radiance
+    "swsh12-172",  // Reshiram V
+    "swsh12-173",  // Alolan Vulpix V
+    // Champion's Path
+    "swsh6-53",    // Zeraora V
+    "swsh6-54",    // Masked Royal's Pikachu VMAX
+    // Base Set OG chase cards
+    "base4-4",     // Charizard
+    "base4-2",     // Blastoise
+    "base4-15",    // Venusaur
+    "base4-58",    // Gengar
+    "base4-9",     // Alakazam
+    // 1st Edition Base Set
+    "base1-4",     // Charizard
+    "base1-1",     // Blastoise
+    "base1-58",    // Gengar
+    "base1-84",    // Pikachu
+    "base1-83",    // Diglett
+    "base1-10",    // Rocket's Scyther
+    "base1-22",    // Chansey
+    "base1-36",    // Bill
+    "base1-45",    // Gust of Wind
+    "base1-62",    // Energy Retrieval
+    // Sun & Moon Tag Team GX
+    "sm115-35",    // Charizard-GX (Burning Shadows)
+    "sm115-36",    // Charizard-GX alt
+    "sm115-34",    // Charizard-GX alt
+    "sm35-1",      // Gyarados-GX (Guardians Rising)
+    "sm35-2",      // Gyarados-GX alt
+    "sm215-1",     // Magearna-EX (Crimson Invasion)
   ];
 
   let updated = 0, failed = 0;
