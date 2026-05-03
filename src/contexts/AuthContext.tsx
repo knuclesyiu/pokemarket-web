@@ -2,10 +2,15 @@
  * AuthContext — manages Firebase Auth state + user profile from Firestore
  */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, ConfirmationResult } from 'firebase/auth';
+import { User, ConfirmationResult, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { UserProfile } from '../types/user';
+
+// Set browser local persistence on module load to fix Service Worker conflict
+setPersistence(auth, { type: 'LOCAL', persistence: browserLocalPersistence }).catch(e => {
+  console.warn('[AuthContext] setPersistence failed:', e);
+});
 
 interface AuthContextValue {
   currentUser: User | null;
