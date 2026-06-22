@@ -4,21 +4,12 @@ import {
   StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import {
-  onSnapshot, addDoc, collection, query, orderBy,
-  updateDoc, doc,
+  onSnapshot, addDoc, collection, query, orderBy, where,
+  updateDoc, doc, getDoc, increment,
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { ChatMessage } from '../../types/chat';
-
-// FIRESTORE: real data — uid resolver (avoids stale closure in useEffect)
-const getCurrentUserId = (): string => {
-  try {
-    const { auth } = require('../../services/firebase');
-    return auth.currentUser?.uid ?? 'placeholder_user';
-  } catch {
-    return 'placeholder_user';
-  }
-};
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Props {
   route: {
@@ -31,21 +22,35 @@ interface Props {
 }
 
 const ChatDetailScreen: React.FC<Props> = ({ route }) => {
-  const { threadId, otherPartyName = '未知用戶' } = route.params;
+  const { threadId, otherPartyName = '未知用戶', otherPartyId } = route.params;
+  const { currentUser, userProfile } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  // FIRESTORE: real data — mark thread read using live uid
-  const markThreadRead = async (uid: string) => {
-    if (uid === 'placeholder_user') return;
-    try {
-      await updateDoc(doc(db, 'chat_threads', threadId), {
-        [`unreadCount.${uid}`]: 0,
-      });
-    } catch (_) {}
-  };
+  // If otherPartyId not passed, derive it from the thread document
+  const [resolvedOtherPartyId, setResolvedOtherPartyId] = useState<string | undefined>(otherPartyId);
+
+  useEffect(() => {
+    if (!otherPartyId) {
+      getDoc(doc(db, 'chat_threads', threadId)).then(snap => {
+        if (snap.exists()) {
+          const parties: string[] = snap.data()?.parties ?? [];
+          const other = parties.find(p => p !== currentUser?.uid) ?? parties[0];
+          if (other) setResolvedOtherPartyId(other);
+        }
+      }).catch(() => {});
+    }
+  }, [threadId, otherPartyId, currentUser?.uid]);
+
+  // Mark thread read on entry and on each new message
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+    updateDoc(doc(db, 'chat_threads', threadId), {
+      [`unreadCount.${currentUser.uid}`]: 0,
+    }).catch(() => {});
+  }, [threadId, currentUser?.uid, messages.length]);
 
   // Real-time listener on messages subcollection
   useEffect(() => {
@@ -60,37 +65,51 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
       err => console.warn('[ChatDetail] snapshot error:', err)
     );
 
-    // FIRESTORE: real data — mark as read after listener is live
-    markThreadRead(getCurrentUserId());
+    // Mark as read after listener is live (inline; the earlier
+    // markThreadRead helper was removed in the v2 refactor)
+    if (currentUser?.uid) {
+      updateDoc(doc(db, 'chat_threads', threadId), {
+        [`unreadCount.${currentUser.uid}`]: 0,
+      }).catch(() => {});
+    }
 
     return () => unsub();
-  }, [threadId]);
+  }, [threadId, currentUser?.uid]);
 
   const sendMessage = async () => {
     const text = inputText.trim();
     if (!text || sending) return;
+    if (!currentUser?.uid) {
+      console.warn('[sendMessage] no current user');
+      return;
+    }
 
     setInputText('');
     setSending(true);
 
     try {
-      const uid = getCurrentUserId();
       const threadDoc = doc(db, 'chat_threads', threadId);
       const msgsRef = collection(threadDoc, 'messages');
       await addDoc(msgsRef, {
-        senderId: uid,
-        senderName: '我',
+        senderId: currentUser.uid,
+        senderName: userProfile?.displayName ?? '我',
         text,
         createdAt: Date.now(),
-        readBy: [uid],
+        readBy: [currentUser.uid],
         type: 'text',
       });
 
-      // Update thread metadata
-      await updateDoc(doc(db, 'chat_threads', threadId), {
+      // Update thread metadata + increment other party's unread count
+      const updatePayload: any = {
         lastMessage: text,
         lastMessageAt: Date.now(),
-      });
+        lastSenderId: currentUser.uid,
+      };
+      // Increment unread count for the other party (if we know who they are)
+      if (resolvedOtherPartyId && resolvedOtherPartyId !== currentUser.uid) {
+        updatePayload[`unreadCount.${resolvedOtherPartyId}`] = increment(1);
+      }
+      await updateDoc(threadDoc, updatePayload);
     } catch (err) {
       console.error('[sendMessage] error:', err);
       setInputText(text); // restore on failure
@@ -108,7 +127,7 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
       );
     }
 
-    const isMe = item.senderId === getCurrentUserId();
+    const isMe = item.senderId === currentUser?.uid;
     const timeStr = new Date(item.createdAt).toLocaleTimeString('zh-HK', {
       hour: '2-digit', minute: '2-digit',
     });

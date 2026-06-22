@@ -3,6 +3,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Main: undefined;
+  Sell: { cardId: string; cardName?: string; priceType?: 'fixed' | 'auction' } | undefined;
   CardDetail: { cardId: string };
   Checkout: { cardId: string };
   OrderStatus: { txId: string };

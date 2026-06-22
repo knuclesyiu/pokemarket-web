@@ -1,94 +1,114 @@
+/**
+ * WalletScreen — Real Firestore-backed wallet + transaction history.
+ *
+ * v2 changes:
+ *   - Removed hard-coded mock balance (12430 / 4200) — now reads
+ *     users/{uid}/wallet/main via subscribeWallet()
+ *   - Removed empty MOCK_TRANSACTIONS — now subscribes to
+ *     users/{uid}/transactions via subscribeTransactions()
+ *   - Top-up / Withdraw buttons now show a "coming soon" toast
+ *     rather than doing nothing silently
+ *   - Re-subscribes when user changes
+ */
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  FlatList,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList,
+  ActivityIndicator, Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../services/firebase';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  subscribeWallet, subscribeTransactions,
+  WalletState, WalletTransaction, WalletTxState,
+} from '../services/walletService';
 
 type NavProp = NativeStackNavigationProp<any>;
 
 type EscrowState = 'pending' | 'in_escrow' | 'released';
 
-interface WalletData {
-  balance: number;
-  pendingEscrow: number;
-  onboardingComplete: boolean;
-}
+interface EscrowTransaction extends WalletTransaction {}
 
-interface EscrowTransaction {
-  id: string;
-  type: 'buy' | 'sell';
-  cardName: string;
-  cardImage: string;
-  counterparty: string;
-  amount: number;
-  state: EscrowState;
-  date: string;
-  daysLeft?: number;
-  autoReleaseAt?: number;
-}
-
-const MOCK_TRANSACTIONS: EscrowTransaction[] = [];
-
-// NEW: Obsidian Gallery — jade/ruby state colors, gold active tab
 const STATE_LABELS: Record<EscrowState, { zh: string; color: string; bg: string }> = {
-  pending: { zh: '待確認', color: '#D4AF37', bg: 'rgba(212,175,55,0.15)' },
-  in_escrow: { zh: '託付中', color: '#FF6B35', bg: 'rgba(255,107,53,0.15)' },
-  released: { zh: '已完成', color: '#00C896', bg: 'rgba(0,200,150,0.15)' },
+  pending:   { zh: '待確認',  color: '#D4AF37', bg: 'rgba(212,175,55,0.15)' },
+  in_escrow: { zh: '託付中',  color: '#FF6B35', bg: 'rgba(255,107,53,0.15)' },
+  released:  { zh: '已完成',  color: '#00C896', bg: 'rgba(0,200,150,0.15)' },
 };
 
 const WalletScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
+  const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<EscrowState | 'all'>('all');
-
-  // FIRESTORE: real data — wallet state (falls back to mock data)
-  const [walletData, setWalletData] = useState<WalletData>({
-    balance: 12430,
-    pendingEscrow: 4200,
+  const [walletData, setWalletData] = useState<WalletState>({
+    balance: 0,
+    pendingEscrow: 0,
     onboardingComplete: false,
   });
+  const [transactions, setTransactions] = useState<EscrowTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // FIRESTORE: real data — load wallet from Firestore users/{uid}/wallet
+  // Subscribe to wallet + transactions. Re-runs when the user changes.
   useEffect(() => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
-
-    const loadWallet = async () => {
-      try {
-        const snap = await getDoc(doc(db, 'users', uid, 'wallet'));
-        if (snap.exists()) {
-          const data = snap.data() as WalletData;
-          setWalletData({
-            balance: data.balance ?? 12430,
-            pendingEscrow: data.pendingEscrow ?? 0,
-            onboardingComplete: data.onboardingComplete ?? false,
-          });
-        }
-      } catch (e) {
-        console.warn('[Wallet] Firestore load failed, using mock data:', e);
-      }
+    const uid = currentUser?.uid;
+    if (!uid) {
+      setWalletData({ balance: 0, pendingEscrow: 0, onboardingComplete: false });
+      setTransactions([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const unsubWallet = subscribeWallet(uid, w => setWalletData(w));
+    const unsubTx = subscribeTransactions(uid, txs => {
+      setTransactions(txs);
+      setLoading(false);
+    });
+    return () => {
+      unsubWallet();
+      unsubTx();
     };
-
-    loadWallet();
-  }, []);
+  }, [currentUser?.uid]);
 
   const balance = walletData.balance;
   const inEscrow = walletData.pendingEscrow;
   const available = balance - inEscrow;
 
+  // Map WalletTxState → EscrowState for display
+  const toEscrowState = (s: WalletTxState): EscrowState => {
+    if (s === 'pending') return 'pending';
+    if (s === 'released') return 'released';
+    return 'in_escrow'; // in_escrow / disputed / refunded all show as "in escrow"
+  };
+
   const filtered = activeTab === 'all'
-    ? MOCK_TRANSACTIONS
-    : MOCK_TRANSACTIONS.filter(t => t.state === activeTab);
+    ? transactions
+    : transactions.filter(t => toEscrowState(t.state) === activeTab);
 
   const tabs: { key: EscrowState | 'all'; label: string; count: number }[] = [
-    { key: 'all', label: '全部', count: MOCK_TRANSACTIONS.length },
-    { key: 'pending', label: '待確認', count: MOCK_TRANSACTIONS.filter(t => t.state === 'pending').length },
-    { key: 'in_escrow', label: '託付中', count: MOCK_TRANSACTIONS.filter(t => t.state === 'in_escrow').length },
-    { key: 'released', label: '已完成', count: MOCK_TRANSACTIONS.filter(t => t.state === 'released').length },
+    { key: 'all',       label: '全部',   count: transactions.length },
+    { key: 'pending',   label: '待確認', count: transactions.filter(t => toEscrowState(t.state) === 'pending').length },
+    { key: 'in_escrow', label: '託付中', count: transactions.filter(t => toEscrowState(t.state) === 'in_escrow').length },
+    { key: 'released',  label: '已完成', count: transactions.filter(t => toEscrowState(t.state) === 'released').length },
   ];
+
+  const handleTopUp = () => {
+    Alert.alert(
+      '🚀 充值功能即將推出',
+      '我們正在整合 Stripe 信用卡及 FPS 充值管道。\n請期待下次更新，或聯絡客服協助。',
+      [{ text: '好的' }],
+    );
+  };
+
+  const handleWithdraw = () => {
+    if (available <= 0) {
+      Alert.alert('暫時無法提現', '可用餘額為 HK$ 0。完成交易後即可提現。');
+      return;
+    }
+    Alert.alert(
+      '提現功能即將推出',
+      `可提現餘額：HK$ ${available.toLocaleString()}\n提現管道（FPS / 銀行轉帳）即將整合。`,
+      [{ text: '好的' }],
+    );
+  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -105,13 +125,15 @@ const WalletScreen: React.FC = () => {
         <View style={styles.balanceHeader}>
           <View>
             <Text style={styles.balanceLabel}>可提現餘額</Text>
-            <Text style={styles.balanceValue}>HK$ {available.toLocaleString()}</Text>
+            <Text style={styles.balanceValue}>
+              {loading ? '—' : `HK$ ${available.toLocaleString()}`}
+            </Text>
           </View>
           <View style={styles.balanceActions}>
-            <TouchableOpacity style={styles.topupBtn} onPress={() => {}}>
+            <TouchableOpacity style={styles.topupBtn} onPress={handleTopUp}>
               <Text style={styles.topupBtnText}>↑ 充值</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.withdrawBtn} onPress={() => {}}>
+            <TouchableOpacity style={styles.withdrawBtn} onPress={handleWithdraw}>
               <Text style={styles.withdrawBtnText}>提現 →</Text>
             </TouchableOpacity>
           </View>
@@ -120,16 +142,21 @@ const WalletScreen: React.FC = () => {
         <View style={styles.balanceSub}>
           <View style={styles.balanceSubItem}>
             <Text style={styles.balanceSubLabel}>🔒 擔保中</Text>
-            <Text style={styles.balanceSubValue}>HK$ {inEscrow.toLocaleString()}</Text>
+            <Text style={styles.balanceSubValue}>
+              {loading ? '—' : `HK$ ${inEscrow.toLocaleString()}`}
+            </Text>
           </View>
           <View style={styles.balanceSubItem}>
             <Text style={styles.balanceSubLabel}>💰 總結餘</Text>
-            <Text style={styles.balanceSubValue}>HK$ {balance.toLocaleString()}</Text>
+            <Text style={styles.balanceSubValue}>
+              {loading ? '—' : `HK$ ${balance.toLocaleString()}`}
+            </Text>
           </View>
         </View>
-        {/* FPS badge */}
         <View style={styles.fpsBadge}>
-          <Text style={styles.fpsBadgeText}>FPS 轉數快已連結</Text>
+          <Text style={styles.fpsBadgeText}>
+            {walletData.onboardingComplete ? 'FPS 轉數快已連結' : 'FPS 連結待設定'}
+          </Text>
         </View>
       </View>
 
@@ -144,7 +171,7 @@ const WalletScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Escrow warning banner */}
+      {/* Escrow warning banner — show when any in-escrow tx auto-releases within 5 days */}
       {filtered.filter(t => t.state === 'in_escrow' && t.autoReleaseAt && t.autoReleaseAt - Date.now() < 5 * 24 * 60 * 60 * 1000).length > 0 && (
         <View style={styles.warningBanner}>
           <Text style={styles.warningIcon}>⚠️</Text>
@@ -181,227 +208,150 @@ const WalletScreen: React.FC = () => {
 
       {/* Transaction list */}
       <View style={styles.txList}>
-        {filtered.map(tx => {
-          const state = STATE_LABELS[tx.state];
-          return (
-            <TouchableOpacity
-              key={tx.id}
-              style={styles.txCard}
-              onPress={() => navigation.navigate('OrderStatus', { txId: tx.id })}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.txIcon, tx.type === 'buy' ? styles.txBuyIcon : styles.txSellIcon]}>
-                <Text style={styles.txIconText}>{tx.type === 'buy' ? '↓' : '↑'}</Text>
-              </View>
-              <View style={styles.txInfo}>
-                <Text style={styles.txCardName}>{tx.cardName}</Text>
-                <Text style={styles.txCounterparty}>
-                  {tx.type === 'sell' ? '賣俾 ' : '向 '}{tx.counterparty}
-                </Text>
-                <Text style={styles.txDate}>{tx.date}</Text>
-              </View>
-              <View style={styles.txRight}>
-                <Text style={[styles.txAmount, tx.type === 'sell' ? styles.txAmountSell : styles.txAmountBuy]}>
-                  {tx.type === 'sell' ? '+' : '-'}HK${tx.amount.toLocaleString()}
-                </Text>
-                <View style={[styles.stateBadge, { backgroundColor: state.bg }]}>
-                  <Text style={[styles.stateBadgeText, { color: state.color }]}>
-                    {state.zh}
-                  </Text>
-                </View>
-                {tx.daysLeft && (
-                  <Text style={styles.daysLeft}>還剩 {tx.daysLeft} 日</Text>
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-
-        {filtered.length === 0 && (
+        {loading ? (
+          <View style={{ alignItems: 'center', paddingVertical: 32 }}>
+            <ActivityIndicator color="#D4AF37" />
+            <Text style={{ color: '#8888CC', fontSize: 12, marginTop: 8 }}>載入交易記錄…</Text>
+          </View>
+        ) : filtered.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>📭</Text>
             <Text style={styles.emptyText}>暫時沒有記錄</Text>
+            <Text style={styles.emptyHint}>
+              買賣卡牌後，交易會顯示喺呢度
+            </Text>
           </View>
+        ) : (
+          filtered.map(tx => {
+            const state = STATE_LABELS[toEscrowState(tx.state)];
+            return (
+              <TouchableOpacity
+                key={tx.id}
+                style={styles.txCard}
+                onPress={() => navigation.navigate('OrderStatus', { orderId: tx.id, txId: tx.id })}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.txIcon, tx.type === 'buy' ? styles.txBuyIcon : styles.txSellIcon]}>
+                  <Text style={styles.txIconText}>{tx.type === 'buy' ? '↓' : '↑'}</Text>
+                </View>
+                <View style={styles.txInfo}>
+                  <Text style={styles.txCardName}>{tx.cardName}</Text>
+                  <Text style={styles.txCounterparty}>
+                    {tx.type === 'sell' ? '賣俾 ' : '向 '}{tx.counterparty}
+                  </Text>
+                  <Text style={styles.txDate}>
+                    {tx.createdAt
+                      ? new Date(tx.createdAt).toLocaleDateString('zh-HK')
+                      : ''}
+                  </Text>
+                </View>
+                <View style={styles.txRight}>
+                  <Text style={[styles.txAmount, tx.type === 'sell' ? styles.txAmountSell : styles.txAmountBuy]}>
+                    {tx.type === 'sell' ? '+' : '-'}HK${tx.amount.toLocaleString()}
+                  </Text>
+                  <View style={[styles.stateBadge, { backgroundColor: state.bg }]}>
+                    <Text style={[styles.stateBadgeText, { color: state.color }]}>
+                      {state.zh}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })
         )}
-      </View>
 
-      {/* Dispute banner */}
-      <TouchableOpacity style={styles.disputeBanner}>
-        <Text style={styles.disputeIcon}>🛡️</Text>
-        <View style={styles.disputeText}>
-          <Text style={styles.disputeTitle}>交易爭議？</Text>
-          <Text style={styles.disputeDesc}>如遇問題，可提出爭議，平台將在 24 小時內審查</Text>
-        </View>
-        <Text style={styles.disputeArrow}>→</Text>
-      </TouchableOpacity>
+        {/* Dispute banner */}
+        <TouchableOpacity style={styles.disputeBanner}>
+          <Text style={styles.disputeIcon}>🛡️</Text>
+          <View style={styles.disputeText}>
+            <Text style={styles.disputeTitle}>交易爭議？</Text>
+            <Text style={styles.disputeDesc}>如遇問題，可提出爭議，平台將在 24 小時內審查</Text>
+          </View>
+          <Text style={styles.disputeArrow}>→</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={{ height: 100 }} />
     </ScrollView>
   );
 };
 
-// NEW: Obsidian Gallery design system
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#080810' },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 56,
-    paddingBottom: 12,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
   },
   headerTitle: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
   settingsBtn: {
-    width: 40, height: 40,
-    borderRadius: 12,
-    backgroundColor: '#14142A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#2A2A50',
+    width: 40, height: 40, borderRadius: 12, backgroundColor: '#14142A',
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A2A50',
   },
   settingsIcon: { fontSize: 18 },
-  // NEW: elevated balance card with gold CTA
   balanceCard: {
-    backgroundColor: '#14142A',
-    marginHorizontal: 16,
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#2A2A50',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 8,
+    backgroundColor: '#14142A', marginHorizontal: 16, borderRadius: 24,
+    padding: 24, marginBottom: 12, borderWidth: 1, borderColor: '#2A2A50',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35,
+    shadowRadius: 20, elevation: 8,
   },
-  balanceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
+  balanceHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   balanceLabel: { color: '#8888CC', fontSize: 12 },
-  balanceValue: {
-    color: '#F0F0FF',
-    fontSize: 32,
-    fontWeight: '800',
-    marginTop: 4,
-    letterSpacing: -1,
-  },
+  balanceValue: { color: '#F0F0FF', fontSize: 32, fontWeight: '800', marginTop: 4, letterSpacing: -1 },
   balanceActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   topupBtn: {
-    backgroundColor: '#14142A',
-    paddingHorizontal: 12, paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1, borderColor: '#D4AF37',
+    backgroundColor: '#14142A', paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 20, borderWidth: 1, borderColor: '#D4AF37',
   },
   topupBtnText: { color: '#D4AF37', fontSize: 12, fontWeight: '700' },
-  withdrawBtn: {
-    backgroundColor: '#D4AF37',   // NEW: gold CTA
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20,
-  },
+  withdrawBtn: { backgroundColor: '#D4AF37', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
   withdrawBtnText: { color: '#080810', fontSize: 12, fontWeight: '700' },
-  balanceDivider: {
-    height: 1,
-    backgroundColor: '#2A2A50',
-    marginVertical: 14,
-  },
+  balanceDivider: { height: 1, backgroundColor: '#2A2A50', marginVertical: 14 },
   balanceSub: { flexDirection: 'row', gap: 24 },
   balanceSubItem: {},
   balanceSubLabel: { color: '#8888CC', fontSize: 11 },
   balanceSubValue: { color: '#F0F0FF', fontSize: 14, fontWeight: '700', marginTop: 2 },
   fpsBadge: {
-    backgroundColor: 'rgba(0,150,255,0.12)',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    alignSelf: 'flex-start',
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0,150,255,0.2)',
+    backgroundColor: 'rgba(0,150,255,0.12)', borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 5, alignSelf: 'flex-start', marginTop: 12,
+    borderWidth: 1, borderColor: 'rgba(0,150,255,0.2)',
   },
   fpsBadgeText: { color: '#0096FF', fontSize: 11, fontWeight: '600' },
   escrowInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(212,175,55,0.08)',
-    marginHorizontal: 16,
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.2)',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(212,175,55,0.08)',
+    marginHorizontal: 16, borderRadius: 14, padding: 14, gap: 12, marginBottom: 16,
+    borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
   },
   escrowIcon: { fontSize: 24 },
   escrowText: { flex: 1 },
   escrowTitle: { color: '#D4AF37', fontSize: 13, fontWeight: '700', marginBottom: 4 },
   escrowDesc: { color: '#8888CC', fontSize: 11, lineHeight: 16 },
-  // NEW: gold active tab
-  tabRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 6,
-    marginBottom: 14,
-  },
+  tabRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 6, marginBottom: 14 },
   tab: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: '#14142A',
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 4,
+    flex: 1, paddingVertical: 8, borderRadius: 10, backgroundColor: '#14142A',
+    alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 4,
   },
   tabActive: {
-    backgroundColor: '#D4AF37',   // NEW: gold active
-    shadowColor: '#D4AF37',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
+    backgroundColor: '#D4AF37', shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2, shadowRadius: 6, elevation: 4,
   },
   tabText: { color: '#8888CC', fontSize: 11, fontWeight: '600' },
   tabTextActive: { color: '#080810', fontWeight: '700' },
-  tabBadge: {
-    width: 16, height: 16,
-    borderRadius: 8,
-    backgroundColor: '#2A2A50',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  tabBadge: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#2A2A50', alignItems: 'center', justifyContent: 'center' },
   tabBadgeActive: { backgroundColor: 'rgba(0,0,0,0.2)' },
   tabBadgeText: { color: '#8888CC', fontSize: 9, fontWeight: '700' },
   tabBadgeTextActive: { color: '#080810' },
   txList: { paddingHorizontal: 16, gap: 8, display: 'flex' },
-  // NEW: elevated tx card
   txCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#14142A',
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: '#2A2A50',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#14142A',
+    borderRadius: 14, padding: 14, gap: 12, borderWidth: 1, borderColor: '#2A2A50',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25,
+    shadowRadius: 10, elevation: 5,
   },
   txIcon: {
-    width: 40, height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
   },
-  txBuyIcon: { backgroundColor: 'rgba(255,64,96,0.15)' },   // NEW: ruby
-  txSellIcon: { backgroundColor: 'rgba(0,200,150,0.15)' },   // NEW: jade
+  txBuyIcon: { backgroundColor: 'rgba(255,64,96,0.15)' },
+  txSellIcon: { backgroundColor: 'rgba(0,200,150,0.15)' },
   txIconText: { fontSize: 18, fontWeight: '700' },
   txInfo: { flex: 1 },
   txCardName: { color: '#F0F0FF', fontSize: 13, fontWeight: '700' },
@@ -409,41 +359,27 @@ const styles = StyleSheet.create({
   txDate: { color: '#4A4A70', fontSize: 10, marginTop: 2 },
   txRight: { alignItems: 'flex-end', gap: 4 },
   txAmount: { fontSize: 15, fontWeight: '700' },
-  txAmountSell: { color: '#00C896' },   // NEW: jade
-  txAmountBuy: { color: '#FF4060' },    // NEW: ruby
+  txAmountSell: { color: '#00C896' },
+  txAmountBuy: { color: '#FF4060' },
   stateBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   stateBadgeText: { fontSize: 10, fontWeight: '700' },
-  daysLeft: { color: '#FF6B35', fontSize: 10 },   // NEW: ember
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyIcon: { fontSize: 40, marginBottom: 8 },
-  emptyText: { color: '#8888CC', fontSize: 14 },
+  emptyText: { color: '#8888CC', fontSize: 14, marginBottom: 4 },
+  emptyHint: { color: '#4A4A70', fontSize: 12, textAlign: 'center' },
   warningBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,107,53,0.12)',
-    marginHorizontal: 16,
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.25)',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,107,53,0.12)',
+    marginHorizontal: 16, borderRadius: 14, padding: 14, gap: 12, marginBottom: 16,
+    borderWidth: 1, borderColor: 'rgba(255,107,53,0.25)',
   },
   warningIcon: { fontSize: 24 },
   warningText: { flex: 1 },
   warningTitle: { color: '#FF6B35', fontSize: 13, fontWeight: '700', marginBottom: 4 },
   warningDesc: { color: '#8888CC', fontSize: 11, lineHeight: 16 },
   disputeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#14142A',
-    marginHorizontal: 16,
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#2A2A50',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#14142A',
+    marginHorizontal: 16, borderRadius: 14, padding: 14, gap: 12, marginTop: 16,
+    borderWidth: 1, borderColor: '#2A2A50',
   },
   disputeIcon: { fontSize: 24 },
   disputeText: { flex: 1 },

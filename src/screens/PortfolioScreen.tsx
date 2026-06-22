@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, ScrollView, StyleSheet, Image,
   TouchableOpacity, FlatList, Modal,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { collection, doc, getDocs, getDoc, query, where, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
@@ -126,6 +126,41 @@ const PortfolioScreen: React.FC = () => {
     loadPortfolio();
   }, []);
 
+  // Re-evaluate PnL against live market prices every time the user
+  // re-focuses this tab. Without this, PnL stays frozen at whatever
+  // price was snapshotted in card_prices at last sync (up to 4 hours stale).
+  const isFocusedRef = useRef(false);
+  useFocusEffect(useCallback(() => {
+    isFocusedRef.current = true;
+    // Refresh live prices for each portfolio item
+    if (portfolioItems.length === 0) return;
+    (async () => {
+      try {
+        const updates = await Promise.all(
+          portfolioItems.map(async (item) => {
+            const cardSnap = await getDoc(doc(db, 'card_prices', item.card.id));
+            if (!cardSnap.exists()) return null;
+            const data = cardSnap.data() as any;
+            const currentPrice = Number(data.priceHkd ?? data.cardmarketHkd ?? 0);
+            const currentValue = currentPrice * item.quantity;
+            const totalCost = item.avgBuyPrice * item.quantity;
+            const pnl = currentValue - totalCost;
+            const pnlPercent = totalCost > 0 ? (pnl / totalCost) * 100 : 0;
+            return { id: item.card.id, currentValue, pnl, pnlPercent, currentPrice };
+          })
+        );
+        setPortfolioItems(prev => prev.map(item => {
+          const u = updates.find(x => x?.id === item.card.id);
+          if (!u) return item;
+          return { ...item, currentValue: u.currentValue, pnl: u.pnl, pnlPercent: u.pnlPercent, card: { ...item.card, price: u.currentPrice } };
+        }));
+      } catch (e) {
+        console.warn('[Portfolio] live price refresh failed:', e);
+      }
+    })();
+    return () => { isFocusedRef.current = false; };
+  }, [portfolioItems.length]));
+
   const totalValue = portfolioItems.reduce((s, i) => s + i.currentValue, 0);
   const totalCost = portfolioItems.reduce((s, i) => s + i.avgBuyPrice * i.quantity, 0);
   const totalPnL = totalValue - totalCost;
@@ -242,12 +277,12 @@ const PortfolioScreen: React.FC = () => {
         </View>
       ))}
 
-      {/* Floating Sell Button */}
+      {/* Floating Sell Button — navigates to Sell screen with empty params,
+          user picks the card from their portfolio inside Sell screen. */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => {
-          const nav = navigation as any;
-          if (nav.navigate) nav.navigate('CardDetail', {});
+          navigation.navigate('Sell', undefined);
         }}
         activeOpacity={0.8}
       >

@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image,
   TextInput, TouchableOpacity, Modal, Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../types/navigation';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { auth } from '../services/firebase';
-import { PokemonCard } from '../types';
+import { PokemonCard, CardCondition, CardGrade, GradingInfo } from '../types';
+import { GRADE_LABEL, GRADE_CHIP, makeGrading, isPlausibleCert, GRADE_PREMIUM_HINT } from '../utils/gradeHelper';
 import ReviewBadge from '../components/ReviewBadge';
-import type { CardCondition } from '../types';
+import { calculateFee, PLATFORM_FEE_PERCENT, STRIPE_PERCENT_FEE, STRIPE_FIXED_CENTS, ORDER_MIN_FEE_HKD } from '../utils/feeCalculator';
+import type { CardCondition as CardCondType } from '../types';
+
+type SellRouteProp = RouteProp<RootStackParamList, 'Sell'>;
 
 const CONDITIONS: CardCondition[] = ['Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
+
+// All available grade options in display order
+const GRADES: CardGrade[] = [
+  'raw',
+  'psa10', 'psa9', 'psa8', 'psa7',
+  'bgs95', 'bgs10', 'bgs9',
+  'cgc10',
+  'other_graded',
+];
 
 // NEW: Obsidian Gallery — gold step indicators, premium feel
 const COLORS = {
@@ -34,18 +49,59 @@ const COLORS = {
 const REVIEW_THRESHOLD = 500;
 
 const SellScreen: React.FC = () => {
+  const route = useRoute<SellRouteProp>();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  // If the user came from CardDetail's "sell this card" modal, they passed
+  // a cardId + cardName + priceType. We pre-select that card.
+  const incomingCardId = route.params?.cardId;
+  const incomingCardName = route.params?.cardName;
+  const incomingPriceType = route.params?.priceType;
+
   const [step, setStep] = useState(1);
   const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null);
-  const [priceType, setPriceType] = useState<'fixed' | 'auction'>('fixed');
+  const [priceType, setPriceType] = useState<'fixed' | 'auction'>(incomingPriceType ?? 'fixed');
   const [price, setPrice] = useState('');
   const [condition, setCondition] = useState<CardCondition>('Near Mint');
+  const [grade, setGrade] = useState<CardGrade>('raw');
+  const [certNumber, setCertNumber] = useState('');
   const [showCardPicker, setShowCardPicker] = useState(false);
   const [listing, setListing] = useState<{reviewId?: string; isVerified?: boolean; verifiedGrade?: string} | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const needsReview = selectedCard && Number(price) >= REVIEW_THRESHOLD;
-  const totalSteps = needsReview ? 4 : 3;
+  // Now totalSteps grows by 1 if user picks a graded card (extra review step)
+  const isGraded = grade !== 'raw';
+  const totalSteps = needsReview ? (isGraded ? 5 : 4) : (isGraded ? 4 : 3);
+
+  // Build GradingInfo for the listing payload
+  const gradingInfo: GradingInfo | undefined = grade === 'raw'
+    ? undefined
+    : makeGrading(grade, certNumber || undefined);
+
+  // If user came from CardDetail "Sell this card" modal, auto-load the
+  // card from Firestore card_prices so the user doesn't have to search
+  // for the card they just looked at.
+  useEffect(() => {
+    if (incomingCardId && !selectedCard) {
+      (async () => {
+        try {
+          const { getCardPrice, priceDataToCard } = await import('../services/cardPriceService');
+          const priceDoc = await getCardPrice(incomingCardId);
+          if (priceDoc) {
+            setSelectedCard(priceDataToCard(priceDoc));
+            setStep(2);
+          }
+        } catch (e) {
+          console.warn('[SellScreen] auto-load card failed:', e);
+        }
+      })();
+    }
+  }, [incomingCardId]);
+
+  // Cert validity check
+  const certValid = isPlausibleCert(grade, certNumber);
+  const certIsRequired = isGraded && !certNumber.trim();
+  const canProceedFromGrade = !isGraded || certValid;
 
   const handleCardSelect = (card: PokemonCard) => {
     if (!auth.currentUser) {
@@ -65,6 +121,15 @@ const SellScreen: React.FC = () => {
       return;
     }
     if (!selectedCard || !price) return;
+    if (!canProceedFromGrade) {
+      Alert.alert(
+        '資料未完整',
+        isGraded && !certValid
+          ? 'PSA cert 格式不正確（需 7-10 位數字）；BGS 需 8-12 位英數'
+          : '請填寫 slab 認證編號',
+      );
+      return;
+    }
     setSubmitting(true);
     try {
       const createListing = httpsCallable(getFunctions(), 'createListing');
@@ -72,16 +137,18 @@ const SellScreen: React.FC = () => {
         cardId: selectedCard.id,
         price: Number(price),
         condition,
+        grade,                          // legacy numeric not derivable, but pass string
+        grading: gradingInfo,           // new structured {grade, grader, certNumber, gradeValue}
         type: priceType,
         sellerId: auth.currentUser.uid,
       });
       const data = result.data as any;
       if (needsReview && !listing?.isVerified) {
         setListing({ reviewId: data.reviewId });
-        setStep(4);
+        setStep(isGraded ? 5 : 4);
       } else {
         Alert.alert('✅ 掛牌成功！', `${selectedCard.name} 已成功上架。`, [{ text: '好的' }]);
-        setStep(1); setSelectedCard(null); setPrice(''); setListing(null);
+        resetForm();
       }
     } catch (err) {
       Alert.alert('❌ 掛牌失敗', '請稍後再試。');
@@ -89,6 +156,15 @@ const SellScreen: React.FC = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const resetForm = () => {
+    setStep(1);
+    setSelectedCard(null);
+    setPrice('');
+    setGrade('raw');
+    setCertNumber('');
+    setListing(null);
   };
 
   return (
@@ -247,13 +323,28 @@ const SellScreen: React.FC = () => {
 
           <View style={styles.feeInfo}>
             <Text style={styles.feeTitle}>📋 費用說明</Text>
-            <Text style={styles.feeRow}>平台服務費：成交金額 × 3%</Text>
-            <Text style={styles.feeRow}>支付手續費：HK$ 15/筆</Text>
-            {price && (
-              <Text style={styles.feeRow}>
-                預計收款：HK$ {(Number(price) * 0.97 - 15).toFixed(0)}
-              </Text>
-            )}
+            <Text style={styles.feeRow}>
+              平台服務費：成交金額 × {Math.round(PLATFORM_FEE_PERCENT * 100)}%
+            </Text>
+            <Text style={styles.feeRow}>
+              Stripe 處理費：{Math.round(STRIPE_PERCENT_FEE * 100)}% + HK$ {(STRIPE_FIXED_CENTS / 100).toFixed(2)}/筆
+            </Text>
+            <Text style={styles.feeRow}>
+              最低手續費：HK$ {ORDER_MIN_FEE_HKD.toFixed(0)}/筆
+            </Text>
+            {price && Number(price) > 0 && (() => {
+              const fee = calculateFee(Number(price));
+              return (
+                <>
+                  <Text style={styles.feeRow}>
+                    預計總費用：HK$ {fee.totalFeeHkd.toFixed(2)}
+                  </Text>
+                  <Text style={[styles.feeRow, styles.feeRowNet]}>
+                    預計淨收款：HK$ {fee.sellerNetHkd.toFixed(2)}
+                  </Text>
+                </>
+              );
+            })()}
           </View>
 
           <View style={styles.stepNav}>
@@ -594,6 +685,7 @@ const styles = StyleSheet.create({
   feeInfo: { backgroundColor: '#14142A', borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#2A2A50' },
   feeTitle: { color: '#F0F0FF', fontSize: 13, fontWeight: '700', marginBottom: 10 },
   feeRow: { color: '#8888CC', fontSize: 12, marginBottom: 4 },
+  feeRowNet: { color: '#00C896', fontWeight: '700', fontSize: 13, marginTop: 4 },
   stepNav: { flexDirection: 'row', gap: 12 },
   backBtn: {
     flex: 1, alignItems: 'center', backgroundColor: 'transparent',

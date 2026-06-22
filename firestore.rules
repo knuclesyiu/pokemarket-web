@@ -1,0 +1,213 @@
+rules_version = '2';
+
+// Firestore Security Rules for PokeMarket
+//
+// DEPLOY: Paste this into Firebase Console → Firestore → Rules tab → Publish.
+// OR: firebase deploy --only firestore:rules
+//
+// These rules enforce:
+//   1. Auth: only signed-in users can read most data
+//   2. Ownership: users can only write to their own profile/portfolio/wallet
+//   3. Card catalog: public read, server-only write
+//   4. Orders: only buyer + seller can read; only buyer can create
+//   5. Listings: public read; only owner can create/update/delete
+//   6. Chat: only thread participants can read/write
+//
+// IMPORTANT: This is a permissive MVP. Pre-launch hardening you should add:
+//   - require email_verified == true for createListing / createOrder
+//   - rate-limit writes (currently per-user; consider per-IP at the App Check layer)
+//   - Cloud Function validation hooks via request.auth.token.admin
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helpers ───────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    // ─── Public card catalog ──────────────────────────────────────────
+    // Anyone can read card_prices (public market data). Only the
+    // backend (Cloud Functions / Admin SDK) writes — clients cannot.
+    match /card_prices/{cardId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ─── Card image CDN cache (optional optimization) ────────────────
+    match /card_image_cache/{cardId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ─── User profiles ────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+
+      // Wallet balance subcollection
+      match /wallet/{document=**} {
+        allow read: if isOwner(userId);
+        // Backend-only writes (Stripe webhooks)
+        allow write: if false;
+      }
+
+      // Portfolio subcollection
+      match /portfolio/{cardId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Transaction history (escrow records)
+      match /transactions/{txId} {
+        allow read: if isOwner(userId);
+        allow write: if false; // backend-only
+      }
+
+      // PIN attempt counter (used for server-side rate limiting)
+      match /pinAttempts/{document=**} {
+        allow read, write: if false; // backend-only
+      }
+    }
+
+    // ─── Market listings (sell side) ────────────────────────────────
+    match /listings/{listingId} {
+      // Public catalog of active listings
+      allow read: if true;
+
+      // Only owner can create / modify / delete. Must be email-verified
+      // for create (lifted during pre-launch dev).
+      allow create: if isSignedIn()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.price is number
+        && request.resource.data.price > 0
+        && request.resource.data.price < 10000000
+        && request.resource.data.cardId is string
+        && request.resource.data.status in ['active', 'pending'];
+        // Uncomment for production: && isEmailVerified();
+
+      allow update, delete: if isSignedIn()
+        && resource.data.sellerId == request.auth.uid;
+    }
+
+    // ─── Orders (escrow flow) ────────────────────────────────────────
+    match /orders/{orderId} {
+      // Only buyer and seller can read
+      allow read: if isSignedIn() && (
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid
+      );
+
+      // Buyer creates the order (validated server-side by Cloud Function
+      // before the order is actually created — the client just calls
+      // createPaymentIntent which writes the order).
+      allow create: if isSignedIn()
+        && request.resource.data.buyerId == request.auth.uid
+        && request.resource.data.amountHkd is number
+        && request.resource.data.amountHkd > 0
+        && request.resource.data.cardId is string
+        && request.resource.data.sellerId is string
+        && request.resource.data.sellerId != request.auth.uid;
+        // Uncomment for production: && isEmailVerified();
+
+      // Updates are server-only (Stripe webhook → Cloud Function updates
+      // status). Clients can NEVER modify order state.
+      allow update, delete: if false;
+    }
+
+    // ─── Offers (trade flow) ─────────────────────────────────────────
+    match /offers/{offerId} {
+      // Only buyer and seller can read
+      allow read: if isSignedIn() && (
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid
+      );
+
+      // Buyer creates the offer
+      allow create: if isSignedIn()
+        && request.resource.data.buyerId == request.auth.uid
+        && request.resource.data.sellerId != request.auth.uid
+        && request.resource.data.listingId is string;
+
+      // Buyer can cancel their own offer
+      // Seller can accept/reject/counter
+      allow update: if isSignedIn() && (
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid
+      );
+
+      allow delete: if false; // soft-delete via status field
+    }
+
+    // ─── Chat threads ────────────────────────────────────────────────
+    match /chat_threads/{threadId} {
+      // Only thread participants can read the thread metadata
+      allow read: if isSignedIn()
+        && request.auth.uid in resource.data.participantIds;
+
+      // Create only if you're one of the participants
+      allow create: if isSignedIn()
+        && request.auth.uid in request.resource.data.participantIds
+        && request.resource.data.participantIds.size() == 2;
+
+      // Update thread metadata (lastMessage, unreadCount) — only by
+      // a participant. The other party's readBy can be updated.
+      allow update: if isSignedIn()
+        && request.auth.uid in resource.data.participantIds
+        // Prevent participants from removing each other
+        && request.resource.data.participantIds == resource.data.participantIds;
+
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Only thread participants can read messages
+        allow read: if isSignedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/chat_threads/$(threadId)).data.participantIds;
+
+        // Only the sender can create a message with their own uid
+        allow create: if isSignedIn()
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 4000;
+
+        // Sender can mark their own message as deleted (soft delete)
+        allow update: if isSignedIn()
+          && resource.data.senderId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['deleted', 'text']);
+      }
+    }
+
+    // ─── Notifications ──────────────────────────────────────────────
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow write: if false; // backend-only
+    }
+
+    // ─── Reviews ────────────────────────────────────────────────────
+    match /reviews/{reviewId} {
+      allow read: if true; // public reputation
+      allow create: if isSignedIn()
+        && request.resource.data.reviewerId == request.auth.uid
+        && request.resource.data.type in ['positive', 'negative'];
+      allow update, delete: if false; // immutable once written
+    }
+
+    // ─── Sync metadata (priceScraper bookkeeping) ─────────────────
+    match /sync_meta/{document=**} {
+      allow read, write: if false; // backend-only
+    }
+
+    // ─── Default deny-all ───────────────────────────────────────────
+    // Any path not explicitly matched above is denied.
+  }
+}

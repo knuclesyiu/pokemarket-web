@@ -14,6 +14,7 @@ import urllib.request
 import json
 import time
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -103,6 +104,30 @@ def convert_price(p: dict, fx: dict) -> dict:
     return p
 
 # ─── Firestore Batch Upload ──────────────────────────────────────────────────
+def tcgdex_image_url(card_id: str, card: dict) -> str:
+    """Build a TCGdex CDN URL for a card. Returns full https URL with
+    `/high.png` suffix so the app can render directly without runtime
+    normalization.
+
+    TCGdex image field in API responses is a relative path like
+    `/en/swsh/swsh3/20`. We need to prepend the CDN host and add
+    the quality suffix.
+    """
+    img = card.get("image", "")
+    if not img:
+        # Fall back to constructing from card_id
+        return f"https://api.tcgdex.net/cards/{card_id}/high.png"
+    if img.startswith("http"):
+        # Already a full URL — ensure it has a quality suffix
+        if not re.search(r"\.(png|jpg|webp|jpeg)$", img, re.IGNORECASE):
+            return img.rstrip("/") + "/high.png"
+        return img
+    # Relative path
+    if img.startswith("/"):
+        return f"https://api.tcgdex.net{img}/high.png"
+    return f"https://api.tcgdex.net/{img}/high.png"
+
+
 def upload_batch(db, cards: list[dict], fx: dict, set_id: str, set_name: str):
     """Upload a batch of cards to Firestore using batched writes."""
     if not cards:
@@ -124,7 +149,8 @@ def upload_batch(db, cards: list[dict], fx: dict, set_id: str, set_name: str):
             "set": set_name,
             "setCode": set_id,
             "rarity": card.get("rarity", ""),
-            "imageUrl": card.get("image", ""),
+            # ── Use the new helper: always a full https URL with /high.png
+            "imageUrl": tcgdex_image_url(doc_id, card),
             "number": card.get("number", ""),
             "series": card.get("series", ""),
             "priceEur": p.get("priceEur", 0),

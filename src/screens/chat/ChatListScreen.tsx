@@ -6,37 +6,31 @@ import { useNavigation } from '@react-navigation/native';
 import { onSnapshot, query, orderBy, where, collection } from 'firebase/firestore';
 import { auth, db } from '../../services/firebase';
 import { ChatThread } from '../../types/chat';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Props {
   onSelectThread?: (threadId: string) => void;
 }
 
-// FIRESTORE: real data — uid from Firebase Auth
-const getCurrentUserId = (): string => {
-  try {
-    return auth.currentUser?.uid ?? 'placeholder_user';
-  } catch {
-    return 'placeholder_user';
-  }
-};
-
 const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
   const navigation = useNavigation<any>();
+  const { currentUser } = useAuth();
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // FIRESTORE: real data — resolved uid per render
-  const CURRENT_USER_ID = getCurrentUserId();
-
+  // Re-subscribe whenever the user changes (sign in / out / switch account)
   useEffect(() => {
-    if (CURRENT_USER_ID === 'placeholder_user') {
+    const uid = currentUser?.uid;
+    if (!uid) {
+      setThreads([]);
       setLoading(false);
       return;
     }
+    setLoading(true);
 
     const q = query(
       collection(db, 'chat_threads'),
-      where('parties', 'array-contains', CURRENT_USER_ID),
+      where('parties', 'array-contains', uid),
       orderBy('lastMessageAt', 'desc')
     );
 
@@ -52,16 +46,18 @@ const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
     );
 
     return () => unsub();
-  }, []);
+  }, [currentUser?.uid]);
 
   const totalUnread = threads.reduce((sum, t) => {
-    const mine = t.unreadCount?.[CURRENT_USER_ID] ?? 0;
+    if (!currentUser?.uid) return sum;
+    const mine = t.unreadCount?.[currentUser.uid] ?? 0;
     return sum + mine;
   }, 0);
 
   const renderThread = ({ item }: { item: ChatThread }) => {
-    const otherPartyId = item.parties.find(p => p !== CURRENT_USER_ID) ?? item.parties[0];
-    const unread = item.unreadCount?.[CURRENT_USER_ID] ?? 0;
+    if (!currentUser?.uid) return null;
+    const otherPartyId = item.parties.find(p => p !== currentUser.uid) ?? item.parties[0];
+    const unread = item.unreadCount?.[currentUser.uid] ?? 0;
     const timeLabel = item.lastMessageAt
       ? new Date(item.lastMessageAt).toLocaleDateString('zh-HK', { month: 'short', day: 'numeric' })
       : '';
