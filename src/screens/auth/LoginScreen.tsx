@@ -1,21 +1,32 @@
 /**
- * LoginScreen — Phone + Email + Biometric
+ * LoginScreen — Phone + Email + Google
+ *
+ * v2 changes (Phase C auth hardening):
+ *   - Email sign-in no longer auto-creates accounts
+ *   - 'needs_signup' navigates to RegisterScreen with a clear CTA
+ *   - Google button is disabled with tooltip on native (RN has no SDK)
+ *   - Phone button shows clean error if provider not enabled in Firebase
+ *   - Session token is force-refreshed on screen focus
+ *   - Countdown resets on OTP error so the user can immediately retry
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
-import { getAuth } from 'firebase/auth';
 
 const PHONE_REGEX = /^\+?[0-9]{7,15}$/;
+const IS_NATIVE = typeof window === 'undefined';
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { signInWithPhone, signInWithEmail, signInWithGoogle, currentUser } = useAuth();
-  const [mode, setMode] = useState<'phone' | 'email' | 'google'>('phone');
+  const {
+    signInWithPhone, signInWithEmail, signInWithGoogle,
+    currentUser, isAnonymous, refreshSession, isPhoneProviderDisabled,
+  } = useAuth();
+  const [mode, setMode] = useState<'phone' | 'email' | 'google'>('email');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,31 +36,20 @@ const LoginScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (currentUser) navigation.replace('MainTabs');
-  }, [currentUser]);
+  // Force-refresh the ID token whenever the screen regains focus.
+  // This catches password changes / revocations made elsewhere.
+  useFocusEffect(useCallback(() => {
+    if (currentUser && !currentUser.isAnonymous) {
+      refreshSession().catch(() => {});
+    }
+  }, [currentUser, refreshSession]));
 
-  // Initialize reCAPTCHA for Phone Auth (web only)
+  // If already signed in (and not anonymous), auto-redirect.
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const initRecaptcha = async () => {
-      try {
-        const { auth } = await import('../../services/firebase');
-        const { RecaptchaVerifier } = await import('firebase/auth');
-        if (!(window as any).recaptchaVerifier) {
-          (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            size: 'invisible',
-            callback: () => {},
-            'expired-callback': () => {},
-          });
-        }
-      } catch (e) {
-        console.warn('reCAPTCHA init failed:', e);
-      }
-    };
-    initRecaptcha();
-  }, []);
+    if (currentUser && !currentUser.isAnonymous) {
+      navigation.replace('MainTabs');
+    }
+  }, [currentUser, navigation]);
 
   // OTP countdown
   useEffect(() => {
@@ -60,7 +60,7 @@ const LoginScreen: React.FC = () => {
 
   const handleSendOTP = async () => {
     if (!PHONE_REGEX.test(phone)) {
-      Alert.alert('錯誤', '請輸入有效電話號碼（例：+85261234567）');
+      Alert.alert('錯誤', '請輸入有效電話號碼（例：+852****4567）');
       return;
     }
     setLoading(true);
@@ -70,7 +70,18 @@ const LoginScreen: React.FC = () => {
       setOtpSent(true);
       setCountdown(60);
     } catch (e: any) {
-      Alert.alert('發送失敗', e.message ?? '請稍後再試');
+      if (isPhoneProviderDisabled(e)) {
+        Alert.alert(
+          '電話登入未啟用',
+          '此 App 尚未啟用電話登入，請改用 Email 登入，或聯絡管理員。',
+          [{ text: '改用 Email', onPress: () => setMode('email') }, { text: '取消' }],
+        );
+      } else {
+        Alert.alert('發送失敗', e?.message ?? '請稍後再試');
+      }
+      // Reset OTP state on any error
+      setOtpSent(false);
+      setConfirmResult(null);
     } finally {
       setLoading(false);
     }
@@ -84,8 +95,11 @@ const LoginScreen: React.FC = () => {
     setLoading(true);
     try {
       await confirmResult.confirm(otp);
+      // onAuthStateChanged will fire and the useEffect above will navigate
     } catch (e: any) {
-      Alert.alert('驗證失敗', e.message ?? '驗證碼不正確');
+      Alert.alert('驗證失敗', e?.message ?? '驗證碼不正確');
+      // Reset countdown so user can immediately request a new code
+      setCountdown(0);
     } finally {
       setLoading(false);
     }
@@ -98,9 +112,26 @@ const LoginScreen: React.FC = () => {
     }
     setLoading(true);
     try {
-      await signInWithEmail(email, password);
+      const result = await signInWithEmail(email.trim().toLowerCase(), password);
+      if (result.kind === 'needs_signup') {
+        // User doesn't exist — offer explicit signup rather than auto-creating
+        Alert.alert(
+          '帳戶未註冊',
+          `未有此 Email 帳戶。是否前往註冊？`,
+          [
+            { text: '前往註冊', onPress: () => navigation.navigate('Register') },
+            { text: '取消', style: 'cancel' },
+          ],
+        );
+        return;
+      }
+      if (result.kind === 'error') {
+        Alert.alert('登入失敗', result.message);
+        return;
+      }
+      // Success — onAuthStateChanged will navigate
     } catch (e: any) {
-      Alert.alert('登入失敗', e.message ?? 'Email 或密碼錯誤');
+      Alert.alert('登入失敗', e?.message ?? '請稍後再試');
     } finally {
       setLoading(false);
     }
@@ -113,11 +144,10 @@ const LoginScreen: React.FC = () => {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.title}>登入 / 註冊</Text>
-        <Text style={styles.subtitle}>電話或 Email 均可登入</Text>
-
-        {/* reCAPTCHA container for Phone Auth (web) */}
-        <View id="recaptcha-container" />
+        <Text style={styles.title}>登入</Text>
+        <Text style={styles.subtitle}>
+          {isAnonymous ? '升級帳戶以開始交易' : '選擇登入方式'}
+        </Text>
 
         {/* Mode Toggle */}
         <View style={styles.toggle}>
@@ -163,6 +193,7 @@ const LoginScreen: React.FC = () => {
             ) : (
               <>
                 <Text style={styles.label}>輸入驗證碼</Text>
+                <Text style={styles.codeHint}>已發送至 {phone}</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="6 位數字"
@@ -176,7 +207,7 @@ const LoginScreen: React.FC = () => {
                   {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.primaryBtnText}>驗證登入</Text>}
                 </TouchableOpacity>
                 {countdown > 0 ? (
-                  <Text style={styles.resend}>重新發送（{countdown}s）</Text>
+                  <Text style={styles.resend}>{countdown}s 後可重發</Text>
                 ) : (
                   <TouchableOpacity onPress={handleSendOTP}>
                     <Text style={styles.resendLink}>重發驗證碼</Text>
@@ -222,19 +253,39 @@ const LoginScreen: React.FC = () => {
         {/* Google mode */}
         {mode === 'google' && (
           <>
-            <TouchableOpacity
-              style={styles.googleBtn}
-              onPress={async () => {
-                setLoading(true);
-                try { await signInWithGoogle(); } catch (e: any) { Alert.alert('Google 登入失敗', e.message); } finally { setLoading(false); }
-              }}
-              disabled={loading}
-            >
-              {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.googleBtnText}>🔵 用 Google 帳戶登入</Text>}
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.linkBtn} onPress={() => setMode('email')}>
-              <Text style={styles.linkText}>改用 Email 登入 →</Text>
-            </TouchableOpacity>
+            {IS_NATIVE ? (
+              <View style={styles.googleDisabled}>
+                <Text style={styles.googleDisabledTitle}>📱 手機版尚未支援</Text>
+                <Text style={styles.googleDisabledText}>
+                  Google 登入需要安裝額外的 native SDK。{'\n'}
+                  請改用 Email 登入或到網頁版體驗。
+                </Text>
+                <TouchableOpacity
+                  style={styles.primaryBtn}
+                  onPress={() => setMode('email')}
+                >
+                  <Text style={styles.primaryBtnText}>改用 Email →</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.googleBtn}
+                onPress={async () => {
+                  setLoading(true);
+                  try { await signInWithGoogle(); }
+                  catch (e: any) { Alert.alert('Google 登入失敗', e?.message ?? '請稍後再試'); }
+                  finally { setLoading(false); }
+                }}
+                disabled={loading}
+              >
+                {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.googleBtnText}>🔵 用 Google 帳戶登入</Text>}
+              </TouchableOpacity>
+            )}
+            {!IS_NATIVE && (
+              <TouchableOpacity style={styles.linkBtn} onPress={() => setMode('email')}>
+                <Text style={styles.linkText}>改用 Email 登入 →</Text>
+              </TouchableOpacity>
+            )}
           </>
         )}
       </View>
@@ -268,6 +319,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginTop: 8,
   },
   primaryBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
+  codeHint: { color: '#6666AA', fontSize: 12, marginBottom: 8 },
   resend: { color: '#6666AA', fontSize: 12, textAlign: 'center', marginTop: 12 },
   resendLink: { color: '#FF3C3C', fontSize: 12, textAlign: 'center', marginTop: 12 },
   linkBtn: { alignItems: 'center', marginTop: 20 },
@@ -278,6 +330,12 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: '#4A4A70',
   },
   googleBtnText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
+  googleDisabled: {
+    backgroundColor: 'rgba(255,107,53,0.08)', borderRadius: 14, padding: 20,
+    borderWidth: 1, borderColor: 'rgba(255,107,53,0.3)', alignItems: 'center',
+  },
+  googleDisabledTitle: { color: '#FF6B35', fontSize: 14, fontWeight: '700', marginBottom: 8 },
+  googleDisabledText: { color: '#8888AA', fontSize: 12, textAlign: 'center', lineHeight: 18, marginBottom: 12 },
 });
 
 export default LoginScreen;

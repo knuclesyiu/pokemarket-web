@@ -9,8 +9,6 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { httpsCallable, getFunctions } from 'firebase/functions';
-import { signOut } from 'firebase/auth';
-import { auth } from '../services/firebase';
 
 type Language = 'zh-HK' | 'zh-CN' | 'en';
 
@@ -22,10 +20,15 @@ const LANGUAGES: { value: Language; label: string }[] = [
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { currentUser, userProfile, updateProfile, signOut: authSignOut } = useAuth();
+  // All hooks at the top — never destructure inside callbacks
+  const {
+    currentUser, userProfile, updateProfile, signOut: authSignOut,
+    setTransactionPin, isAnonymous, upgradeFromAnonymous, refreshSession,
+  } = useAuth();
   const [changingLang, setChangingLang] = useState(false);
   const [changingPin, setChangingPin] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
 
   const profile = userProfile;
   const positiveRate = profile
@@ -47,16 +50,16 @@ const ProfileScreen: React.FC = () => {
   const handleSetPin = () => {
     Alert.prompt(
       '🔐 設定交易密碼',
-      '請輸入 4-6 位數字交易密碼',
+      '請輸入 6 位數字交易密碼',
       [
         { text: '取消', style: 'cancel' },
         {
           text: '確認',
           onPress: async (pin?: string) => {
-            if (!pin || pin.length < 4) { Alert.alert('錯誤', '密碼最少 4 位'); return; }
+            if (!pin || pin.length < 6) { Alert.alert('錯誤', '密碼最少 6 位數字'); return; }
+            if (!/^\d+$/.test(pin)) { Alert.alert('錯誤', '密碼只能包含數字'); return; }
             setChangingPin(true);
             try {
-              const { setTransactionPin } = useAuth();
               await setTransactionPin(pin);
               Alert.alert('✅ 已設定', '交易密碼已成功設定');
             } catch (e: any) {
@@ -71,14 +74,70 @@ const ProfileScreen: React.FC = () => {
     );
   };
 
+  const handleUpgradeFromAnonymous = () => {
+    Alert.prompt(
+      '🔓 升級訪客帳戶',
+      '輸入 Email 與密碼以升級帳戶，現有資料將會保留。',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '升級',
+          onPress: async (email?: string) => {
+            if (!email || !email.includes('@')) {
+              Alert.alert('錯誤', '請輸入有效 Email');
+              return;
+            }
+            // Re-prompt for password (Alert.prompt is single-input)
+            Alert.prompt(
+              '🔐 設定密碼',
+              '設定新密碼（最少 6 位）',
+              [
+                { text: '取消', style: 'cancel' },
+                {
+                  text: '確認升級',
+                  onPress: async (password?: string) => {
+                    if (!password || password.length < 6) {
+                      Alert.alert('錯誤', '密碼最少 6 位');
+                      return;
+                    }
+                    setUpgrading(true);
+                    try {
+                      const r = await upgradeFromAnonymous(email.trim().toLowerCase(), password);
+                      if (r.kind === 'ok') {
+                        Alert.alert('✅ 升級成功', '帳戶已升級，現有資料保留');
+                      } else {
+                        Alert.alert('❌ 升級失敗', r.message);
+                      }
+                    } catch (e: any) {
+                      Alert.alert('❌ 升級失敗', e?.message ?? '請稍後再試');
+                    } finally {
+                      setUpgrading(false);
+                    }
+                  },
+                },
+              ],
+              'secure-text'
+            );
+          },
+        },
+      ],
+      'email-address'
+    );
+  };
+
   const handleSignOut = () => {
     Alert.alert('登出', '確定要登出嗎？', [
       { text: '取消', style: 'cancel' },
       {
         text: '登出', style: 'destructive',
         onPress: async () => {
-          await authSignOut();
-          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          try {
+            await authSignOut();
+            // Reset nav stack so back button can't go to MainTabs after logout
+            navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          } catch (e: any) {
+            Alert.alert('登出失敗', e?.message ?? '請稍後再試');
+          }
         },
       },
     ]);
@@ -117,6 +176,25 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.notifBell}>🔔</Text>
         </TouchableOpacity>
       </View>
+
+      {/* ── Anonymous user CTA ────────────────────────────────────────── */}
+      {isAnonymous && (
+        <View style={styles.anonBanner}>
+          <Text style={styles.anonBannerTitle}>👻 你正在以訪客身份瀏覽</Text>
+          <Text style={styles.anonBannerDesc}>
+            升級為正式帳戶以建立掛牌、完成交易、保留收藏資料。
+          </Text>
+          <TouchableOpacity
+            style={styles.anonBannerBtn}
+            onPress={handleUpgradeFromAnonymous}
+            disabled={upgrading}
+          >
+            {upgrading
+              ? <ActivityIndicator color="#FFF" />
+              : <Text style={styles.anonBannerBtnText}>升級帳戶 →</Text>}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Avatar + Name */}
       <View style={styles.avatarSection}>
@@ -307,6 +385,18 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginHorizontal: 16, borderWidth: 1, borderColor: 'rgba(255,60,60,0.2)',
   },
   signOutBtnText: { color: '#FF4060', fontSize: 14, fontWeight: '700' },
+  // Anonymous user upgrade CTA
+  anonBanner: {
+    backgroundColor: 'rgba(255,107,53,0.10)', marginHorizontal: 16, marginBottom: 14,
+    borderRadius: 14, padding: 16, borderWidth: 1, borderColor: 'rgba(255,107,53,0.3)',
+  },
+  anonBannerTitle: { color: '#FF6B35', fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  anonBannerDesc: { color: '#8888CC', fontSize: 12, lineHeight: 18, marginBottom: 12 },
+  anonBannerBtn: {
+    backgroundColor: '#FF6B35', borderRadius: 12, paddingVertical: 12,
+    alignItems: 'center',
+  },
+  anonBannerBtnText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
 });
 
 export default ProfileScreen;

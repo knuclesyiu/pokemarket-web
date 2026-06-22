@@ -15,6 +15,7 @@ import NotificationScreen from "./src/screens/NotificationScreen";
 import WalletScreen from "./src/screens/WalletScreen";
 import CheckoutScreen from "./src/screens/CheckoutScreen";
 import OrderStatusScreen from "./src/screens/OrderStatusScreen";
+import SellScreen from "./src/screens/SellScreen";
 import MakeOfferScreen from "./src/screens/trade/MakeOfferScreen";
 import MyOffersScreen from "./src/screens/trade/MyOffersScreen";
 import OfferDetailScreen from "./src/screens/trade/OfferDetailScreen";
@@ -22,7 +23,7 @@ import ChatListScreen from "./src/screens/chat/ChatListScreen";
 import ChatDetailScreen from "./src/screens/chat/ChatDetailScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
-import { AuthProvider } from "./src/contexts/AuthContext";
+import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import type { RootStackParamList } from "./src/types/navigation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -142,19 +143,54 @@ export default function App() {
   return (
     <AuthProvider>
       <ErrorBoundary>
-        <NavigationContainer>
-          <Stack.Navigator
-          screenOptions={{
-            animation: 'fade',
-          }}
-          // NEW: Support ?screen=Main&q=search on URL for deep linking
-          {...(false ? { screenOptions: { initialRouteName: 'Main' } } : {})}
-        >
-        <Stack.Screen name="FeatureShowcase" component={FeatureShowcaseScreen} options={{ headerShown: false }} />
+        <RootNavigator />
+      </ErrorBoundary>
+    </AuthProvider>
+  );
+}
 
+/**
+ * RootNavigator — auth-aware stack.
+ *
+ * - Loading (auth state not yet known)            → LoadingScreen
+ * - Signed in (real account, not anonymous)      → Main (MainTabs)
+ * - Anonymous (auto-signed in by AuthContext)    → Login (with upgrade CTA in Profile)
+ *
+ * The "no anonymous MainTabs" rule: even though AuthContext auto-creates
+ * an anonymous user on first launch, the app is still considered
+ * "logged out" — the Login screen is shown. The user can browse via
+ * anonymous uid in the background, but anything that writes to Firestore
+ * (sell, checkout) must go through a real sign-in.
+ *
+ * FeatureShowcase stays as the very first route for cold launch demos.
+ */
+function RootNavigator() {
+  const { loading, currentUser, isAnonymous, refreshSession } = useAuth();
+
+  // On mount, force-refresh the ID token to catch external password
+  // changes / revocations.
+  useEffect(() => {
+    refreshSession().catch(() => {});
+  }, [refreshSession]);
+
+  if (loading) return <LoadingScreen />;
+
+  // Real signed-in user (email / phone / Google) → MainTabs
+  // Anonymous user → Login (they can browse but must upgrade to trade)
+  const initialRoute: keyof RootStackParamList =
+    currentUser && !isAnonymous ? 'Main' : 'Login';
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        key={currentUser?.uid ?? 'anon'}
+        initialRouteName={initialRoute}
+        screenOptions={{ animation: 'fade' }}
+      >
+        <Stack.Screen name="FeatureShowcase" component={FeatureShowcaseScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Main" component={HomeTabs} />
+        <Stack.Screen name="Main" component={HomeTabs} options={{ headerShown: false }} />
         <Stack.Screen
           name="CardDetail"
           component={CardDetailScreen}
@@ -162,6 +198,7 @@ export default function App() {
         />
         <Stack.Screen name="Checkout" component={CheckoutScreen} />
         <Stack.Screen name="OrderStatus" component={OrderStatusScreen} />
+        <Stack.Screen name="Sell" component={SellScreen} />
         <Stack.Screen name="Notifications" component={NotificationScreen} />
         <Stack.Screen name="MakeOffer" component={MakeOfferScreen} />
         <Stack.Screen name="MyOffers" component={MyOffersScreen} />
@@ -176,11 +213,8 @@ export default function App() {
           component={ChatDetailScreen}
           options={{ headerShown: true, headerTitle: "對話", headerTintColor: "#F0F0FF", headerStyle: { backgroundColor: "#0E0E1A" }, headerBackTitle: "返回" }}
         />
-
       </Stack.Navigator>
-        </NavigationContainer>
-      </ErrorBoundary>
-    </AuthProvider>
+    </NavigationContainer>
   );
 }
 
