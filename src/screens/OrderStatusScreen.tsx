@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Image, Modal, TextInput, Alert, ActivityIndicator,
@@ -7,8 +7,11 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { httpsCallable, getFunctions } from 'firebase/functions';
 import { getAuth } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../services/firebase';
+import { releaseFundsToSeller, raiseDispute } from '../services/stripeService';
 
-type RouteProps = RouteProp<{ params: { txId: string } }, 'params'>;
+type RouteProps = RouteProp<{ params: { txId?: string; orderId?: string } }, 'params'>;
 
 type EscrowStep = 'paid' | 'awaiting_ship' | 'shipped' | 'confirmed' | 'released' | 'disputed' | 'pending_seller_consent';
 
@@ -30,9 +33,43 @@ const TIMELINE_STEPS: TimelineStep[] = [
 const OrderStatusScreen: React.FC = () => {
   const route = useRoute<RouteProps>();
   const navigation = useNavigation();
-  const { txId } = route.params;
+  const orderId = route.params.orderId ?? route.params.txId ?? '';
+  const uid = getAuth().currentUser?.uid;
 
-  const [currentStep, setCurrentStep] = useState<number>(2); // Demo: step 2 = shipped
+  // ── Real order data — subscribe to Firestore so UI updates when webhook
+  //    changes the status (paid → shipped → confirmed → released). ────────
+  const [order, setOrder] = useState<any | null>(null);
+  const [loadingOrder, setLoadingOrder] = useState(true);
+  const [orderError, setOrderError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!orderId) {
+      setOrderError('缺少 orderId');
+      setLoadingOrder(false);
+      return;
+    }
+    setLoadingOrder(true);
+    const unsub = onSnapshot(
+      doc(db, 'orders', orderId),
+      (snap) => {
+        if (snap.exists()) setOrder({ id: snap.id, ...snap.data() });
+        else setOrderError('訂單不存在或已刪除');
+        setLoadingOrder(false);
+      },
+      (err) => {
+        console.warn('[OrderStatus] snapshot error:', err);
+        setOrderError(err.message);
+        setLoadingOrder(false);
+      }
+    );
+    return unsub;
+  }, [orderId]);
+
+  const isSeller = order ? order.sellerId === uid : false;
+  const currentStep = order
+    ? mapStatusToStep(order.status)
+    : 0;
+
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [showReleaseModal, setShowReleaseModal] = useState(false);
   const [releaseAmountText, setReleaseAmountText] = useState('');
@@ -46,12 +83,40 @@ const OrderStatusScreen: React.FC = () => {
   const [disputing, setDisputing] = useState(false);
   const [orderStatus, setOrderStatus] = useState<'funds_escrowed' | 'released' | 'disputed'>('funds_escrowed');
 
+  // Map Firestore order.status string → timeline index
+  function mapStatusToStep(status: string): number {
+    switch (status) {
+      case 'pending':
+      case 'awaiting_fps':
+      case 'awaiting_payment':
+        return 0; // paid (just created)
+      case 'paid':
+      case 'funds_escrowed':
+        return 1; // awaiting ship
+      case 'shipped':
+      case 'in_transit':
+        return 2; // shipped
+      case 'confirmed':
+      case 'pending_release':
+      case 'pending_seller_consent':
+        return 3; // confirmed
+      case 'released':
+      case 'completed':
+        return 4; // released
+      case 'disputed':
+      case 'refunded':
+        return 5; // disputed (out of timeline)
+      default:
+        return 0;
+    }
+  }
+
   const handleExtendEscrow = async () => {
     if (isExtended || extending) return;
     setExtending(true);
     try {
       const extendFn = httpsCallable(getFunctions(), 'extendEscrow');
-      await extendFn({ orderId: txId });
+      await extendFn({ orderId });
       setIsExtended(true);
       Alert.alert('✅ 已延長', '款項釋放期限已延長至 14 日，請放心。');
     } catch (e: any) {
@@ -68,59 +133,70 @@ const OrderStatusScreen: React.FC = () => {
     }
     setDisputing(true);
     try {
-      const disputeFn = httpsCallable(getFunctions(), 'createDispute');
-      await disputeFn({ orderId: txId, reason: disputeReason.trim() });
+      await raiseDispute({ orderId, reason: disputeReason.trim() });
       setShowDisputeModal(false);
       setOrderStatus('disputed');
       Alert.alert('✅ Dispute 已提交', '我們會在 24 小時內處理，請留意通知。');
     } catch (e: any) {
-      Alert.alert('❌ 提交失敗', e.message ?? '請稍後再試');
+      Alert.alert('❌ 提交失敗', e?.message ?? '請稍後再試');
     } finally {
       setDisputing(false);
     }
   };
 
-  const card = {
-    name: 'Charizard VMAX',
-    set: 'Darkness Ablaze',
-    imageUrl: 'https://images.pokemontcg.io/swsh5/115.png',
-    price: 4200,
-    counterparty: 'CardMaster_HK',
-    deliveryMethod: 'sf',
-    trackingNumber: 'SF1234567890',
-  };
+  // Real card data comes from order.card (snapshotted at checkout time)
+  const card = order
+    ? {
+        name: order.cardName ?? 'Pokemon Card',
+        set: order.cardSet ?? '',
+        imageUrl: order.cardImageUrl ?? '',
+        price: order.amountHkd ?? 0,
+        counterparty: isSeller ? order.buyerName ?? '買家' : order.sellerName ?? '賣家',
+        deliveryMethod: order.deliveryMethod ?? 'sf',
+        trackingNumber: order.trackingNumber ?? '',
+      }
+    : null;
 
-  const isSeller = false; // Demo buyer view
-
-  const handleConfirmReceipt = () => {
-    setCurrentStep(3);
+  const handleConfirmReceipt = async () => {
+    // For meetup: buyer marks card received → order moves to 'confirmed'
+    try {
+      const fn = getFunctions();
+      const confirmFn = httpsCallable(fn, 'confirmReceipt');
+      await confirmFn({ orderId });
+      // Real-time listener will update the UI
+    } catch (e: any) {
+      Alert.alert('❌ 確認失敗', e?.message ?? '請稍後再試');
+    }
   };
 
   const handleReleaseFund = () => {
-    setReleaseAmountText(String(card.price));
+    setReleaseAmountText(String(card?.price ?? ''));
     setShowReleaseModal(true);
   };
 
   const confirmRelease = async () => {
     const enteredAmount = parseFloat(releaseAmountText);
     if (isNaN(enteredAmount) || enteredAmount <= 0) return;
-    if (enteredAmount > card.price) return;
+    if (!card || enteredAmount > card.price) return;
     setReleasing(true);
     setShowReleaseModal(false);
     try {
-      const fn = getFunctions();
-      const releaseFn = httpsCallable(fn, 'releasePayment');
-      const result: any = await releaseFn({ orderId: txId, releaseAmountHkd: enteredAmount });
-      const data = result?.data as any;
-      if (data?.status === 'pending_seller_consent') {
-        // Buyer modified amount — waiting for seller
-        setCurrentStep(5); // pending_seller_consent step
+      const sellerStripeAccountId = order?.sellerStripeAccountId ?? '';
+      const result = await releaseFundsToSeller({
+        orderId,
+        sellerStripeAccountId,
+      });
+      if ((result as any)?.status === 'pending_seller_consent') {
+        setShowSellerConsentModal(true);
         return;
       }
-    } catch (e) {
-      // Demo mode fallback
+      // Successful release — Firestore listener will move us to 'released' step
+    } catch (e: any) {
+      console.error('[OrderStatus] release failed:', e);
+      Alert.alert('❌ 釋放失敗', e?.message ?? '請稍後再試');
+    } finally {
+      setReleasing(false);
     }
-    setCurrentStep(4);
   };
 
   const handleSellerAccept = async () => {
@@ -129,9 +205,8 @@ const OrderStatusScreen: React.FC = () => {
     try {
       const fn = getFunctions();
       const fn2 = httpsCallable(fn, 'sellerRespondToModification');
-      await fn2({ orderId: txId, accept: true });
-    } catch (e) { /* demo */ }
-    setCurrentStep(4);
+      await fn2({ orderId, accept: true });
+    } catch (e) { console.warn('[OrderStatus] seller accept failed:', e); }
     setSellerConsenting(false);
   };
 
@@ -141,11 +216,30 @@ const OrderStatusScreen: React.FC = () => {
     try {
       const fn = getFunctions();
       const fn2 = httpsCallable(fn, 'sellerRespondToModification');
-      await fn2({ orderId: txId, accept: false });
-    } catch (e) { /* demo */ }
-    // Stay at step 5 — auto-release will handle in 7 days
+      await fn2({ orderId, accept: false });
+    } catch (e) { console.warn('[OrderStatus] seller reject failed:', e); }
     setSellerConsenting(false);
   };
+
+  if (loadingOrder) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#080810', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color="#D4AF37" size="large" />
+        <Text style={{ color: '#8888CC', marginTop: 12 }}>載入訂單中…</Text>
+      </View>
+    );
+  }
+  if (orderError || !order || !card) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#080810', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <Text style={{ color: '#F0F0FF', fontSize: 18, marginBottom: 8 }}>😕 訂單未找到</Text>
+        <Text style={{ color: '#8888CC', fontSize: 13, textAlign: 'center' }}>{orderError ?? `orderId: ${orderId}`}</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 24, padding: 12 }}>
+          <Text style={{ color: '#D4AF37', fontSize: 14, fontWeight: '700' }}>← 返回</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>

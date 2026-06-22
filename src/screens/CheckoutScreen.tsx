@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  Image, Modal,
+  Image, Modal, ActivityIndicator, Alert, TextInput,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getAuth } from 'firebase/auth';
 import { PokemonCard } from '../types';
-import { calculateFee, formatHkd } from '../utils/feeCalculator';
+import { calculateFee, formatHkd, PLATFORM_FEE_PERCENT, STRIPE_PERCENT_FEE } from '../utils/feeCalculator';
+import { createEscrowPayment, confirmCardPayment } from '../services/stripeService';
+import { loadStripe } from '@stripe/stripe-react-native';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard; seller?: string } }, 'params'>;
 type NavProp = NativeStackNavigationProp<any>;
@@ -48,15 +51,74 @@ const CheckoutScreen: React.FC = () => {
   const [selectedStation, setSelectedStation] = useState<string | null>(null);
   const [address, setAddress] = useState('');
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  // Card collection form
+  const [showCardForm, setShowCardForm] = useState(false);
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExp, setCardExp] = useState('');     // MM/YY
+  const [cardCvc, setCardCvc] = useState('');
 
   const fee = calculateFee(card.price);
   const platformFee = fee.platformFeeHkd;
   const deliveryFee = delivery === 'sf' ? 35 : 0;
   const total = fee.buyerTotalHkd + deliveryFee;
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!delivery || !payment) return;
-    setOrderPlaced(true);
+    const uid = getAuth().currentUser?.uid;
+    if (!uid) {
+      Alert.alert('需要登入', '請先登入再下單');
+      return;
+    }
+    // Card payments require entering card details first
+    if (payment === 'card' && !showCardForm) {
+      setShowCardForm(true);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // 1. Ask Cloud Function to create the PaymentIntent (server creates
+      //    Stripe intent with application_fee + transfer_data.destination
+      //    so funds are escrowed on the platform account).
+      const { clientSecret, paymentIntentId } = await createEscrowPayment({
+        orderId: '', // server fills in
+        amountHkd: total,
+        sellerId: route.params.seller ?? '',
+        deliveryMethod: delivery,
+        cardName: card.name,
+        cardId: card.id,
+      });
+      // 2. If buyer chose card, confirm with Stripe SDK using clientSecret.
+      //    FPS path skips this and waits for buyer to transfer manually;
+      //    order stays in 'awaiting_fps' until webhook confirms receipt.
+      if (payment === 'card') {
+        const [mm, yy] = cardExp.split('/');
+        const stripe = await loadStripe();
+        if (!stripe) throw new Error('Stripe 載入失敗');
+        const { error, paymentIntent } = await stripe.confirmPayment(clientSecret, {
+          paymentMethodType: 'Card',
+          paymentMethodData: {
+            card: {
+              number: cardNumber.replace(/\s/g, ''),
+              expMonth: parseInt(mm ?? '0', 10),
+              expYear: 2000 + parseInt(yy ?? '0', 10),
+              cvc: cardCvc,
+            },
+          },
+        });
+        if (error) throw new Error(error.message);
+        // paymentIntent.id === paymentIntentId once confirmed
+      }
+      // 3. Order created server-side; navigate to status screen with real ID.
+      setCreatedOrderId(paymentIntentId);
+      setOrderPlaced(true);
+    } catch (e: any) {
+      console.error('[Checkout] place order failed:', e);
+      Alert.alert('下單失敗', e?.message ?? '請稍後再試');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (orderPlaced) {
@@ -76,7 +138,8 @@ const CheckoutScreen: React.FC = () => {
           </View>
           <TouchableOpacity
             style={styles.trackBtn}
-            onPress={() => navigation.navigate('OrderStatus', { txId: 'new-order' })}
+            onPress={() => navigation.navigate('OrderStatus', { orderId: createdOrderId ?? '', txId: createdOrderId ?? '' })}
+            disabled={!createdOrderId}
           >
             <Text style={styles.trackBtnText}>追蹤訂單 →</Text>
           </TouchableOpacity>
@@ -226,9 +289,9 @@ const CheckoutScreen: React.FC = () => {
         <View style={styles.breakdown}>
           {[
             ['商品金額', formatHkd(fee.cardPriceHkd)],
-            ['Stripe 處理費 (2.9%)', formatHkd(fee.stripeFeeHkd)],
-            ['平台服務費 (3%)', formatHkd(fee.platformFeeHkd)],
-            ['最低手續費', formatHkd(fee.totalFeeHkd)],
+            [`Stripe 處理費 (${Math.round(STRIPE_PERCENT_FEE * 100)}% + HK$2.35)`, formatHkd(fee.stripeFeeHkd)],
+            [`平台服務費 (${Math.round(PLATFORM_FEE_PERCENT * 100)}%)`, formatHkd(fee.platformFeeHkd)],
+            ['總手續費', formatHkd(fee.totalFeeHkd)],
             delivery === 'sf' ? ['運費（順豐到付）', `HK$ ${deliveryFee}`] : ['運費', '免費（面交）'],
           ].map(([label, value]) => (
             <View key={label as string} style={styles.breakdownRow}>
@@ -251,13 +314,19 @@ const CheckoutScreen: React.FC = () => {
           </Text>
         </View>
         <TouchableOpacity
-          style={[styles.confirmBtn, (!delivery || !payment) ? styles.confirmBtnDisabled : null]}
+          style={[styles.confirmBtn, (!delivery || !payment || submitting) ? styles.confirmBtnDisabled : null]}
           onPress={handlePlaceOrder}
-          disabled={!delivery || !payment}
+          disabled={!delivery || !payment || submitting}
         >
-          <Text style={styles.confirmBtnText}>
-            確認支付 HK$ {total.toLocaleString()}
-          </Text>
+          {submitting ? (
+            <ActivityIndicator color="#080810" />
+          ) : (
+            <Text style={styles.confirmBtnText}>
+              {payment === 'card' && !showCardForm
+                ? '下一步：填寫信用卡資料'
+                : `確認支付 HK$ ${total.toLocaleString()}`}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -316,15 +385,21 @@ const CheckoutScreen: React.FC = () => {
             <Text style={modalStyles.title}>填寫送貨地址</Text>
             <View style={modalStyles.addressForm}>
               <Text style={modalStyles.fieldLabel}>香港地址</Text>
-              <View style={modalStyles.addressInput}>
-                <Text style={modalStyles.addressPlaceholder}>
-                  例子：九龍觀塘偉業街 163 號 10 樓
-                </Text>
-              </View>
+              <TextInput
+                style={modalStyles.addressInputField}
+                placeholder="例：九龍觀塘偉業街 163 號 10 樓"
+                placeholderTextColor="#4A4A70"
+                value={address}
+                onChangeText={setAddress}
+                multiline
+              />
               <TouchableOpacity
                 style={modalStyles.confirmAddressBtn}
                 onPress={() => {
-                  setAddress('九龍觀塘偉業街 163 號 10 樓');
+                  if (!address.trim()) {
+                    Alert.alert('請填地址', '送貨地址不能空白');
+                    return;
+                  }
                   setShowAddressModal(false);
                   setDelivery('sf');
                 }}
@@ -337,6 +412,84 @@ const CheckoutScreen: React.FC = () => {
               onPress={() => setShowAddressModal(false)}
             >
               <Text style={modalStyles.closeText}>取消</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Card Details Modal — shown when buyer picks card payment */}
+      <Modal visible={showCardForm} animationType="slide" transparent>
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.sheet}>
+            <View style={modalStyles.handle} />
+            <Text style={modalStyles.title}>💳 信用卡資料</Text>
+            <Text style={modalStyles.subtitle}>
+              透過 Stripe 加密處理。款項先由平台託管，收卡後釋放。
+            </Text>
+
+            <Text style={modalStyles.fieldLabel}>卡號</Text>
+            <TextInput
+              style={modalStyles.cardField}
+              placeholder="1234 5678 9012 3456"
+              placeholderTextColor="#4A4A70"
+              value={cardNumber}
+              onChangeText={(t) => setCardNumber(t.replace(/[^\d ]/g, '').slice(0, 19))}
+              keyboardType="number-pad"
+            />
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={modalStyles.fieldLabel}>到期日 (MM/YY)</Text>
+                <TextInput
+                  style={modalStyles.cardField}
+                  placeholder="12/28"
+                  placeholderTextColor="#4A4A70"
+                  value={cardExp}
+                  onChangeText={(t) => {
+                    const clean = t.replace(/[^\d/]/g, '');
+                    if (clean.length === 2 && !clean.includes('/')) {
+                      setCardExp(clean + '/');
+                    } else {
+                      setCardExp(clean.slice(0, 5));
+                    }
+                  }}
+                  keyboardType="number-pad"
+                  maxLength={5}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={modalStyles.fieldLabel}>CVC</Text>
+                <TextInput
+                  style={modalStyles.cardField}
+                  placeholder="123"
+                  placeholderTextColor="#4A4A70"
+                  value={cardCvc}
+                  onChangeText={(t) => setCardCvc(t.replace(/[^\d]/g, '').slice(0, 4))}
+                  keyboardType="number-pad"
+                  secureTextEntry
+                  maxLength={4}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={modalStyles.confirmAddressBtn}
+              onPress={handlePlaceOrder}
+              disabled={submitting || !cardNumber || !cardExp || !cardCvc}
+            >
+              {submitting ? (
+                <ActivityIndicator color="#080810" />
+              ) : (
+                <Text style={modalStyles.confirmAddressBtnText}>
+                  立即支付 HK$ {total.toLocaleString()}
+                </Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={modalStyles.closeBtn}
+              onPress={() => setShowCardForm(false)}
+            >
+              <Text style={modalStyles.closeText}>返回</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -527,10 +680,21 @@ const modalStyles = StyleSheet.create({
   closeBtn: { alignItems: 'center', marginTop: 16 },
   closeText: { color: '#8888CC', fontSize: 14, fontWeight: '600' },
   addressForm: { marginBottom: 16 },
-  fieldLabel: { color: '#8888CC', fontSize: 12, marginBottom: 8 },
+  fieldLabel: { color: '#8888CC', fontSize: 12, marginBottom: 8, marginTop: 8 },
   addressInput: { backgroundColor: '#14142A', borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#2A2A50' },
+  addressInputField: {
+    backgroundColor: '#14142A', color: '#F0F0FF', fontSize: 14,
+    borderRadius: 12, padding: 14, marginBottom: 12,
+    borderWidth: 1, borderColor: '#2A2A50', minHeight: 60,
+  },
+  cardField: {
+    backgroundColor: '#14142A', color: '#F0F0FF', fontSize: 16,
+    borderRadius: 12, padding: 14, marginBottom: 12,
+    borderWidth: 1, borderColor: '#2A2A50',
+  },
+  subtitle: { color: '#8888CC', fontSize: 12, marginBottom: 16, lineHeight: 18 },
   addressPlaceholder: { color: '#4A4A70', fontSize: 14 },
-  confirmAddressBtn: { backgroundColor: '#D4AF37', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  confirmAddressBtn: { backgroundColor: '#D4AF37', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
   confirmAddressBtnText: { color: '#080810', fontSize: 14, fontWeight: '700' },
 });
 

@@ -8,17 +8,33 @@
 
 import { functions } from "./firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { Stripe, loadStripe } from "@stripe/stripe-react-native";
+import { loadStripe } from "@stripe/stripe-react-native";
 
 // ─── Stripe instance ───────────────────────────────────────────────────────────
 
+/**
+ * Read the publishable key from EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY.
+ * Defined in .env (see .env.example). Never hardcode in source.
+ */
+export const STRIPE_PUBLISHABLE_KEY: string =
+  process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
+
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
 
-export function getStripe(publishableKey: string) {
-  if (!stripePromise) {
-    stripePromise = loadStripe(publishableKey);
+/**
+ * Lazily load the Stripe SDK with the publishable key from env.
+ * Throws a clear error if the env var is missing.
+ */
+export function getStripe(): Promise<ReturnType<typeof loadStripe> extends Promise<infer T> ? T : never> {
+  if (!STRIPE_PUBLISHABLE_KEY) {
+    throw new Error(
+      "Missing EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY. Set it in your .env (see .env.example)."
+    );
   }
-  return stripePromise;
+  if (!stripePromise) {
+    stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+  }
+  return stripePromise as any;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -159,9 +175,10 @@ export async function confirmCardPayment(
     cvc: string;
   }
 ) {
-  const stripe = await getStripe(
-    "pk_live_51TOvo2A6TKHCOKSebqDl5Qkrmy3zTOxbZSbFruIsM5LhWtfpW3rAcUpq80UEgxFGGBtXWsYHZsoCuCLwkPMpiI10008O8pzjB4"
-  );
+  // loadStripe() reads the publishable key from the native module — set via
+  // app.json plugins entry on iOS / Android, or EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  // on web. See .env.example.
+  const stripe = await loadStripe();
 
   if (!stripe) {
     throw new Error("Stripe not loaded");

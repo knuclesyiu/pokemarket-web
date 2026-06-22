@@ -1,0 +1,62 @@
+# ─── Node / Expo ──────────────────────────────────────────────────────────────
+node_modules/
+.expo/
+.expo-shared/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# ─── Native build outputs ─────────────────────────────────────────────────────
+ios/
+android/
+*.apk
+*.aab
+*.ipa
+
+# ─── Python (price scraper service) ───────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+
+# ─── Local environment / secrets ──────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.pem
+firebase-service-account.json
+
+# ─── OS / editor noise ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── Coverage / testing ───────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+.jest-cache/
+
+# ─── Expo Metro bundler cache ─────────────────────────────────────────────────
+.metro-health-check*
+.metro-cache/
