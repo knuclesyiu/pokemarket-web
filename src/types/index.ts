@@ -6,7 +6,8 @@ export interface PokemonCard {
   set: string;
   setCode: string;
   rarity: Rarity;
-  grade?: number; // PSA/BGS grade
+  grade?: number; // PSA/BGS grade (legacy)
+  grading?: GradingInfo; // new structured field
   price: number; // HKD
   priceChange24h: number; // percentage
   imageUrl: string;
@@ -25,6 +26,21 @@ export type CardLanguage = 'Japanese' | 'English' | 'Chinese' | 'Multilingual';
 
 export type CardCondition = 'Mint' | 'Near Mint' | 'Excellent' | 'Good' | 'Fair' | 'Poor';
 
+// ── Card grade (raw vs PSA/BGS slabbed) ───────────────────────────────────────
+// Raw = ungraded card, condition described by CardCondition above
+// Graded = PSA/BGS slab. `gradeValue` carries the numeric (e.g. 10, 9.5).
+export type CardGrade =
+  | 'raw'              // ungraded, condition is CardCondition
+  | 'psa10' | 'psa9' | 'psa8' | 'psa7'
+  | 'bgs95' | 'bgs10' | 'bgs9' | 'cgc10' | 'other_graded';
+
+export interface GradingInfo {
+  grade: CardGrade;
+  grader?: 'PSA' | 'BGS' | 'CGC' | 'Other';   // who slabbed it
+  certNumber?: string;                          // PSA cert verification #
+  gradeValue?: number;                          // 10, 9.5, 9, etc.
+}
+
 export interface PricePoint {
   date: string;
   price: number;
@@ -40,7 +56,9 @@ export interface Listing {
   auctionEnd?: string;
   currentBid?: number;
   condition: CardCondition;
-  grade?: number;
+  grade?: number; // PSA/BGS grade
+  // ── New: structured grading info (raw vs slabbed) ────────────────────
+  grading?: GradingInfo;
   listedAt: string;
 }
 

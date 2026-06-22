@@ -9,6 +9,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db } from '../services/firebase';
+import { getCardPrice, getCardPrices, priceDataToCard, CardPriceData } from '../services/cardPriceService';
 import CardItem from '../components/CardItem';
 import SearchBar from '../components/search/SearchBar';
 
@@ -54,11 +55,22 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     const loadRealCards = async () => {
       try {
-        const q = query(collection(db, 'card_prices'), limit(50));
-        const snap = await getDocs(q);
+        const snap = await getDocs(query(collection(db, 'card_prices'), limit(50)));
         const cards: PokemonCard[] = [];
         snap.forEach(d => {
+          // Use the normalized helper so imageUrl is a full https URL
+          // (TCGdex sync wrote relative paths; helper adds host + /high.png)
           const p = d.data();
+          // Cheap inline normalize: prefer the helper's full path, fall
+          // back to whatever the doc has.
+          let imageUrl = p.imageUrl ?? '';
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            imageUrl = imageUrl.startsWith('/')
+              ? `https://api.tcgdex.net${imageUrl}/high.png`
+              : `https://api.tcgdex.net/${imageUrl}/high.png`;
+          } else if (imageUrl && !/\.(png|jpg|webp|jpeg)$/i.test(imageUrl)) {
+            imageUrl = `${imageUrl.replace(/\/?$/, '')}/high.png`;
+          }
           cards.push({
             id: d.id,
             name: p.name ?? d.id,
@@ -66,10 +78,10 @@ const HomeScreen: React.FC = () => {
             setCode: p.setCode ?? '',
             rarity: p.rarity ?? 'Common',
             series: p.series ?? 'Other',
-            number: p.number ?? '',
+            number: String(p.number ?? p.localId ?? ''),
             price: p.cardmarketHkd ?? p.priceHkd ?? 0,
-            priceChange24h: p.change24h ?? 0,
-            imageUrl: p.imageUrl ?? '',
+            priceChange24h: p.change24hPct ?? p.change24h ?? 0,
+            imageUrl,
             condition: 'Near Mint',
             language: (p.language as PokemonCard['language']) ?? 'English',
             listed: true,
@@ -77,7 +89,7 @@ const HomeScreen: React.FC = () => {
           });
         });
         setRealCards(cards);
-        if (cards.length > 0) loadPrices(cards.slice(0, 30));
+        // Prices are loaded by the useEffect below — no need to call here.
       } catch (e) {
         console.warn('[Home] Firestore load failed:', e);
       }
@@ -111,38 +123,41 @@ const HomeScreen: React.FC = () => {
   const loadPrices = useCallback(async (cards: PokemonCard[]) => {
     const ids = cards.map(c => c.id).filter(Boolean);
     if (ids.length === 0) return;
-    const BATCH = 30;
-    const results: typeof priceMap = {};
-    for (let i = 0; i < ids.length; i += BATCH) {
-      try {
-        const batch = ids.slice(i, i + BATCH);
-        const snap = await getDocs(query(collection(db, 'card_prices'), where('id', 'in', batch)));
-        snap.forEach(d => {
-          const p = d.data();
-          results[d.id] = {
-            priceHkd: p.priceHkd ?? 0,
-            change24h: p.change24h ?? 0,
-            source: p.source ?? 'cache',
-            ageMs: p.updatedAt ? Date.now() - p.updatedAt : 0,
-          };
-        });
-      } catch (e) { console.warn('[loadPrices] batch error:', e); }
-    }
-    if (Object.keys(results).length > 0) {
-      setPriceMap(prev => ({ ...prev, ...results }));
-      setLastUpdated(new Date());
-    }
+    try {
+      // Use the normalized cardPriceService helper which also fixes
+      // TCGdex image paths (adds /high.png suffix, prepends api.tcgdex.net
+      // when the sync only wrote the relative path).
+      const docs = await getCardPrices(ids);
+      const results: typeof priceMap = {};
+      Object.values(docs).forEach(d => {
+        results[d.id] = {
+          priceHkd: d.priceHkd,
+          change24h: d.change24hPct,
+          source: d.source,
+          ageMs: d.fetchedAtTs ? Date.now() - d.fetchedAtTs : 0,
+        };
+      });
+      if (Object.keys(results).length > 0) {
+        setPriceMap(prev => ({ ...prev, ...results }));
+        setLastUpdated(new Date());
+      }
+    } catch (e) { console.warn('[loadPrices] error:', e); }
   }, []);
 
+  // Re-fetch prices when the visible card set changes. We depend on
+  // a stable identifier (the joined card IDs) so we don't re-fire on
+  // every render (array reference changes via priceMap update).
   useEffect(() => {
     if (displayCards.length > 0) loadPrices(displayCards);
-  }, [displayCards, loadPrices]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayCards.map(c => c.id).join(','), loadPrices]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadPrices(displayCards);
     setRefreshing(false);
-  }, [displayCards, loadPrices]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayCards.map(c => c.id).join(','), loadPrices]);
 
   const formatLastUpdated = () => {
     if (!lastUpdated) return null;
@@ -187,7 +202,7 @@ const HomeScreen: React.FC = () => {
         </View>
         <TouchableOpacity style={styles.bellBtn}>
           <Text style={styles.bellIcon}>🔔</Text>
-          {priceMap[Object.keys(priceMap)[0]]?.source === 'live' && (
+          {priceMap[Object.keys(priceMap)[0]]?.source === 'tcgdex' && (
             <View style={styles.liveDot} />
           )}
         </TouchableOpacity>

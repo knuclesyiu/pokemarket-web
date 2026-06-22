@@ -3,7 +3,7 @@
  * 卡片交換系統的所有型別
  */
 
-// ─── 核心枚舉 ───────────────────────────────────────────────────────────────────
+// ─── 枚舉 ───────────────────────────────────────────────────────────────────
 
 export type OfferStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled' | 'countered';
 export type ListingStatus = 'active' | 'sold' | 'cancelled' | 'expired';
@@ -11,6 +11,19 @@ export type ListingType = 'buy_now' | 'auction';
 export type CardCondition = 'Mint' | 'Near Mint' | 'Excellent' | 'Good' | 'Fair' | 'Poor';
 export type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Rare Holo' | 'Rare Ultra' | 'Rare Secret' | 'Promo';
 export type OfferAction = 'accept' | 'reject' | 'counter';
+
+// ── Card grade (raw vs PSA/BGS slabbed) ───────────────────────────────────────
+export type CardGrade =
+  | 'raw'
+  | 'psa10' | 'psa9' | 'psa8' | 'psa7'
+  | 'bgs95' | 'bgs10' | 'bgs9' | 'cgc10' | 'other_graded';
+
+export interface GradingInfo {
+  grade: CardGrade;
+  grader?: 'PSA' | 'BGS' | 'CGC' | 'Other';
+  certNumber?: string;
+  gradeValue?: number;
+}
 
 // ─── 卡片 ─────────────────────────────────────────────────────────────────────
 
@@ -22,7 +35,8 @@ export interface TradeCard {
   series: string;
   number: string;
   rarity: Rarity;
-  grade?: number;        // PSA/BGS 等級
+  grade?: number;        // PSA/BGS 等級 (legacy)
+  grading?: GradingInfo; // 新結構化 slab 資料
   condition: CardCondition;
   imageUrl: string;
   marketPrice: number;   // HKD 市價參考
@@ -40,7 +54,8 @@ export interface MarketListing {
   type: ListingType;
   auctionEnd?: number;       // Unix timestamp（競標結束時間）
   condition: CardCondition;
-  grade?: number;
+  grade?: number;             // legacy
+  grading?: GradingInfo;      // new — raw vs PSA/BGS slab
   status: ListingStatus;
   createdAt: number;        // Unix timestamp
 }
@@ -87,7 +102,8 @@ export interface UserCard {
   acquiredAt: number;         // Unix timestamp
   source: 'purchase' | 'trade' | 'listing' | 'other';
   condition: CardCondition;
-  grade?: number;
+  grade?: number;             // legacy
+  grading?: GradingInfo;      // new
   notes?: string;
 }
 

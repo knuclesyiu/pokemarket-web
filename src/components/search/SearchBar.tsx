@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { PokemonCard } from '../../types';
+import { searchCardsByName, priceDataToCard } from '../../services/cardPriceService';
 
 type VersionFilter = '全部' | '日版' | '中文版' | '英文版';
 
@@ -50,15 +51,29 @@ const SearchBar: React.FC<Props> = ({
     setLoading(true);
     onLoadingChange?.(true);
 
+    // Try Cloud Function first (server-side full-text search when deployed).
+    // If it fails (404 / network), fall back to Firestore direct query.
     try {
       const searchCards = httpsCallable(getFunctions(), 'searchCardsWithPrices');
       const result = await searchCards({ query: q.trim(), language: lang });
       const raw = result.data as any;
-      // Firebase callable SDK wraps in {result: ...} on web; server returns raw {cards}
       const cards = raw?.result?.cards ?? raw?.cards ?? (Array.isArray(raw) ? raw : []);
+      if (cards && cards.length > 0) {
+        onResults(cards);
+        return;
+      }
+      // Empty result from function — fall through to Firestore fallback.
+    } catch (err) {
+      console.warn('[SearchBar] Cloud Function unavailable, using Firestore fallback:', err);
+    }
+
+    // Fallback: search Firestore card_prices by name contains
+    try {
+      const priceDocs = await searchCardsByName(q, 20);
+      const cards: PokemonCard[] = priceDocs.map(priceDataToCard);
       onResults(cards);
     } catch (err) {
-      console.warn('[SearchBar] searchCards error:', err);
+      console.warn('[SearchBar] Firestore fallback failed:', err);
       onResults([]);
     } finally {
       setLoading(false);

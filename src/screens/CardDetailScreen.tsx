@@ -12,7 +12,7 @@ import { auth } from '../services/firebase';
 import PriceChart from '../components/PriceChart';
 
 import { PokemonCard } from '../types';
-import { generatePriceHistory } from '../data/mockData';
+import { getCardPrice, buildPriceHistory, CardPriceData } from '../services/cardPriceService';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard } }, 'params'>;
 const { width } = Dimensions.get('window');
@@ -23,37 +23,54 @@ const CardDetailScreen: React.FC = () => {
   const { card } = route.params;
   const [activeTab, setActiveTab] = useState<'listings' | 'history'>('listings');
   const [showSellModal, setShowSellModal] = useState(false);
-  const [priceData, setPriceData] = useState<{ priceHkd: number; change24h: number; source: string; ageMs: number } | null>(null);
+  const [priceDoc, setPriceDoc] = useState<CardPriceData | null>(null);
   const [priceLoading, setPriceLoading] = useState(true);
-  const priceHistory = generatePriceHistory(card.price);
+  const [historyLoading, setHistoryLoading] = useState(true);
 
-  const isGain = (priceData?.change24h ?? card.priceChange24h) >= 0;
-
+  // ── Real price from Firestore card_prices (TCGdex-backed) ─────────
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
-        const fn = getFunctions();
-        const getCardPrice = httpsCallable(fn, 'getCardPrice');
-        const result = await getCardPrice({ cardId: card.id });
-        const data = result.data as any;
-        if (data && !data.error) {
-          setPriceData({
-            priceHkd: data.priceHkd ?? card.price,
-            change24h: data.change24h ?? card.priceChange24h,
-            source: data.source ?? 'cache',
-            ageMs: data.ageMs ?? 0,
-          });
-        }
+        const data = await getCardPrice(card.id);
+        if (cancelled) return;
+        setPriceDoc(data);
       } catch (e) {
-        console.warn('[CardDetail] getCardPrice failed:', e);
+        console.warn('[CardDetail] getCardPrice error:', e);
       } finally {
-        setPriceLoading(false);
+        if (!cancelled) {
+          setPriceLoading(false);
+          setHistoryLoading(false);
+        }
       }
     })();
+    return () => { cancelled = true; };
   }, [card.id]);
+
+  // Build 30-day history from real TCGdex fields (trendEur/avg7Eur/avg30Eur)
+  const priceHistory = priceDoc
+    ? buildPriceHistory(priceDoc, 30)
+    : [{ date: new Date().toISOString().slice(0, 10), price: card.price }];
+
+  // Prefer the live Firestore price; fall back to the card's snapshot value
+  const livePrice = priceDoc?.priceHkd ?? card.price;
+  const liveChange = priceDoc?.change24hPct ?? card.priceChange24h;
+  const isGain = liveChange >= 0;
 
   const formatPrice = (p: number) =>
     p >= 1000 ? `HK$ ${(p / 1000).toFixed(1)}K` : `HK$ ${p}`;
+
+  // "5 分鐘前" / "2 小時前" / "3 日前" — humanize ms epoch
+  const formatAge = (ts: number): string => {
+    const diff = Date.now() - ts;
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return '剛剛';
+    if (min < 60) return `${min} 分鐘`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr} 小時`;
+    const d = Math.floor(hr / 24);
+    return `${d} 日`;
+  };
 
   return (
     <View style={styles.container}>
@@ -89,23 +106,25 @@ const CardDetailScreen: React.FC = () => {
               ) : (
                 <>
                   <Text style={styles.currentPrice}>
-                    {formatPrice(priceData?.priceHkd ?? card.price)}
+                    {formatPrice(livePrice)}
                   </Text>
-                  <View style={styles.priceSourceBadge}>
-                    <View style={[
-                      styles.sourceDot,
-                      { backgroundColor: priceData?.source === 'live' ? '#00C896' : '#8888AA' }
-                    ]} />
-                    <Text style={styles.priceSourceText}>
-                      {priceData?.source === 'live' ? 'Live' : 'Cache'}
-                      {priceData?.ageMs ? ` · ${Math.round(priceData.ageMs/3600000)}h ago` : ''}
-                    </Text>
-                  </View>
+                  {priceDoc ? (
+                    <View style={styles.sourceTag}>
+                      <View style={[
+                        styles.sourceDot,
+                        { backgroundColor: priceDoc.source === 'tcgdex' || priceDoc.source === 'tcgdex+seed' ? '#00C896' : '#8888AA' }
+                      ]} />
+                      <Text style={styles.sourceTagText}>
+                        {priceDoc.source === 'tcgdex' || priceDoc.source === 'tcgdex+seed' ? 'Live · TCGdex' : priceDoc.source}
+                        {priceDoc.fetchedAtTs ? ` · ${formatAge(priceDoc.fetchedAtTs)} ago` : ''}
+                      </Text>
+                    </View>
+                  ) : null}
                 </>
               )}
               <View style={[styles.badge, isGain ? styles.badgeGain : styles.badgeLoss]}>
                 <Text style={[styles.badgeText, isGain ? styles.textGain : styles.textLoss]}>
-                  {isGain ? '▲' : '▼'} {Math.abs(priceData?.change24h ?? card.priceChange24h).toFixed(1)}%
+                  {isGain ? '▲' : '▼'} {Math.abs(liveChange).toFixed(1)}%
                 </Text>
               </View>
             </View>
@@ -200,12 +219,30 @@ const CardDetailScreen: React.FC = () => {
             <View style={styles.chartHeader}>
               <Text style={styles.chartTitle}>30天價格走势</Text>
               <Text style={styles.chartRange}>
-                HK$ {Math.min(...priceHistory.map(p => p.price)).toLocaleString()}
-                {' → '}
-                HK$ {Math.max(...priceHistory.map(p => p.price)).toLocaleString()}
+                {priceHistory.length > 0
+                  ? `HK$ ${Math.min(...priceHistory.map(p => p.price)).toLocaleString()} → HK$ ${Math.max(...priceHistory.map(p => p.price)).toLocaleString()}`
+                  : '載入中…'}
               </Text>
             </View>
-            <PriceChart data={priceHistory} />
+            {historyLoading ? (
+              <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+                <ActivityIndicator color="#D4AF37" />
+                <Text style={{ color: '#8888CC', fontSize: 12, marginTop: 8 }}>由 TCGdex 載入即時行情…</Text>
+              </View>
+            ) : priceHistory.length > 0 ? (
+              <>
+                <PriceChart data={priceHistory} />
+                {priceDoc && (priceDoc.avg7Eur > 0 || priceDoc.avg30Eur > 0) && (
+                  <Text style={styles.chartNote}>
+                    📊 數據源：TCGdex Cardmarket trend / 7日 / 30日均價 線性插值
+                  </Text>
+                )}
+              </>
+            ) : (
+              <Text style={styles.chartNote}>
+                此卡暫無歷史價格資料
+              </Text>
+            )}
           </View>
         )}
 
@@ -230,17 +267,38 @@ const CardDetailScreen: React.FC = () => {
       </ScrollView>
 
       {/* Sell Modal */}
+      {/* Sell Modal — two paths: fixed price or auction */}
       <Modal visible={showSellModal} animationType="slide" transparent>
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
             <Text style={modalStyles.title}>放售 {card.name}</Text>
             <Text style={modalStyles.subtitle}>選擇掛牌方式</Text>
-            <TouchableOpacity style={modalStyles.option}>
+            <TouchableOpacity
+              style={modalStyles.option}
+              onPress={() => {
+                setShowSellModal(false);
+                navigation.navigate('Sell', {
+                  cardId: card.id,
+                  cardName: card.name,
+                  priceType: 'fixed',
+                });
+              }}
+            >
               <Text style={modalStyles.optionTitle}>💰 定價出售</Text>
               <Text style={modalStyles.optionDesc}>設定固定價格，買家即時購買</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={modalStyles.option}>
+            <TouchableOpacity
+              style={modalStyles.option}
+              onPress={() => {
+                setShowSellModal(false);
+                navigation.navigate('Sell', {
+                  cardId: card.id,
+                  cardName: card.name,
+                  priceType: 'auction',
+                });
+              }}
+            >
               <Text style={modalStyles.optionTitle}>🏷️ 拍賣</Text>
               <Text style={modalStyles.optionDesc}>設定底價，讓買家競標</Text>
             </TouchableOpacity>
@@ -442,6 +500,7 @@ const styles = StyleSheet.create({
   chartHeader: { marginBottom: 8 },
   chartTitle: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
   chartRange: { color: '#8888CC', fontSize: 11, marginTop: 2 },
+  chartNote: { color: '#6666AA', fontSize: 10, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
   detailSection: {
     marginHorizontal: 16,
     backgroundColor: '#14142A',
