@@ -23,6 +23,7 @@ import ChatListScreen from "./src/screens/chat/ChatListScreen";
 import ChatDetailScreen from "./src/screens/chat/ChatDetailScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
+import EditProfileScreen from "./src/screens/EditProfileScreen";
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import type { RootStackParamList } from "./src/types/navigation";
 
@@ -191,6 +192,7 @@ function RootNavigator() {
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Main" component={HomeTabs} options={{ headerShown: false }} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
         <Stack.Screen
           name="CardDetail"
           component={CardDetailScreen}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image,
-  TouchableOpacity, Dimensions, Modal, ActivityIndicator,
+  TouchableOpacity, Dimensions, Modal, ActivityIndicator, Alert,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,6 +13,7 @@ import PriceChart from '../components/PriceChart';
 
 import { PokemonCard } from '../types';
 import { getCardPrice, buildPriceHistory, CardPriceData } from '../services/cardPriceService';
+import type { MarketListing } from '../types/trade';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard } }, 'params'>;
 const { width } = Dimensions.get('window');
@@ -26,8 +27,34 @@ const CardDetailScreen: React.FC = () => {
   const [priceDoc, setPriceDoc] = useState<CardPriceData | null>(null);
   const [priceLoading, setPriceLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [listings, setListings] = useState<MarketListing[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
 
-  // ── Real price from Firestore card_prices (TCGdex-backed) ─────────
+  // ── Live market listings for this card ─────────────────────────────
+  // Reads Firestore directly (public read is allowed on `listings`),
+  // so this works even before the Cloud Functions are deployed.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        const { db } = await import('../services/firebase');
+        const q = query(
+          collection(db, 'listings'),
+          where('cardId', '==', card.id),
+          where('status', '==', 'active'),
+        );
+        const snap = await getDocs(q);
+        if (cancelled) return;
+        setListings(snap.docs.map(d => ({ id: d.id, ...d.data() }) as MarketListing));
+      } catch (e) {
+        console.warn('[CardDetail] listings load failed:', e);
+      } finally {
+        if (!cancelled) setListingsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [card.id]);
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -109,12 +136,12 @@ const CardDetailScreen: React.FC = () => {
                     {formatPrice(livePrice)}
                   </Text>
                   {priceDoc ? (
-                    <View style={styles.sourceTag}>
+                    <View style={styles.priceSourceBadge}>
                       <View style={[
                         styles.sourceDot,
                         { backgroundColor: priceDoc.source === 'tcgdex' || priceDoc.source === 'tcgdex+seed' ? '#00C896' : '#8888AA' }
                       ]} />
-                      <Text style={styles.sourceTagText}>
+                      <Text style={styles.priceSourceText}>
                         {priceDoc.source === 'tcgdex' || priceDoc.source === 'tcgdex+seed' ? 'Live · TCGdex' : priceDoc.source}
                         {priceDoc.fetchedAtTs ? ` · ${formatAge(priceDoc.fetchedAtTs)} ago` : ''}
                       </Text>
@@ -195,22 +222,35 @@ const CardDetailScreen: React.FC = () => {
 
         {activeTab === 'listings' && (
           <View style={styles.listingsSection}>
-            {[].map(listing => (
-              <View key={listing.id} style={styles.listingCard}>
-                <View style={styles.listingLeft}>
-                  <Text style={styles.listingSeller}>{listing.sellerName}</Text>
-                  <Text style={styles.listingCondition}>{listing.condition}</Text>
-                </View>
-                <View style={styles.listingRight}>
-                  <Text style={styles.listingPrice}>{formatPrice(listing.price)}</Text>
-                  <TouchableOpacity style={styles.bidBtn}>
-                    <Text style={styles.bidBtnText}>
-                      {listing.type === 'auction' ? '競投 →' : '購買 →'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+            {listingsLoading ? (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <ActivityIndicator color="#FF3C3C" />
               </View>
-            ))}
+            ) : listings.length === 0 ? (
+              <Text style={styles.emptyListings}>
+                暫時未有掛牌，成為第一個放售呢張卡嘅人吧 🎴
+              </Text>
+            ) : (
+              listings.map(listing => (
+                <View key={listing.id} style={styles.listingCard}>
+                  <View style={styles.listingLeft}>
+                    <Text style={styles.listingSeller}>{listing.sellerName || '賣家'}</Text>
+                    <Text style={styles.listingCondition}>{listing.condition}</Text>
+                  </View>
+                  <View style={styles.listingRight}>
+                    <Text style={styles.listingPrice}>{formatPrice(listing.price)}</Text>
+                    <TouchableOpacity
+                      style={styles.bidBtn}
+                      onPress={() => navigation.navigate('MakeOffer', { listing })}
+                    >
+                      <Text style={styles.bidBtnText}>
+                        {listing.type === 'auction' ? '競投 →' : '出價 →'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )}
           </View>
         )}
 
@@ -475,6 +515,7 @@ const styles = StyleSheet.create({
   tabText: { color: '#8888CC', fontSize: 12, fontWeight: '600' },
   tabTextActive: { color: '#F0F0FF' },
   listingsSection: { paddingHorizontal: 16, gap: 10, display: 'flex' },
+  emptyListings: { color: '#6666AA', fontSize: 12, textAlign: 'center', paddingVertical: 16, lineHeight: 18 },
   listingCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',

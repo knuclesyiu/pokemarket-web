@@ -22,6 +22,7 @@ import { UserProfile } from '../types/user';
 import {
   signInEmailOrPromptSignup, EmailSignInResult,
   upgradeAnonymousToEmail, UpgradeResult,
+  registerWithEmail as registerWithEmailImpl, RegisterResult,
   refreshSession as refreshSessionImpl,
   isPhoneProviderDisabled,
 } from '../services/authFlow';
@@ -36,6 +37,7 @@ interface AuthContextValue {
   signInWithGoogle: () => Promise<User>;
   signInAnonymously: () => Promise<User>;
   upgradeFromAnonymous: (email: string, password: string) => Promise<UpgradeResult>;
+  registerWithEmail: (email: string, password: string) => Promise<RegisterResult>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   setTransactionPin: (pin: string) => Promise<void>;
@@ -218,6 +220,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser]);
 
+  /**
+   * Register a brand-new email/password account.
+   *
+   * If the current session is anonymous we upgrade that session instead of
+   * creating a fresh one — the uid (and therefore any portfolio data the
+   * visitor already created) is preserved. Otherwise a new account is
+   * created outright.
+   */
+  const registerWithEmail = useCallback(async (email: string, password: string): Promise<RegisterResult> => {
+    const e = email.trim().toLowerCase();
+    if (currentUser?.isAnonymous) {
+      const r = await upgradeAnonymousToEmail(currentUser, e, password);
+      if (r.kind === 'ok') return r;
+      // 'auth/email-already-in-use' means the email belongs to a real
+      // account already — the anon uid cannot claim it. Fall through to
+      // a direct sign-in so the user still gets an account.
+      if (r.code === 'auth/email-already-in-use') {
+        const signIn = await signInEmailOrPromptSignup(auth, e, password);
+        if (signIn.kind === 'ok') return { kind: 'ok', user: signIn.user };
+        if (signIn.kind === 'needs_signup') {
+          return { kind: 'error', code: 'auth/email-already-in-use', message: '呢個 Email 已經註冊咗，密碼唔啱' };
+        }
+        return { kind: 'error', code: signIn.code, message: signIn.message };
+      }
+      return r;
+    }
+    return registerWithEmailImpl(auth, e, password);
+  }, [currentUser]);
+
   const signOut = useCallback(async () => {
     await auth.signOut();
   }, []);
@@ -278,7 +309,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{
       currentUser, userProfile, loading, isAnonymous,
       signInWithPhone, signInWithEmail, signInWithGoogle, signInAnonymously,
-      upgradeFromAnonymous,
+      upgradeFromAnonymous, registerWithEmail,
       signOut,
       updateProfile, setTransactionPin, verifyTransactionPin,
       refreshSession, isPhoneProviderDisabled,

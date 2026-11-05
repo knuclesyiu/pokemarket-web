@@ -47,7 +47,7 @@ const LoginScreen: React.FC = () => {
   // If already signed in (and not anonymous), auto-redirect.
   useEffect(() => {
     if (currentUser && !currentUser.isAnonymous) {
-      navigation.replace('MainTabs');
+      navigation.replace('Main');
     }
   }, [currentUser, navigation]);
 

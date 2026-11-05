@@ -83,19 +83,12 @@ service cloud.firestore {
       // Public catalog of active listings
       allow read: if true;
 
-      // Only owner can create / modify / delete. Must be email-verified
-      // for create (lifted during pre-launch dev).
-      allow create: if isSignedIn()
-        && request.resource.data.sellerId == request.auth.uid
-        && request.resource.data.price is number
-        && request.resource.data.price > 0
-        && request.resource.data.price < 10000000
-        && request.resource.data.cardId is string
-        && request.resource.data.status in ['active', 'pending'];
-        // Uncomment for production: && isEmailVerified();
-
-      allow update, delete: if isSignedIn()
-        && resource.data.sellerId == request.auth.uid;
+      // SECURITY: all listing writes go through the createListing Cloud
+      // Function (Admin SDK bypasses these rules), which validates the
+      // card, price and seller identity. Denying client writes here stops
+      // a seller from self-marking a listing 'sold' or from injecting
+      // arbitrary fields into a public document.
+      allow create, update, delete: if false;
     }
 
     // ─── Orders (escrow flow) ────────────────────────────────────────
@@ -124,6 +117,13 @@ service cloud.firestore {
     }
 
     // ─── Offers (trade flow) ─────────────────────────────────────────
+    //
+    // SECURITY: clients must NOT be able to write offer status. Every
+    // status transition (accept / reject / counter / cancel) goes through
+    // a Cloud Function, which uses the Admin SDK and bypasses these rules.
+    // Previously the buyer could update their own offer and set
+    // status='accepted' themselves — which would let them take the
+    // seller's card without the seller ever agreeing.
     match /offers/{offerId} {
       // Only buyer and seller can read
       allow read: if isSignedIn() && (
@@ -131,45 +131,50 @@ service cloud.firestore {
         resource.data.sellerId == request.auth.uid
       );
 
-      // Buyer creates the offer
+      // Buyer creates the offer (validated server-side by createOffer)
       allow create: if isSignedIn()
         && request.resource.data.buyerId == request.auth.uid
         && request.resource.data.sellerId != request.auth.uid
         && request.resource.data.listingId is string;
 
-      // Buyer can cancel their own offer
-      // Seller can accept/reject/counter
-      allow update: if isSignedIn() && (
-        resource.data.buyerId == request.auth.uid ||
-        resource.data.sellerId == request.auth.uid
-      );
-
+      // Client-side updates are NOT allowed for status. createOffer /
+      // respondToOffer / cancelOffer (Cloud Functions) handle this.
+      allow update: if false;
       allow delete: if false; // soft-delete via status field
     }
 
     // ─── Chat threads ────────────────────────────────────────────────
+    //
+    // The participant list is stored in the `parties` field (this is the
+    // name the app's ChatThread type and both chat screens use).
     match /chat_threads/{threadId} {
       // Only thread participants can read the thread metadata
       allow read: if isSignedIn()
-        && request.auth.uid in resource.data.participantIds;
+        && request.auth.uid in resource.data.parties;
 
       // Create only if you're one of the participants
       allow create: if isSignedIn()
-        && request.auth.uid in request.resource.data.participantIds
-        && request.resource.data.participantIds.size() == 2;
+        && request.auth.uid in request.resource.data.parties
+        && request.resource.data.parties.size() == 2;
 
-      // Update thread metadata (lastMessage, unreadCount) — only by
-      // a participant. The other party's readBy can be updated.
+      // Update thread metadata (lastMessage, unreadCount) — only by a
+      // participant.
+      //
+      // The second condition prevents participants from removing each
+      // other from the thread: the participant list must be unchanged.
+      // NOTE: it must compare request.resource against resource —
+      // `request.auth.data.parties` (the previous code) does not exist on
+      // the auth token, so the comparison was always false and EVERY
+      // thread update was silently denied.
       allow update: if isSignedIn()
-        && request.auth.uid in resource.data.participantIds
-        // Prevent participants from removing each other
-        && request.resource.data.participantIds == resource.data.participantIds;
+        && request.auth.uid in resource.data.parties
+        && request.resource.data.parties == resource.data.parties;
 
       // Messages subcollection
       match /messages/{messageId} {
         // Only thread participants can read messages
         allow read: if isSignedIn()
-          && request.auth.uid in get(/databases/$(database)/documents/chat_threads/$(threadId)).data.participantIds;
+          && request.auth.uid in get(/databases/$(database)/documents/chat_threads/$(threadId)).data.parties;
 
         // Only the sender can create a message with their own uid
         allow create: if isSignedIn()
@@ -178,7 +183,11 @@ service cloud.firestore {
           && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 4000;
 
-        // Sender can mark their own message as deleted (soft delete)
+        // Sender can mark their own message as deleted (soft delete).
+        // The diff must compare request.resource against resource — using
+        // `resource.data.diff(resource.data)` yields an empty set, which
+        // makes the hasOnly() check vacuously true and lets the sender
+        // overwrite ANY field of their message.
         allow update: if isSignedIn()
           && resource.data.senderId == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys()

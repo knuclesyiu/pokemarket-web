@@ -121,6 +121,8 @@ const ProfileScreen: React.FC = () => {
           },
         },
       ],
+      'default',
+      undefined,
       'email-address'
     );
   };

@@ -137,7 +137,7 @@ const OfferDetailScreen: React.FC = () => {
         navigation.goBack();
       } else if (data.newStatus === 'accepted') {
         Alert.alert('✅ 成交完成！', '卡片已成功交換，請在收藏頁確認！', [
-          { text: '查看收藏', onPress: () => navigation.navigate('PortfolioTab') },
+          { text: '查看收藏', onPress: () => navigation.navigate('Main', { screen: 'PortfolioTab' }) },
           { text: '返回', onPress: () => navigation.goBack() },
         ]);
       } else if (data.newStatus === 'countered') {

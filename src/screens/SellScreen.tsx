@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image,
-  TextInput, TouchableOpacity, Modal, Alert,
+  TextInput, TouchableOpacity, Modal, Alert, ActivityIndicator,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -65,6 +65,10 @@ const SellScreen: React.FC = () => {
   const [grade, setGrade] = useState<CardGrade>('raw');
   const [certNumber, setCertNumber] = useState('');
   const [showCardPicker, setShowCardPicker] = useState(false);
+  const [pickerQuery, setPickerQuery] = useState('');
+  const [pickerResults, setPickerResults] = useState<PokemonCard[]>([]);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [portfolioCards, setPortfolioCards] = useState<PokemonCard[]>([]);
   const [listing, setListing] = useState<{reviewId?: string; isVerified?: boolean; verifiedGrade?: string} | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -97,6 +101,53 @@ const SellScreen: React.FC = () => {
       })();
     }
   }, [incomingCardId]);
+
+  // ── Load the user's own portfolio cards for the quick-pick grid ────
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { collection, getDocs } = await import('firebase/firestore');
+        const { db } = await import('../services/firebase');
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+        const snap = await getDocs(collection(db, 'users', uid, 'portfolio'));
+        if (cancelled) return;
+        const cards: PokemonCard[] = [];
+        for (const d of snap.docs) {
+          const { getCardPrice, priceDataToCard } = await import('../services/cardPriceService');
+          const priceDoc = await getCardPrice(d.id);
+          if (priceDoc) cards.push(priceDataToCard(priceDoc));
+        }
+        if (!cancelled) setPortfolioCards(cards);
+      } catch (e) {
+        console.warn('[SellScreen] portfolio load failed:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Card picker search (Firestore card_prices) ─────────────────────
+  const searchPickerCards = useCallback(async (q: string) => {
+    if (q.trim().length < 2) { setPickerResults([]); return; }
+    setPickerLoading(true);
+    try {
+      const { searchCardsByName, priceDataToCard } = await import('../services/cardPriceService');
+      const docs = await searchCardsByName(q.trim(), 20);
+      setPickerResults(docs.map(priceDataToCard));
+    } catch (e) {
+      console.warn('[SellScreen] picker search failed:', e);
+      setPickerResults([]);
+    } finally {
+      setPickerLoading(false);
+    }
+  }, []);
+
+  // Debounce the picker query
+  useEffect(() => {
+    const t = setTimeout(() => { searchPickerCards(pickerQuery); }, 350);
+    return () => clearTimeout(t);
+  }, [pickerQuery, searchPickerCards]);
 
   // Cert validity check
   const certValid = isPlausibleCert(grade, certNumber);
@@ -228,17 +279,23 @@ const SellScreen: React.FC = () => {
 
           <Text style={styles.sectionLabel}>或從列表選擇</Text>
           <View style={styles.quickGrid}>
-            {[].slice(0, 4).map(card => (
-              <TouchableOpacity
-                key={card.id}
-                style={[styles.quickCard, selectedCard?.id === card.id ? styles.quickCardSelected : null]}
-                onPress={() => handleCardSelect(card)}
-              >
-                <Image source={{ uri: card.imageUrl }} style={styles.quickImage} />
-                <Text style={styles.quickName} numberOfLines={1}>{card.name}</Text>
-                <Text style={styles.quickPrice}>HK${(card.price / 1000).toFixed(0)}K</Text>
-              </TouchableOpacity>
-            ))}
+            {portfolioCards.length === 0 ? (
+              <Text style={styles.quickEmpty}>
+                收藏空空如也 — 先去「我的收藏」加入卡牌，就可以喺度快速放售
+              </Text>
+            ) : (
+              portfolioCards.slice(0, 4).map(card => (
+                <TouchableOpacity
+                  key={card.id}
+                  style={[styles.quickCard, selectedCard?.id === card.id ? styles.quickCardSelected : null]}
+                  onPress={() => handleCardSelect(card)}
+                >
+                  <Image source={{ uri: card.imageUrl }} style={styles.quickImage} />
+                  <Text style={styles.quickName} numberOfLines={1}>{card.name}</Text>
+                  <Text style={styles.quickPrice}>HK${(card.price / 1000).toFixed(0)}K</Text>
+                </TouchableOpacity>
+              ))
+            )}
           </View>
 
           <TouchableOpacity
@@ -500,23 +557,40 @@ const SellScreen: React.FC = () => {
             <Text style={modalStyles.title}>搜尋卡牌</Text>
             <View style={modalStyles.searchBarWrap}>
               <Text style={{ fontSize: 16 }}>🔍</Text>
-              <TextInput style={modalStyles.searchInput} placeholder="輸入卡名..." placeholderTextColor="#6666AA" />
+              <TextInput
+                style={modalStyles.searchInput}
+                placeholder="輸入卡名..."
+                placeholderTextColor="#4A4A70"
+                value={pickerQuery}
+                onChangeText={setPickerQuery}
+                autoCorrect={false}
+              />
             </View>
             <ScrollView>
-              {[].map(card => (
-                <TouchableOpacity
-                  key={card.id}
-                  style={modalStyles.cardRow}
-                  onPress={() => { setSelectedCard(card); setShowCardPicker(false); }}
-                >
-                  <Image source={{ uri: card.imageUrl }} style={modalStyles.cardThumb} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={modalStyles.cardName}>{card.name}</Text>
-                    <Text style={modalStyles.cardSet}>{card.set}</Text>
-                  </View>
-                  <Text style={modalStyles.cardPrice}>HK${card.price.toLocaleString()}</Text>
-                </TouchableOpacity>
-              ))}
+              {pickerLoading ? (
+                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                  <ActivityIndicator color="#FF3C3C" />
+                </View>
+              ) : pickerResults.length === 0 ? (
+                <Text style={modalStyles.emptyText}>
+                  {pickerQuery.trim().length < 2 ? '輸入至少 2 個字搜尋卡牌' : '搵唔到相符嘅卡牌'}
+                </Text>
+              ) : (
+                pickerResults.map(card => (
+                  <TouchableOpacity
+                    key={card.id}
+                    style={modalStyles.cardRow}
+                    onPress={() => { setSelectedCard(card); setShowCardPicker(false); setPickerQuery(''); setPickerResults([]); }}
+                  >
+                    <Image source={{ uri: card.imageUrl }} style={modalStyles.cardThumb} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={modalStyles.cardName}>{card.name}</Text>
+                      <Text style={modalStyles.cardSet}>{card.set}</Text>
+                    </View>
+                    <Text style={modalStyles.cardPrice}>HK${card.price.toLocaleString()}</Text>
+                  </TouchableOpacity>
+                ))
+              )}
             </ScrollView>
             <TouchableOpacity style={modalStyles.closeBtn} onPress={() => setShowCardPicker(false)}>
               <Text style={modalStyles.closeText}>關閉</Text>
@@ -611,6 +685,7 @@ const styles = StyleSheet.create({
   placeholderText: { color: '#8888CC', fontSize: 14 },
   sectionLabel: { color: '#8888CC', fontSize: 12, marginBottom: 12 },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
+  quickEmpty: { color: '#6666AA', fontSize: 12, lineHeight: 18, paddingVertical: 8, width: '100%' },
   quickCard: {
     width: '47%',
     backgroundColor: '#14142A',
@@ -742,6 +817,7 @@ const modalStyles = StyleSheet.create({
   searchBarWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#14142A', borderRadius: 12, paddingHorizontal: 14, marginBottom: 16, borderWidth: 1, borderColor: '#2A2A50' },
   searchInput: { flex: 1, color: '#F0F0FF', fontSize: 14, paddingVertical: 12, marginLeft: 8 },
   cardRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2A2A50' },
+  emptyText: { color: '#6666AA', fontSize: 13, textAlign: 'center', paddingVertical: 20, lineHeight: 18 },
   cardThumb: { width: 50, height: 70, borderRadius: 6, backgroundColor: '#1C1C38', marginRight: 12 },
   cardName: { color: '#F0F0FF', fontSize: 14, fontWeight: '600' },
   cardSet: { color: '#8888CC', fontSize: 11 },

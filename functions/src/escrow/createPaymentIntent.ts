@@ -20,11 +20,11 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import Stripe from 'stripe';
-import { calculateFee, PLATFORM_FEE_PERCENT, ESCROW_MIN_HKD } from '../shared/feeCalculator';
+import { calculateFee, ESCROW_MIN_HKD } from '../shared/feeCalculator';
 
 const db = admin.firestore();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-02-24.acacia',
 });
 
 interface CreatePaymentIntentParams {

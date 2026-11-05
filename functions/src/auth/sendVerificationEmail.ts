@@ -11,7 +11,6 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
-const db = admin.firestore();
 
 export const sendVerificationEmail = functions.onCall(async (request) => {
   if (!request.auth) throw new functions.HttpsError('unauthenticated', '需要登入');

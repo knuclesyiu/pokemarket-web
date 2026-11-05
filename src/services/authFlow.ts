@@ -102,6 +102,46 @@ export async function upgradeAnonymousToEmail(
 }
 
 /**
+ * Create a brand-new email/password account.
+ *
+ * Used when the visitor is NOT signed in as an anonymous user — e.g. the
+ * account was deleted, or the anon session was cleared. When the current
+ * user IS anonymous we prefer `upgradeAnonymousToEmail` so that any data
+ * already created under the anonymous uid (portfolio, drafts) survives.
+ *
+ * `auth/email-already-in-use` is surfaced as a distinct code so the UI can
+ * tell the user "this email is taken, try logging in" instead of a raw
+ * Firebase message.
+ */
+export type RegisterResult =
+  | { kind: 'ok'; user: User }
+  | { kind: 'error'; code: string; message: string };
+
+export async function registerWithEmail(
+  auth: Auth,
+  email: string,
+  password: string,
+): Promise<RegisterResult> {
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    return { kind: 'ok', user: cred.user };
+  } catch (e) {
+    const code = (e as FirebaseError)?.code ?? '';
+    let message = (e as Error)?.message ?? '註冊失敗';
+    if (code === 'auth/email-already-in-use') {
+      message = '呢個 Email 已經註冊咗，請直接登入';
+    } else if (code === 'auth/weak-password') {
+      message = '密碼太弱，請用至少 6 個字元';
+    } else if (code === 'auth/invalid-email') {
+      message = 'Email 格式唔啱';
+    } else if (code === 'auth/operation-not-allowed') {
+      message = '此 App 尚未啟用 Email 註冊，請聯絡管理員';
+    }
+    return { kind: 'error', code, message };
+  }
+}
+
+/**
  * Force-refresh the user's ID token (e.g. on app resume).
  * Returns the fresh token, or null on error.
  */

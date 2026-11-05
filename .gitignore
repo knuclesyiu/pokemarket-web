@@ -29,12 +29,16 @@ __pycache__/
 venv/
 env/
 
-# ─── Local environment / secrets ──────────────────────────────────────────────
+# Local environment / secrets ──────────────────────────────────────────────
 .env
 .env.local
 .env.*.local
 *.pem
 firebase-service-account.json
+
+# Firebase Functions build output ──────────────────────────────────────────
+functions/lib/
+functions/lib-test/
 
 # ─── OS / editor noise ────────────────────────────────────────────────────────
 .DS_Store

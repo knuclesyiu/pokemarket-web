@@ -1,16 +1,20 @@
+import type { PokemonCard } from './index';
+import type { MarketListing, Offer } from './trade';
+
 export type RootStackParamList = {
   FeatureShowcase: undefined;
   Login: undefined;
   Register: undefined;
   Main: undefined;
+  EditProfile: undefined;
   Sell: { cardId: string; cardName?: string; priceType?: 'fixed' | 'auction' } | undefined;
-  CardDetail: { cardId: string };
-  Checkout: { cardId: string };
-  OrderStatus: { txId: string };
+  CardDetail: { card: PokemonCard };
+  Checkout: { card: PokemonCard; seller?: string };
+  OrderStatus: { txId?: string; orderId?: string };
   Notifications: undefined;
-  MakeOffer: { listing?: any };
+  MakeOffer: { listing: MarketListing };
   MyOffers: undefined;
-  OfferDetail: { offerId: string };
+  OfferDetail: { offer: Offer; role: 'buyer' | 'seller' };
   ChatList: undefined;
   ChatDetail: { threadId: string; otherPartyId?: string; otherPartyName?: string };
 };

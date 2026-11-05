@@ -14,6 +14,8 @@
     "@react-navigation/bottom-tabs": "^7.15.9",
     "@react-navigation/native": "^7.2.2",
     "@react-navigation/native-stack": "^7.14.11",
+    "@stripe/react-stripe-js": "^7.0.1",
+    "@stripe/stripe-js": "^10.2.1",
     "@stripe/stripe-react-native": "^0.45.0",
     "axios": "^1.15.2",
     "expo": "~54.0.34",

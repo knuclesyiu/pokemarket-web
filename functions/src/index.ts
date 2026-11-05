@@ -20,7 +20,6 @@ if (!admin.apps.length) {
 }
 
 export { createPaymentIntent } from './escrow/createPaymentIntent';
-export { confirmPayment } from './escrow/confirmPayment';
 export { releasePayment } from './escrow/releasePayment';
 export { refundPayment } from './escrow/refundPayment';
 
@@ -39,7 +38,13 @@ export { createOffer } from './listings/createOffer';
 export { respondToOffer } from './listings/respondToOffer';
 export { cancelOffer } from './listings/cancelOffer';
 export { getMyOffers } from './listings/getMyOffers';
+export { getUserCards } from './listings/getUserCards';
 export { executeTrade } from './listings/executeTrade';
+
+export { createChatThread } from './chat/createChatThread';
+export { getOrderStatus } from './orders/getOrderStatus';
+export { getNotifications } from './notifications/getNotifications';
+export { getUserReviews } from './reviews/getUserReviews';
 
 export { sendVerificationEmail } from './auth/sendVerificationEmail';
 export { checkEmailVerified } from './auth/checkEmailVerified';

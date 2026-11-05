@@ -24,7 +24,7 @@ const WEAK_PINS = new Set([
 const RegisterScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   // Destructure ALL hooks at the top level (never inside callbacks)
-  const { updateProfile, setTransactionPin, currentUser } = useAuth();
+  const { updateProfile, setTransactionPin, currentUser, registerWithEmail } = useAuth();
   const [step, setStep] = useState<'profile' | 'pin' | 'done'>('profile');
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
@@ -38,13 +38,32 @@ const RegisterScreen: React.FC = () => {
   const handleRegister = async () => {
     if (!displayName.trim()) { Alert.alert('錯誤', '請輸入暱稱'); return; }
     if (displayName.trim().length < 2) { Alert.alert('錯誤', '暱稱至少 2 個字'); return; }
+    if (!email.trim()) { Alert.alert('錯誤', '請輸入 Email'); return; }
+    if (!EMAIL_REGEX.test(email.trim())) { Alert.alert('錯誤', 'Email 格式不正確'); return; }
+    if (!password) { Alert.alert('錯誤', '請設定登入密碼'); return; }
+    if (password.length < 6) { Alert.alert('錯誤', '密碼最少 6 位'); return; }
+    if (password !== confirmPassword) { Alert.alert('錯誤', '兩次密碼不相同'); return; }
     if (phone && !PHONE_REGEX.test(phone)) { Alert.alert('錯誤', '電話格式不正確'); return; }
-    if (email && !EMAIL_REGEX.test(email)) { Alert.alert('錯誤', 'Email 格式不正確'); return; }
-    if (password && password.length < 6) { Alert.alert('錯誤', '密碼最少 6 位'); return; }
-    if (password && password !== confirmPassword) { Alert.alert('錯誤', '兩次密碼不相同'); return; }
 
     setLoading(true);
     try {
+      // 1. Create the real Firebase Auth account (or upgrade the anonymous
+      //    session, keeping the uid and any data already attached to it).
+      //    Without this the password was collected and thrown away — the
+      //    user stayed anonymous forever.
+      const result = await registerWithEmail(email.trim().toLowerCase(), password);
+      if (result.kind === 'error') {
+        Alert.alert(
+          result.code === 'auth/email-already-in-use' ? 'Email 已被註冊' : '註冊失敗',
+          result.message,
+          result.code === 'auth/email-already-in-use'
+            ? [{ text: '去登入', onPress: () => navigation.replace('Login') }, { text: '取消', style: 'cancel' }]
+            : [{ text: '好' }],
+        );
+        return;
+      }
+
+      // 2. Save the profile details (display name, phone, email).
       await updateProfile({
         displayName: displayName.trim(),
         phone: phone.trim(),
@@ -144,7 +163,7 @@ const RegisterScreen: React.FC = () => {
             ? '你將以訪客身份繼續瀏覽。建立交易前需要完成註冊。'
             : '你可以開始買賣 Pokemon 卡片了'}
         </Text>
-        <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.replace('MainTabs')}>
+        <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.replace('Main')}>
           <Text style={styles.primaryBtnText}>進入主頁 →</Text>
         </TouchableOpacity>
       </View>
@@ -177,22 +196,19 @@ const RegisterScreen: React.FC = () => {
           <TextInput style={styles.input} placeholder="+852 6123 4567" placeholderTextColor="#6666AA"
             keyboardType="phone-pad" value={phone} onChangeText={setPhone} autoComplete="tel" />
 
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>Email *</Text>
           <TextInput style={styles.input} placeholder="your@email.com" placeholderTextColor="#6666AA"
             keyboardType="email-address" autoCapitalize="none" value={email}
             onChangeText={setEmail} autoComplete="email" />
 
-          <Text style={styles.label}>設定登入密碼（如使用 Email 登入）</Text>
+          <Text style={styles.label}>設定登入密碼 *</Text>
           <TextInput style={styles.input} placeholder="最少 6 位" placeholderTextColor="#6666AA"
             secureTextEntry value={password} onChangeText={setPassword} autoComplete="new-password" />
 
-          {password !== '' && (
-            <>
-              <Text style={styles.label}>確認密碼</Text>
-              <TextInput style={styles.input} placeholder="再次輸入密碼" placeholderTextColor="#6666AA"
-                secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
-            </>
-          )}
+          <Text style={styles.label}>確認密碼 *</Text>
+          <TextInput style={styles.input} placeholder="再次輸入密碼" placeholderTextColor="#6666AA"
+            secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword}
+            autoComplete="new-password" />
 
           <TouchableOpacity style={styles.primaryBtn} onPress={handleRegister} disabled={loading}>
             {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.primaryBtnText}>下一步 →</Text>}

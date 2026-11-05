@@ -17,6 +17,15 @@ import {
   ESCROW_MIN_HKD,
 } from '../config/platform';
 
+// Re-export the fee constants so screens import them from one place.
+export {
+  PLATFORM_FEE_PERCENT,
+  ORDER_MIN_FEE_HKD,
+  STRIPE_PERCENT_FEE,
+  STRIPE_FIXED_CENTS,
+  ESCROW_MIN_HKD,
+};
+
 const ORDER_MIN_FEE_CENTS = Math.round(ORDER_MIN_FEE_HKD * 100);
 const STRIPE_FIXED_HKD   = STRIPE_FIXED_CENTS / 100;  // HK$2.35
 

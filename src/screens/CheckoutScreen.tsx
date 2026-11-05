@@ -10,7 +10,7 @@ import { getAuth } from 'firebase/auth';
 import { PokemonCard } from '../types';
 import { calculateFee, formatHkd, PLATFORM_FEE_PERCENT, STRIPE_PERCENT_FEE } from '../utils/feeCalculator';
 import { createEscrowPayment, confirmCardPayment } from '../services/stripeService';
-import { loadStripe } from '@stripe/stripe-react-native';
+import CardPaymentForm from '../components/CardPaymentForm';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard; seller?: string } }, 'params'>;
 type NavProp = NativeStackNavigationProp<any>;
@@ -55,9 +55,9 @@ const CheckoutScreen: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   // Card collection form
   const [showCardForm, setShowCardForm] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExp, setCardExp] = useState('');     // MM/YY
-  const [cardCvc, setCardCvc] = useState('');
+  const [getPaymentMethodId, setGetPaymentMethodId] = useState<
+    (() => Promise<string | null>) | null
+  >(null);
 
   const fee = calculateFee(card.price);
   const platformFee = fee.platformFeeHkd;
@@ -93,21 +93,13 @@ const CheckoutScreen: React.FC = () => {
       //    FPS path skips this and waits for buyer to transfer manually;
       //    order stays in 'awaiting_fps' until webhook confirms receipt.
       if (payment === 'card') {
-        const [mm, yy] = cardExp.split('/');
-        const stripe = await loadStripe();
-        if (!stripe) throw new Error('Stripe 載入失敗');
-        const { error, paymentIntent } = await stripe.confirmPayment(clientSecret, {
-          paymentMethodType: 'Card',
-          paymentMethodData: {
-            card: {
-              number: cardNumber.replace(/\s/g, ''),
-              expMonth: parseInt(mm ?? '0', 10),
-              expYear: 2000 + parseInt(yy ?? '0', 10),
-              cvc: cardCvc,
-            },
-          },
-        });
-        if (error) throw new Error(error.message);
+        // The card form hands us a factory that turns the card the user
+        // entered (collected by Stripe's own element) into a
+        // PaymentMethod. Stripe never lets raw card data touch our code.
+        if (!getPaymentMethodId) {
+          throw new Error('請先填寫信用卡資料');
+        }
+        await confirmCardPayment(clientSecret, { getPaymentMethodId });
         // paymentIntent.id === paymentIntentId once confirmed
       }
       // 3. Order created server-side; navigate to status screen with real ID.
@@ -427,55 +419,15 @@ const CheckoutScreen: React.FC = () => {
               透過 Stripe 加密處理。款項先由平台託管，收卡後釋放。
             </Text>
 
-            <Text style={modalStyles.fieldLabel}>卡號</Text>
-            <TextInput
-              style={modalStyles.cardField}
-              placeholder="1234 5678 9012 3456"
-              placeholderTextColor="#4A4A70"
-              value={cardNumber}
-              onChangeText={(t) => setCardNumber(t.replace(/[^\d ]/g, '').slice(0, 19))}
-              keyboardType="number-pad"
+            <CardPaymentForm
+              onPaymentMethodReady={setGetPaymentMethodId}
+              submitting={submitting}
             />
-
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={modalStyles.fieldLabel}>到期日 (MM/YY)</Text>
-                <TextInput
-                  style={modalStyles.cardField}
-                  placeholder="12/28"
-                  placeholderTextColor="#4A4A70"
-                  value={cardExp}
-                  onChangeText={(t) => {
-                    const clean = t.replace(/[^\d/]/g, '');
-                    if (clean.length === 2 && !clean.includes('/')) {
-                      setCardExp(clean + '/');
-                    } else {
-                      setCardExp(clean.slice(0, 5));
-                    }
-                  }}
-                  keyboardType="number-pad"
-                  maxLength={5}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={modalStyles.fieldLabel}>CVC</Text>
-                <TextInput
-                  style={modalStyles.cardField}
-                  placeholder="123"
-                  placeholderTextColor="#4A4A70"
-                  value={cardCvc}
-                  onChangeText={(t) => setCardCvc(t.replace(/[^\d]/g, '').slice(0, 4))}
-                  keyboardType="number-pad"
-                  secureTextEntry
-                  maxLength={4}
-                />
-              </View>
-            </View>
 
             <TouchableOpacity
               style={modalStyles.confirmAddressBtn}
               onPress={handlePlaceOrder}
-              disabled={submitting || !cardNumber || !cardExp || !cardCvc}
+              disabled={submitting || !getPaymentMethodId}
             >
               {submitting ? (
                 <ActivityIndicator color="#080810" />

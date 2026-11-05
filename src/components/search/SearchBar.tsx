@@ -24,7 +24,7 @@ const VERSION_EMOJI: Record<VersionFilter, string> = {
 };
 
 interface Props {
-  onResults: (cards: PokemonCard[]) => void;
+  onResults: (cards: PokemonCard[] | null) => void;
   onLoadingChange?: (loading: boolean) => void;
   placeholder?: string;
 }

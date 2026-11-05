@@ -8,34 +8,16 @@
 
 import { functions } from "./firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { loadStripe } from "@stripe/stripe-react-native";
+import { confirmCardPayment } from "./stripeCard";
 
 // ─── Stripe instance ───────────────────────────────────────────────────────────
 
 /**
- * Read the publishable key from EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY.
- * Defined in .env (see .env.example). Never hardcode in source.
+ * The Stripe SDK is platform-specific: the native SDK cannot be bundled
+ * for web. The card-payment implementation lives in `stripeCard.ts`
+ * (native) and `stripeCard.web.ts` (web) — Metro picks the right one.
  */
-export const STRIPE_PUBLISHABLE_KEY: string =
-  process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
-
-let stripePromise: ReturnType<typeof loadStripe> | null = null;
-
-/**
- * Lazily load the Stripe SDK with the publishable key from env.
- * Throws a clear error if the env var is missing.
- */
-export function getStripe(): Promise<ReturnType<typeof loadStripe> extends Promise<infer T> ? T : never> {
-  if (!STRIPE_PUBLISHABLE_KEY) {
-    throw new Error(
-      "Missing EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY. Set it in your .env (see .env.example)."
-    );
-  }
-  if (!stripePromise) {
-    stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
-  }
-  return stripePromise as any;
-}
+export { confirmCardPayment };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -158,49 +140,6 @@ export async function createWithdrawal(amountHkd: number, sellerStripeAccountId:
     "createWithdrawal",
     { amountHkd, sellerStripeAccountId }
   );
-}
-
-// ─── Stripe SDK Card Payment (alternative to FPS) ──────────────────────────────
-
-/**
- * Use Stripe SDK to collect and confirm card payment
- * Call this after createEscrowPayment() gets a clientSecret
- */
-export async function confirmCardPayment(
-  clientSecret: string,
-  card: {
-    number: string;
-    expMonth: number;
-    expYear: number;
-    cvc: string;
-  }
-) {
-  // loadStripe() reads the publishable key from the native module — set via
-  // app.json plugins entry on iOS / Android, or EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  // on web. See .env.example.
-  const stripe = await loadStripe();
-
-  if (!stripe) {
-    throw new Error("Stripe not loaded");
-  }
-
-  const { error, paymentIntent } = await stripe.confirmPayment(clientSecret, {
-    paymentMethodType: "Card",
-    paymentMethodData: {
-      card: {
-        number: card.number,
-        expMonth: card.expMonth,
-        expYear: card.expYear,
-        cvc: card.cvc,
-      },
-    },
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return paymentIntent;
 }
 
 // ─── Order Status Polling ──────────────────────────────────────────────────────
