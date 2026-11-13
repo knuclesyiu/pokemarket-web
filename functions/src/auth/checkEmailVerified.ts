@@ -5,6 +5,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
+import { FieldValue } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
 export const checkEmailVerified = functions.onCall(async (request) => {
@@ -17,7 +18,7 @@ export const checkEmailVerified = functions.onCall(async (request) => {
     // (custom claims are also possible but require token refresh)
     await db.doc(`users/${uid}`).set({
       emailVerified: true,
-      emailVerifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      emailVerifiedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
     return { verified: true };
   }

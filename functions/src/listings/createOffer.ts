@@ -5,6 +5,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
+import { FieldValue } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
 export const createOffer = functions.onCall(async (request) => {
@@ -53,7 +54,7 @@ export const createOffer = functions.onCall(async (request) => {
     cashAddHkd: cashAddHkd ?? 0,
     message: message ?? '',
     status: 'pending',
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     createdAtMs: now,
   });
   return { offerId: offerRef.id, status: 'pending' };

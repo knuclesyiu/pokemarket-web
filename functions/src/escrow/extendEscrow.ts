@@ -4,6 +4,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
+import { FieldValue } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
 export const extendEscrow = functions.onCall(async (request) => {
@@ -24,7 +25,7 @@ export const extendEscrow = functions.onCall(async (request) => {
   await orderRef.update({
     escrowExtended: true,
     autoReleaseAt: newAutoReleaseAt,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
   return { orderId, newAutoReleaseAt };
 });

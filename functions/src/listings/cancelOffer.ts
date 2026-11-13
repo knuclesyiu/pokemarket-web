@@ -4,6 +4,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
+import { FieldValue } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
 export const cancelOffer = functions.onCall(async (request) => {
@@ -23,7 +24,7 @@ export const cancelOffer = functions.onCall(async (request) => {
   }
   await ref.update({
     status: 'cancelled',
-    cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+    cancelledAt: FieldValue.serverTimestamp(),
   });
   return { offerId, newStatus: 'cancelled' };
 });

@@ -19,6 +19,18 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
+// Firestore refuses to store `undefined` and reports it as
+// "Value for argument data is not a valid Firestore document". The
+// write helpers here pass optional fields straight through —
+// `grade` is undefined when a seller has not graded the card — and
+// a single one of those turns into a hard failure. Listing a card
+// without a grade used to fail for exactly this reason.
+//
+// Firestore only allows the setting to be changed before the first
+// operation, and creating the client is not an operation, so this
+// is still in time.
+admin.firestore().settings({ ignoreUndefinedProperties: true });
+
 export { createPaymentIntent } from './escrow/createPaymentIntent';
 export { releasePayment } from './escrow/releasePayment';
 export { refundPayment } from './escrow/refundPayment';

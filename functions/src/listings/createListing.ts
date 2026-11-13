@@ -6,6 +6,7 @@
  */
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { loadCardCatalog, buildTradeCard } from '../shared/cards';
 
 const db = admin.firestore();
@@ -51,7 +52,7 @@ export const createListing = functions.onCall(async (request) => {
     grade,                      // legacy
     grading,                    // new structured {grade, grader, certNumber, gradeValue}
     status: 'active',
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     createdAtMs: now,
   });
   return { listingId: listingRef.id, status: 'active' };

@@ -15,12 +15,12 @@
 
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
-import Stripe from 'stripe';
+import { FieldValue } from 'firebase-admin/firestore';
+import type Stripe from 'stripe';
+import { stripeClient } from '../shared/stripe';
 
 const db = admin.firestore();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
-  apiVersion: '2025-02-24.acacia',
-});
+
 
 export const stripeWebhook = functions.onRequest(async (req, res) => {
   const sig = req.headers['stripe-signature'] as string | undefined;
@@ -34,7 +34,7 @@ export const stripeWebhook = functions.onRequest(async (req, res) => {
   let event: Stripe.Event;
   try {
     // Stripe needs the raw body for signature verification
-    event = stripe.webhooks.constructEvent(
+    event = stripeClient().webhooks.constructEvent(
       (req as any).rawBody,
       sig,
       webhookSecret,
@@ -57,14 +57,14 @@ export const stripeWebhook = functions.onRequest(async (req, res) => {
         // Update order to 'paid' (funds now in escrow on platform)
         await db.doc(`orders/${orderId}`).update({
           status: 'paid',
-          paidAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          paidAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
         // Update buyer's wallet pendingEscrow
         const buyerId = pi.metadata.buyerId;
         if (buyerId) {
           await db.doc(`users/${buyerId}/wallet/main`).set({
-            pendingEscrow: admin.firestore.FieldValue.increment(pi.amount / 100),
+            pendingEscrow: FieldValue.increment(pi.amount / 100),
           }, { merge: true });
         }
         console.log(`[stripeWebhook] order ${orderId} paid`);
@@ -77,7 +77,7 @@ export const stripeWebhook = functions.onRequest(async (req, res) => {
           await db.doc(`orders/${orderId}`).update({
             status: 'payment_failed',
             failureReason: pi.last_payment_error?.message ?? 'unknown',
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
           });
         }
         break;
@@ -102,13 +102,13 @@ export const stripeWebhook = functions.onRequest(async (req, res) => {
             const orderData = orderDoc.data();
             await orderDoc.ref.update({
               status: 'refunded',
-              refundedAt: admin.firestore.FieldValue.serverTimestamp(),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              refundedAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
             });
             // Restore buyer's wallet pendingEscrow
             if (orderData.buyerId) {
               await db.doc(`users/${orderData.buyerId}/wallet/main`).set({
-                pendingEscrow: admin.firestore.FieldValue.increment(-(charge.amount / 100)),
+                pendingEscrow: FieldValue.increment(-(charge.amount / 100)),
               }, { merge: true });
             }
           }

@@ -22,6 +22,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
+import { FieldValue } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
 export const releasePayment = functions.onCall(async (request) => {
@@ -59,7 +60,7 @@ export const releasePayment = functions.onCall(async (request) => {
   // For separate-charges-and-transfers model, you'd call stripe.transfers.create here.
 
   const releaseAmountHkd = order.sellerNetHkd ?? order.amountHkd - (order.platformFeeHkd ?? 0);
-  const now = admin.firestore.FieldValue.serverTimestamp();
+  const now = FieldValue.serverTimestamp();
 
   await orderRef.update({
     status: 'released',
@@ -71,10 +72,10 @@ export const releasePayment = functions.onCall(async (request) => {
   const buyerWalletRef = db.doc(`users/${buyerId}/wallet/main`);
   const sellerWalletRef = db.doc(`users/${order.sellerId}/wallet/main`);
   await buyerWalletRef.set({
-    pendingEscrow: admin.firestore.FieldValue.increment(-order.amountHkd),
+    pendingEscrow: FieldValue.increment(-order.amountHkd),
   }, { merge: true });
   await sellerWalletRef.set({
-    balance: admin.firestore.FieldValue.increment(releaseAmountHkd),
+    balance: FieldValue.increment(releaseAmountHkd),
   }, { merge: true });
 
   // Write transaction records

@@ -9,6 +9,7 @@
 
 import * as admin from 'firebase-admin';
 
+import { FieldPath } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
 /** Normalise a TCGdex image path into a full URL usable by <Image>. */
@@ -44,7 +45,7 @@ export async function loadCardCatalog(
     try {
       const snap = await db
         .collection('card_prices')
-        .where(admin.firestore.FieldPath.documentId(), 'in', chunk)
+        .where(FieldPath.documentId(), 'in', chunk)
         .get();
       snap.forEach((d) => {
         out[d.id] = d.data();

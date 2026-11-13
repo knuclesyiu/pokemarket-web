@@ -19,13 +19,12 @@
 
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
-import Stripe from 'stripe';
+import { FieldValue } from 'firebase-admin/firestore';
+import { stripeClient } from '../shared/stripe';
 import { calculateFee, ESCROW_MIN_HKD } from '../shared/feeCalculator';
 
 const db = admin.firestore();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
-  apiVersion: '2025-02-24.acacia',
-});
+
 
 interface CreatePaymentIntentParams {
   orderId?: string;          // optional — server generates if absent
@@ -82,7 +81,7 @@ export const createPaymentIntent = functions.onCall(async (request) => {
 
   // 6. Create Stripe PaymentIntent with destination charge
   //    (uses seller's connected account, platform takes application_fee)
-  const paymentIntent = await stripe.paymentIntents.create({
+  const paymentIntent = await stripeClient().paymentIntents.create({
     amount: amountCents,
     currency: 'hkd',
     application_fee_amount: platformFeeCents,
@@ -116,8 +115,8 @@ export const createPaymentIntent = functions.onCall(async (request) => {
     clientSecret: paymentIntent.client_secret,
     sellerStripeAccountId,
     status: 'awaiting_payment',
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
 
   // 8. Return

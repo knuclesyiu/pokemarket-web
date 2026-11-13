@@ -6,6 +6,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
+import { FieldValue } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
 export const sellerRespondToModification = functions.onCall(async (request) => {
@@ -22,7 +23,7 @@ export const sellerRespondToModification = functions.onCall(async (request) => {
   if (order.status !== 'pending_seller_consent') {
     throw new functions.HttpsError('failed-precondition', '無待回應的修改');
   }
-  const now = admin.firestore.FieldValue.serverTimestamp();
+  const now = FieldValue.serverTimestamp();
   if (accept) {
     await orderRef.update({
       status: 'pending_release',

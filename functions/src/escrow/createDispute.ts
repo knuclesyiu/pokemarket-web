@@ -4,6 +4,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
+import { FieldValue } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
 export const createDispute = functions.onCall(async (request) => {
@@ -32,14 +33,14 @@ export const createDispute = functions.onCall(async (request) => {
     reason: reason.trim(),
     status: 'open',
     evidence: [],  // buyer uploads images to storage; refs go here
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
   });
 
   // Update order status
   await orderRef.update({
     status: 'disputed',
     disputeId: disputeRef.id,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
 
   return { orderId, disputeId: disputeRef.id };

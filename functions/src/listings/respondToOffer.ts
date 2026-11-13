@@ -12,6 +12,7 @@
  */
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { decrementPortfolio, incrementPortfolio } from '../shared/portfolio';
 
 const db = admin.firestore();
@@ -37,7 +38,7 @@ export const respondToOffer = functions.onCall(async (request) => {
     await offerRef.update({
       status: 'countered',
       counterOffer: counterData,
-      respondedAt: admin.firestore.FieldValue.serverTimestamp(),
+      respondedAt: FieldValue.serverTimestamp(),
       respondedAtMs: Date.now(),
     });
     return { offerId, newStatus: 'countered' };
@@ -46,7 +47,7 @@ export const respondToOffer = functions.onCall(async (request) => {
   if (action === 'reject') {
     await offerRef.update({
       status: 'rejected',
-      respondedAt: admin.firestore.FieldValue.serverTimestamp(),
+      respondedAt: FieldValue.serverTimestamp(),
       respondedAtMs: Date.now(),
     });
     return { offerId, newStatus: 'rejected' };
@@ -131,16 +132,16 @@ export const respondToOffer = functions.onCall(async (request) => {
     cashBtoAHkd: Number(offer.cashAddHkd ?? 0),
     tradeType: 'offer_accepted',
     status: 'completed',
-    completedAt: admin.firestore.FieldValue.serverTimestamp(),
+    completedAt: FieldValue.serverTimestamp(),
     completedAtMs: now,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     createdAtMs: now,
   });
 
   // Mark the listing sold.
   await listingRef.update({
     status: 'sold',
-    soldAt: admin.firestore.FieldValue.serverTimestamp(),
+    soldAt: FieldValue.serverTimestamp(),
     soldAtMs: now,
     soldTo: buyerId,
     tradeId: tradeRef.id,
@@ -148,7 +149,7 @@ export const respondToOffer = functions.onCall(async (request) => {
 
   await offerRef.update({
     status: 'accepted',
-    respondedAt: admin.firestore.FieldValue.serverTimestamp(),
+    respondedAt: FieldValue.serverTimestamp(),
     respondedAtMs: now,
     tradeId: tradeRef.id,
   });

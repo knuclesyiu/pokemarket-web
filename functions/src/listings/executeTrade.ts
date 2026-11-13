@@ -9,6 +9,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
+import { FieldValue } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
 async function decrementPortfolio(uid: string, cardId: string): Promise<boolean> {
@@ -30,7 +31,7 @@ async function incrementPortfolio(uid: string, cardId: string, avgBuyPrice: numb
   const snap = await ref.get();
   if (snap.exists) {
     await ref.update({
-      quantity: admin.firestore.FieldValue.increment(1),
+      quantity: FieldValue.increment(1),
       addedAt: Date.now(),
     });
   } else {
@@ -92,9 +93,9 @@ export const executeTrade = functions.onCall(async (request) => {
     message: message ?? '',
     tradeType: 'direct_trade',
     status: 'completed',
-    completedAt: admin.firestore.FieldValue.serverTimestamp(),
+    completedAt: FieldValue.serverTimestamp(),
     completedAtMs: now,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     createdAtMs: now,
   });
 

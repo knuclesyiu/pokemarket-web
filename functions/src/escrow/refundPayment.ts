@@ -4,12 +4,11 @@
  */
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
-import Stripe from 'stripe';
+import { FieldValue } from 'firebase-admin/firestore';
+import { stripeClient } from '../shared/stripe';
 
 const db = admin.firestore();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
-  apiVersion: '2025-02-24.acacia',
-});
+
 
 export const refundPayment = functions.onCall(async (request) => {
   if (!request.auth) {
@@ -29,7 +28,7 @@ export const refundPayment = functions.onCall(async (request) => {
   }
 
   // Issue refund
-  const refund = await stripe.refunds.create({
+  const refund = await stripeClient().refunds.create({
     payment_intent: order.paymentIntentId,
     reason: 'requested_by_customer',
     metadata: { orderId, reason },
@@ -40,7 +39,7 @@ export const refundPayment = functions.onCall(async (request) => {
     status: 'refund_pending',
     refundId: refund.id,
     refundReason: reason,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
 
   return { orderId, refundId: refund.id, status: refund.status };

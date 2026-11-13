@@ -10,6 +10,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
+import { FieldValue } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
 export const createChatThread = functions.onCall(async (request) => {
@@ -59,9 +60,9 @@ export const createChatThread = functions.onCall(async (request) => {
     parties: [uidA, uidB].sort(),
     listingId: listingId ?? null,
     lastMessage: '',
-    lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+    lastMessageAt: FieldValue.serverTimestamp(),
     unreadCount: {},
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     status: 'open',
   });
 

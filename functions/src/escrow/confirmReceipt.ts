@@ -5,6 +5,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
+import { FieldValue } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
 export const confirmReceipt = functions.onCall(async (request) => {
@@ -23,8 +24,8 @@ export const confirmReceipt = functions.onCall(async (request) => {
   }
   await orderRef.update({
     status: 'confirmed',
-    confirmedAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    confirmedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
   return { orderId, status: 'confirmed' };
 });
