@@ -33,6 +33,17 @@ const {
   deleteUser,
 } = require('firebase/auth');
 const { getFunctions, httpsCallable } = require('firebase/functions');
+const {
+  getFirestore,
+  doc,
+  setDoc,
+  deleteDoc,
+  getDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+} = require('firebase/firestore');
 
 /* ── config ─────────────────────────────────────────────────── */
 
@@ -121,6 +132,9 @@ for (const name of CALLABLES) {
   if (r.parsed?.error) {
     // The function ran and said no. It is deployed.
     console.log(`  ✅ ${name} — 已部署，有應聲`);
+  } else if (r.status === 200 && r.parsed) {
+    // It ran and said yes. Also deployed.
+    console.log(`  ✅ ${name} — 已部署，正常回應`);
   } else if (r.status === 404) {
     console.log(`  ❌ ${name} — 未部署（404）`);
     notDeployed.push(name);
@@ -150,6 +164,34 @@ const stamp = Date.now();
 const SELLER = { email: `hermes_seller${stamp}@example.com`, password: 'TestPass123!' };
 const BUYER = { email: `hermes_buyer${stamp}@example.com`, password: 'TestPass123!' };
 
+const db = getFirestore(app);
+
+const SELLER_CARD = 'hermes-probe-card-001';
+const BUYER_CARD = 'hermes-probe-card-002';
+
+/**
+ * Give each account a card, using the client's own Firestore writes.
+ *
+ * The rules let a user write their own portfolio, so this needs no
+ * Admin SDK and no credentials — and it exercises the deployed rules
+ * as a side effect, which is worth having.
+ */
+async function seedPortfolio(uid, cardId, avgBuyPrice) {
+  await setDoc(doc(db, 'users', uid, 'portfolio', cardId), {
+    cardId,
+    quantity: 1,
+    avgBuyPrice,
+    condition: 'Near Mint',
+    source: 'probe',
+    addedAt: Date.now(),
+  });
+  await setDoc(doc(db, 'users', uid), {
+    uid,
+    displayName: 'Probe User',
+    createdAt: Date.now(),
+  }, { merge: true });
+}
+
 async function signIn(person) {
   await signOut(auth);
   const cred = await signInWithEmailAndPassword(auth, person.email, person.password);
@@ -176,8 +218,13 @@ try {
   check('賣家登入', !!seller.uid, seller.uid);
   check('買家登入', !!buyer.uid, buyer.uid);
 
+  await signIn(SELLER);
+  await seedPortfolio(seller.uid, SELLER_CARD, 100);
+  await signIn(BUYER);
+  await seedPortfolio(buyer.uid, BUYER_CARD, 50);
+
   const listed = await seller.call('createListing', {
-    cardId: 'hermes-probe-card-001',
+    cardId: SELLER_CARD,
     cardName: 'Probe Card',
     price: 100,
     condition: 'Near Mint',
@@ -205,7 +252,7 @@ try {
 
   const offered = await buyer.call('createOffer', {
     listingId,
-    offerCards: [{ card: { id: 'hermes-probe-card-002', name: 'Probe Card 2' } }],
+    offerCards: [{ card: { id: BUYER_CARD, name: 'Probe Card 2' } }],
     cashAddHkd: 10,
   });
   check('出價建立', !!offered.data.offerId, offered.data.offerId);
@@ -223,6 +270,56 @@ try {
     action: 'accept',
   });
   check('賣家接受', accepted.data.newStatus === 'accepted', accepted.data.newStatus);
+
+  // The part that matters: did the cards actually move? A trade that
+  // records itself but leaves the portfolios alone looks correct in
+  // the app and destroys the economy.
+  const portfolioOf = async (uid) => {
+    const snap = await getDocs(collection(db, 'users', uid, 'portfolio'));
+    const map = {};
+    for (const d of snap.docs) map[d.id] = Number(d.data().quantity ?? 0);
+    return map;
+  };
+  const total = (m) => Object.values(m).reduce((a, b) => a + b, 0);
+
+  // Each portfolio is read by its owner. The rules do not let one
+  // seller read another's, and they should not.
+  await signIn(SELLER);
+  const sellerAfter = await portfolioOf(seller.uid);
+  await signIn(BUYER);
+  const buyerAfter = await portfolioOf(buyer.uid);
+  console.log(`     賣家 → ${JSON.stringify(sellerAfter)}`);
+  console.log(`     買家 → ${JSON.stringify(buyerAfter)}`);
+
+  check('賣家冇晒掛牌卡', (sellerAfter[SELLER_CARD] ?? 0) === 0);
+  check('買家收到掛牌卡', (buyerAfter[SELLER_CARD] ?? 0) === 1);
+  check('買家交出咗自己張卡', (buyerAfter[BUYER_CARD] ?? 0) === 0);
+  check('賣家收到買家張卡', (sellerAfter[BUYER_CARD] ?? 0) === 1);
+  check(
+    '總卡數守恆',
+    total(sellerAfter) + total(buyerAfter) === 2,
+    `${total(sellerAfter) + total(buyerAfter)} 張`
+  );
+
+  const listingSnap = await getDoc(doc(db, 'listings', listingId));
+  check('掛牌標記為已售', listingSnap.data()?.status === 'sold', listingSnap.data()?.status);
+
+  // A trade record is readable by the two parties to it. The query
+  // has to be constrained: Firestore will not serve a plain
+  // collection query over rules that depend on each document's
+  // contents, so each side of the trade is asked for separately.
+  let trade = null;
+  for (const field of ['partyAId', 'partyBId']) {
+    try {
+      const snap = await getDocs(
+        query(collection(db, 'trades'), where(field, '==', auth.currentUser.uid))
+      );
+      trade = trade ?? snap.docs.map((d) => d.data()).find((t) => t.listingId === listingId);
+    } catch (e) {
+      console.log(`     （讀唔到 trades by ${field}: ${String(e?.message).slice(0, 50)}）`);
+    }
+  }
+  check('有交易紀錄', !!trade, trade?.status ?? '');
 } catch (e) {
   check('線上交易流程', false, `${e?.code ?? ''} ${e?.message ?? e}`.slice(0, 160));
 } finally {
@@ -230,6 +327,12 @@ try {
   for (const person of [SELLER, BUYER]) {
     try {
       await signInWithEmailAndPassword(auth, person.email, person.password);
+      const uid = auth.currentUser.uid;
+      await deleteDoc(doc(db, 'users', uid, 'portfolio', SELLER_CARD)).catch(() => {});
+      await deleteDoc(doc(db, 'users', uid, 'portfolio', BUYER_CARD)).catch(() => {});
+      // The profile document is not deletable by the client — the
+      // rules do not allow it — so it is left behind. The account
+      // itself is deleted, which is the part that matters.
       await deleteUser(auth.currentUser);
       console.log(`  清理 ${person.email}`);
     } catch {

@@ -35,6 +35,13 @@ export { createPaymentIntent } from './escrow/createPaymentIntent';
 export { releasePayment } from './escrow/releasePayment';
 export { refundPayment } from './escrow/refundPayment';
 
+// Seller payouts. The app called these four and the source had lost
+// them, so every call came back `not-found`.
+export { createSellerAccount } from './escrow/sellerPayouts';
+export { getSellerOnboardingStatus } from './escrow/sellerPayouts';
+export { createWithdrawal } from './escrow/sellerPayouts';
+export { confirmPayment } from './escrow/sellerPayouts';
+
 export { extendEscrow } from './escrow/extendEscrow';
 export { confirmReceipt } from './escrow/confirmReceipt';
 export { createDispute } from './escrow/createDispute';

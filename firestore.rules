@@ -15,6 +15,7 @@ rules_version = '2';
 //
 // IMPORTANT: This is a permissive MVP. Pre-launch hardening you should add:
 //   - require email_verified == true for createListing / createOrder
+//     (not enforced yet — see the note by the helpers below)
 //   - rate-limit writes (currently per-user; consider per-IP at the App Check layer)
 //   - Cloud Function validation hooks via request.auth.token.admin
 
@@ -30,9 +31,22 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isEmailVerified() {
-      return isSignedIn() && request.auth.token.email_verified == true;
-    }
+    // Email verification is deliberately NOT enforced yet: the
+    // registration flow creates the account and lands the user in the
+    // app, and requiring a verified address before that happens blocks
+    // people who never open the verification email.
+    //
+    // Before launch, add this helper back and require it on the
+    // writes that move money:
+    //
+    //   function isEmailVerified() {
+    //     return isSignedIn() && request.auth.token.email_verified == true;
+    //   }
+    //
+    // then append `&& isEmailVerified()` to the `create` rules for
+    // /orders and /listings. The functions that write those documents
+    // use the Admin SDK and bypass these rules, so the check has to
+    // live in the Cloud Function too.
 
     // ─── Public card catalog ──────────────────────────────────────────
     // Anyone can read card_prices (public market data). Only the
@@ -109,7 +123,6 @@ service cloud.firestore {
         && request.resource.data.cardId is string
         && request.resource.data.sellerId is string
         && request.resource.data.sellerId != request.auth.uid;
-        // Uncomment for production: && isEmailVerified();
 
       // Updates are server-only (Stripe webhook → Cloud Function updates
       // status). Clients can NEVER modify order state.
@@ -209,6 +222,20 @@ service cloud.firestore {
         && request.resource.data.reviewerId == request.auth.uid
         && request.resource.data.type in ['positive', 'negative'];
       allow update, delete: if false; // immutable once written
+    }
+
+    // ─── Trade records ──────────────────────────────────────────────
+    // Written by respondToOffer and executeTrade, which use the
+    // Admin SDK. There was no rule for this collection at all, so
+    // Firestore's default deny applied: the records existed and
+    // nobody could read them, not even the two parties to the
+    // trade.
+    match /trades/{tradeId} {
+      allow read: if isSignedIn() && (
+        resource.data.partyAId == request.auth.uid ||
+        resource.data.partyBId == request.auth.uid
+      );
+      allow write: if false; // backend-only
     }
 
     // ─── Sync metadata (priceScraper bookkeeping) ─────────────────
