@@ -64,3 +64,6 @@ coverage/
 # ─── Expo Metro bundler cache ─────────────────────────────────────────────────
 .metro-health-check*
 .metro-cache/
+
+# Emulator build (local only)
+dist-emu/

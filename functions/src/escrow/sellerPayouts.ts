@@ -58,6 +58,14 @@ export const createSellerAccount = functions.onCall(async (request) => {
   if (!request.auth) {
     throw new functions.HttpsError('unauthenticated', '需要登入');
   }
+  // Fail with a reason the seller can act on, rather than a
+  // five-hundred with no explanation.
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new functions.HttpsError(
+      'failed-precondition',
+      'Stripe 收款服務未設定，暫時無法開通收款帳戶。',
+    );
+  }
   const uid = request.auth.uid;
   const { sellerId, email } = request.data as {
     sellerId?: string;
@@ -134,9 +142,30 @@ export const getSellerOnboardingStatus = functions.onCall(async (request) => {
   }
   const uid = request.auth.uid;
 
-  const accountId = await sellerAccountId(uid);
+  const sellerRecord = await db.doc(`sellers/${uid}`).get();
+  const accountId = sellerRecord.data()?.stripeAccountId as string | null;
   if (!accountId) {
-    return { onboarded: false, accountId: null, onboardingUrl: null };
+    return {
+      onboarded: false,
+      accountId: null,
+      onboardingUrl: null,
+      stripeConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
+    };
+  }
+
+  // When Stripe is not configured — a misconfigured deploy, or the
+  // emulator — the status cannot be asked for. Say so and report what
+  // was recorded, rather than failing the call: the app needs to
+  // tell the user whether they have set up a payout account, and a
+  // five-hundred error answers nothing.
+  if (!process.env.STRIPE_SECRET_KEY) {
+    const stored = sellerRecord.data() ?? {};
+    return {
+      onboarded: Boolean(stored.onboarded),
+      accountId,
+      onboardingUrl: null,
+      stripeConfigured: false,
+    };
   }
 
   const account = await stripeClient().accounts.retrieve(accountId);
@@ -168,7 +197,7 @@ export const getSellerOnboardingStatus = functions.onCall(async (request) => {
     onboardingUrl = link.url;
   }
 
-  return { onboarded, accountId, onboardingUrl };
+  return { onboarded, accountId, onboardingUrl, stripeConfigured: true };
 });
 
 /* ── withdrawal ─────────────────────────────────────────────── */
@@ -188,6 +217,12 @@ export const getSellerOnboardingStatus = functions.onCall(async (request) => {
 export const createWithdrawal = functions.onCall(async (request) => {
   if (!request.auth) {
     throw new functions.HttpsError('unauthenticated', '需要登入');
+  }
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new functions.HttpsError(
+      'failed-precondition',
+      'Stripe 收款服務未設定，提現暫時無法處理。',
+    );
   }
   const uid = request.auth.uid;
   const { amountHkd, sellerStripeAccountId } = request.data as {

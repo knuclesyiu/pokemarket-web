@@ -15,6 +15,7 @@
  */
 
 import Stripe from 'stripe';
+import { HttpsError } from 'firebase-functions/v2/https';
 
 /** Matches the version the installed Stripe package expects. */
 export const STRIPE_API_VERSION = '2025-02-24.acacia';
@@ -31,8 +32,12 @@ let client: Stripe | null = null;
 export function stripeClient(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) {
-    throw new Error(
-      'STRIPE_SECRET_KEY 未設定 — 用 functions/.env 或者部署時嘅 secret 綁定',
+    // A plain Error reaches the client as `functions/internal` with
+    // the message "INTERNAL" — the user learns nothing. An HttpsError
+    // carries the reason through.
+    throw new HttpsError(
+      'failed-precondition',
+      'Stripe 收款服務未設定。需要用 firebase functions:secrets:set STRIPE_SECRET_KEY 綁定金鑰。',
     );
   }
   if (!client) {

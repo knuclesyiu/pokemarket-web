@@ -221,9 +221,12 @@ async function runSync(opts: {
 
   const namesIndexed = await backfillNameIndex(opts.nameBackfillLimit);
 
-  const ids = opts.cardIds?.length
-    ? opts.cardIds
-    : await pickCardsToRefresh(opts.cardLimit);
+  const ids =
+    opts.cardLimit === 0
+      ? []
+      : opts.cardIds?.length
+        ? opts.cardIds
+        : await pickCardsToRefresh(opts.cardLimit);
 
   let refreshed = 0;
   let withPrice = 0;
@@ -302,23 +305,52 @@ async function runSync(opts: {
  * and TCGdex rate-limits by IP.
  */
 export const syncCardPrices = functions.onCall(
-  { timeoutSeconds: 540, memory: '512MiB' },
+  {
+    timeoutSeconds: 540,
+    memory: '512MiB',
+    // The first deployment of this function was refused by the
+    // platform before the request reached it: the raw response was
+    // an HTML 401 while every other callable answered with JSON.
+    // The invoker binding is set explicitly so it does not depend on
+    // what the deploy happened to leave behind.
+    invoker: 'public',
+  },
   async (request) => {
     if (!request.auth) {
       throw new functions.HttpsError('unauthenticated', '需要登入');
     }
 
-    const gate = db.doc('sync_meta/price_sync_gate');
+    // Two gates. The price refresh makes a few hundred outbound
+    // requests, and TCGdex rate-limits by IP, so that part waits ten
+    // minutes between runs. The name backfill only reads and writes
+    // Firestore, so it is allowed to run every minute — otherwise
+    // indexing 18,000 documents would take three hours.
     const now = Date.now();
-    const last = await gate.get();
-    const lastAt = Number(last.data()?.lastAt ?? 0);
-    if (lastAt && now - lastAt < 10 * 60 * 1000) {
+
+    const refreshGate = db.doc('sync_meta/price_sync_gate');
+    const refreshSnap = await refreshGate.get();
+    const lastRefresh = Number(refreshSnap.data()?.lastAt ?? 0);
+    // When the refresh gate is closed the run still goes ahead — it
+    // just skips the outbound price refresh and indexes more names.
+    // Throwing here would block the backfill for ten minutes at a
+    // time, and indexing the collection would take three hours.
+    const refreshBlocked =
+      Boolean(lastRefresh) && now - lastRefresh < 10 * 60 * 1000;
+    if (!refreshBlocked) {
+      await refreshGate.set({ lastAt: now }, { merge: true });
+    }
+
+    const indexGate = db.doc('sync_meta/name_index_gate');
+    const indexSnap = await indexGate.get();
+    const lastIndex = Number(indexSnap.data()?.lastAt ?? 0);
+    if (lastIndex && now - lastIndex < 60 * 1000) {
       throw new functions.HttpsError(
         'resource-exhausted',
-        `太密。請於 ${Math.ceil((10 * 60 * 1000 - (now - lastAt)) / 60000)} 分鐘後再試。`,
+        '名稱索引剛啱做咗，請一分鐘後再試。',
       );
     }
-    await gate.set({ lastAt: now }, { merge: true });
+
+    await indexGate.set({ lastAt: now }, { merge: true });
 
     const data = (request.data ?? {}) as {
       cardLimit?: number;
@@ -327,7 +359,9 @@ export const syncCardPrices = functions.onCall(
     };
 
     const result = await runSync({
-      cardLimit: Math.min(Math.max(data.cardLimit ?? 200, 1), 400),
+      cardLimit: refreshBlocked
+        ? 0
+        : Math.min(Math.max(data.cardLimit ?? 200, 1), 400),
       nameBackfillLimit: Math.min(
         Math.max(data.nameBackfillLimit ?? 5000, 0),
         20000,
@@ -342,6 +376,7 @@ export const syncCardPrices = functions.onCall(
       namesIndexed: result.namesIndexed,
       fx: result.fx,
       failed: result.errors.length,
+      refreshSkipped: refreshBlocked,
     };
   },
 );
@@ -351,7 +386,13 @@ export const syncCardPrices = functions.onCall(
  * moving without anyone pressing a button.
  */
 export const scheduledCardPriceSync = functionsScheduler.onSchedule(
-  { schedule: 'every 6 hours', timeZone: 'Asia/Hong_Kong', timeoutSeconds: 540, memory: '512MiB' },
+  {
+    schedule: 'every 6 hours',
+    timeZone: 'Asia/Hong_Kong',
+    timeoutSeconds: 540,
+    memory: '512MiB',
+    invoker: 'public',
+  },
   async () => {
     try {
       const result = await runSync({
