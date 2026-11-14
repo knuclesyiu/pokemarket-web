@@ -1,79 +1,66 @@
-# PokeMarket — Resume Plan (更新 2026-11-13)
+# PokeMarket — Resume Plan (更新 2026-11-14)
 
 ## Goal
-用家自己註冊帳戶 → 然後交易卡。呢個係核心，其他次要。
+用家自己註冊帳戶 → 然後交易卡。
 
-## 而家嘅狀態
-
-**本地全部通過。線上仲係舊版壞 code。**
+## 而家嘅狀態：**線上部署好，實測通過**
 
 | 項目 | 狀態 |
 |---|---|
 | App `tsc --noEmit` | ✅ 0 error |
 | Functions `tsc --noEmit` | ✅ 0 error |
-| `expo export --platform web` | ✅ 成功（1.81 MB bundle） |
+| `expo export --platform web` | ✅ 成功 |
 | Portfolio 單元測試 | ✅ 8/8（含總數守恆） |
-| **Emulator E2E：註冊→掛牌→出價→接受→搬卡** | ✅ **全部通過** |
-| 線上 Cloud Functions | ❌ 仍然係舊版，要重新部署 |
-| 線上 Firestore rules | ❌ 未部署（repo 有，線上未必係） |
-| 未 push commits | 7 個（`origin/flat-public` 之後） |
+| Emulator E2E | ✅ 22/22 通過 |
+| **線上部署（真實專案 pokemarket-255c6）** | ✅ **functions 29 個 + rules + indexes 全部上線** |
+| **線上 E2E 探測** | ✅ **全部通過**（註冊→掛牌→出價→接受→搬卡→總數守恆→sold→交易紀錄） |
+| 未 push commits | 9 個（GitHub token 失效，要 Ken re-auth） |
+| Stripe 金鑰 | ❌ 未設定（`STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`） |
 
-## Emulator E2E 證明咗咩
-
-`scripts/smoke_e2e.mjs`（對 auth + firestore + functions emulator 跑）：
+## 線上探測結果（scripts/probe_deployed.mjs）
 
 ```
-✅ 兩個人註冊
-✅ 賣家掛牌 → 買家見到（nested card 物件、賣家名）
-✅ 買家出價
-✅ 買家試住自己 accept 自己個出價 → 被拒（「只有賣家可以回應」）
-✅ 賣家 accept
-✅ 卡片真係郁：賣家 掛牌卡−1 / 買家 +1；買家 出價卡−1 / 賣家 +1
-✅ 總卡數守恆 2 → 2
-✅ 掛牌 status=sold、交易紀錄 completed、出價 accepted
+24 個 callable 全部已部署、有應聲
+註冊 → 掛牌 → 買家見到 → 出價
+買家試住自己 accept 自己個出價 → 被拒（「只有賣家可以回應」）
+賣家 accept → accepted
+賣家 → {"hermes-probe-card-002":1}
+買家 → {"hermes-probe-card-001":1}
+總卡數守恆 2 張 · 掛牌 sold · 交易紀錄 completed
 ```
 
-## 今次修好嘅四個 bug（全部係 typecheck 抓唔到）
+## 部署途中修好嘅 6 個問題
 
-1. **成個 functions bundle 載入失敗**
-   `new Stripe(process.env.STRIPE_SECRET_KEY ?? '')` 喺 module load 執行，空 key 會 throw →
-   bundle 分析失敗 → **全部 callable 回 `not-found`**（連 25 個同 Stripe 冇關嘅都陪葬）。
-   改成喺 handler 入面先建 client（`src/shared/stripe.ts`）。
+1. **Node 20 runtime 已收爐**（2026-10-30）→ 升到 Node 22
+2. **Index 格式錯**：`"order": "ARRAY_CONTAINS"` → `"arrayConfig": "CONTAINS"`；
+   另外 4 個單欄 index 要用 single-field index controls，唔可以留喺 file
+3. **App 叫緊 4 個 source 冇嘅 function**（`createSellerAccount`,
+   `getSellerOnboardingStatus`, `createWithdrawal`, `confirmPayment`）
+   → 新增 `functions/src/escrow/sellerPayouts.ts`
+4. **`trades` collection 冇任何 rule** → Firestore default-deny，交易紀錄存在但冇人讀得到
+5. **12 個 function 被平台層 403 擋死**（HTML 403，function 根本冇收到請求）
+   → 原因係 IAM：覆蓋部署係 "update operation"，保留舊 Cloud Run service 嘅 invoker binding。
+   刪除再部署 → "create operation" → 全新 service + 預設 binding → function 自己驗證身份。
+   **下次遇到平台層 403，先試刪除重建，唔好以為係 code 問題。**
+6. **17 個線上殘留 function**（代碼已冇）→ 刪除
 
-2. **`admin.firestore.FieldValue` / `FieldPath` 喺 emulator 係 undefined**
-   typecheck 唔會捉到（types 有 declare）。19 個檔案、37 處寫入會 runtime throw。
-   改用 `import { FieldValue, FieldPath } from 'firebase-admin/firestore'`。
+## Ken 要做嘅一步
 
-3. **Firestore 唔收 `undefined`**
-   `createListing` 寫 `grade` / `grading`（冇填就 undefined）→ 掛牌直接失敗
-   （"Value for argument data is not a valid Firestore document"）。
-   `src/index.ts` 開 `ignoreUndefinedProperties`。
-
-4. **Emulator port 撞車**
-   Firestore emulator 原本用 8080，但本地 web preview 霸咗。改 8081。
-
-## Ken 要做嘅兩步（我做唔到）
-
-### 1. 登入 Firebase CLI（部署要用互動式 Google 登入）
 ```bash
-firebase login
-firebase deploy --only functions,firestore:rules,firestore:indexes
-```
-部署完要重跑線上探測（`scripts/probe_rules.mjs`）。
-
-### 2. GitHub re-auth（push 用）
-```bash
-gh auth login
+gh auth login --web
 git push origin flat-public
 ```
-⚠️ `~/.config/gh/hosts.yml` 個 token 已經無效（之前貼入 chat，按保安政策當洩漏處理，唔好再用）。
-另外 `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY`（pk_live）同之前嗰個 GitHub token 都係貼過入 chat，都要換。
+（9 個 commit 未 push；舊 token 已當洩漏處理，唔好再用。）
 
-## 未做
+## 未做 / 下一步
 
-- App 未接錢包，所以用家暫時付唔到真錢（escrow 係 server 端邏輯，未接 Stripe 測試卡）。
-- 卡片目錄 `card_prices` 未入 emulator（`loadCardCatalog` 會 warn 同降級，唔會死）。
-- `loadCardCatalog` 用 `where(FieldPath.documentId(), 'in', chunk)` —— Firestore 對 `in` + `__name__`
-  有已知限制，要實測確認；emulator 會 warn 但繼續。
-- Firestore composite index：repo 有 `offers[buyerId,createdAt]` 等，要部署後確認線上 index 真係存在。
-- `web/` 版嘅 Stripe 用 CardElement，native 用 FPS-only 路徑（上次 commit 改嘅，要真機驗）。
+- **Stripe 未接**：`STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` 未設定，
+  所以 `createPaymentIntent` / `releasePayment` / `stripeWebhook` 會喺
+  「缺少 key」時失敗（而家係清楚嘅錯誤訊息，唔會靜靜哋死）。
+  要真收款就要設定 secret + 測試卡。
+- **賣家 onboarding / 提現 UI 未接**（`startSellerOnboarding` 等 4 個
+  function 有後端，app 嘅 service 有 wrapper，但冇畫面用）。
+- **FPS 付款流程**：`confirmPayment` 只記錄「買家話畀咗錢」，唔會放錢；
+  要人工或 bank 核對先可以 `releasePayment`。
+- `card_prices` 卡片目錄未入 emulator（`loadCardCatalog` 會 warn 同降級）。
+- Firestore composite index 已部署 20 個；新 query 要記得加 index。
