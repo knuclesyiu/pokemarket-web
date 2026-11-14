@@ -45,8 +45,14 @@ export interface RefundParams {
 }
 
 export interface OnboardingParams {
-  sellerId: string;
-  email: string;
+  /**
+   * Optional. The server refuses a sellerId that is not the signed-in
+   * user, so sending the caller's own uid buys nothing — and the
+   * caller is the seller by definition.
+   */
+  sellerId?: string;
+  /** Optional. The server falls back to the profile, then the auth token. */
+  email?: string;
 }
 
 // ─── Firebase Function Call Helpers ──────────────────────────────────────────
@@ -136,10 +142,12 @@ export async function checkSellerOnboarding() {
  * Seller withdrawal: Transfer balance to seller's bank
  */
 export async function createWithdrawal(amountHkd: number, sellerStripeAccountId: string) {
-  return callFunction<{ success: boolean; payoutId: string; status: string }>(
-    "createWithdrawal",
-    { amountHkd, sellerStripeAccountId }
-  );
+  return callFunction<{
+    success: boolean;
+    payoutId: string;
+    status: string;
+    amountHkd: number;
+  }>("createWithdrawal", { amountHkd, sellerStripeAccountId });
 }
 
 // ─── Order Status Polling ──────────────────────────────────────────────────────

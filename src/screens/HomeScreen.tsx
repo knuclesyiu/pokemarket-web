@@ -9,6 +9,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db } from '../services/firebase';
+import {
+  HOME_FEED_MIN_PRICE_HKD,
+  HOME_FEED_MAX_PRICE_HKD,
+  HOME_FEED_LIMIT,
+} from '../config/platform';
 import { getCardPrice, getCardPrices, priceDataToCard, CardPriceData } from '../services/cardPriceService';
 import CardItem from '../components/CardItem';
 import SearchBar from '../components/search/SearchBar';
@@ -55,7 +60,18 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     const loadRealCards = async () => {
       try {
-        const snap = await getDocs(query(collection(db, 'card_prices'), limit(50)));
+        // Only cards that carry a real market price, in the band a
+        // collector would actually trade in. See HOME_FEED_* in
+        // config/platform for why the band exists.
+        const snap = await getDocs(
+          query(
+            collection(db, 'card_prices'),
+            where('priceHkd', '>=', HOME_FEED_MIN_PRICE_HKD),
+            where('priceHkd', '<=', HOME_FEED_MAX_PRICE_HKD),
+            orderBy('priceHkd', 'desc'),
+            limit(HOME_FEED_LIMIT),
+          ),
+        );
         const cards: PokemonCard[] = [];
         snap.forEach(d => {
           // Use the normalized helper so imageUrl is a full https URL

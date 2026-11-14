@@ -258,6 +258,24 @@ const ProfileScreen: React.FC = () => {
         )}
       </TouchableOpacity>
 
+      {/* Selling */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>🏪 賣家設定</Text>
+        <TouchableOpacity
+          style={styles.actionRow}
+          onPress={() => navigation.navigate('SellerOnboarding')}
+        >
+          <Text style={styles.actionIcon}>💳</Text>
+          <View style={styles.actionContent}>
+            <Text style={styles.actionLabel}>收款帳戶</Text>
+            <Text style={styles.actionSub}>
+              設定 Stripe 收款戶口，賣出嘅卡收到嘅錢會直接入你嘅銀行
+            </Text>
+          </View>
+          <Text style={styles.actionArrow}>→</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Preferences */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>⚙️ 偏好設定</Text>

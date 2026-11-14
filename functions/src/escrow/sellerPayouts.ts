@@ -178,8 +178,12 @@ export const getSellerOnboardingStatus = functions.onCall(async (request) => {
  *
  * The amount is checked against the balance the server credited, and
  * the balance is decremented in the same transaction that records the
- * payout. A request that names someone else's connected account is
+ * transfer. A request that names someone else's connected account is
  * refused outright.
+ *
+ * Stripe moves the money from the platform balance into the seller's
+ * connected account; Stripe then pays it out to the seller's bank
+ * account on its own schedule.
  */
 export const createWithdrawal = functions.onCall(async (request) => {
   if (!request.auth) {
@@ -222,18 +226,21 @@ export const createWithdrawal = functions.onCall(async (request) => {
     );
   }
 
-  const payout = await stripeClient().payouts.create(
+  // A Stripe payout cannot name a connected account: it pays out to a
+  // bank account that belongs to the account making the payout. The
+  // right call is a transfer, which moves the money from the
+  // platform's balance into the seller's connected account, and Stripe
+  // then pays it out to the seller's bank on their own schedule.
+  //
+  // The idempotency key means a retried request cannot pay twice.
+  const transfer = await stripeClient().transfers.create(
     {
       amount: Math.round(amountHkd * 100),
       currency: 'hkd',
-      // A payout cannot name a connected account directly. The money
-      // has to be transferred to it first, and then paid out.
-      method: 'standard',
-      metadata: { firebaseUid: uid },
+      destination: onFile,
+      metadata: { firebaseUid: uid, sellerId: uid },
     },
     {
-      // Stripe Connect's idempotency key, so a retried request
-      // cannot pay out twice.
       idempotencyKey: `withdrawal-${uid}-${Date.now()}`,
     },
   );
@@ -258,17 +265,17 @@ export const createWithdrawal = functions.onCall(async (request) => {
       id: payoutRef.id,
       sellerId: uid,
       stripeAccountId: onFile,
-      stripePayoutId: payout.id,
+      stripeTransferId: transfer.id,
       amountHkd,
-      status: payout.status,
+      status: 'submitted',
       createdAt: FieldValue.serverTimestamp(),
     });
   });
 
   return {
     success: true,
-    payoutId: payout.id,
-    status: payout.status,
+    payoutId: transfer.id,
+    status: 'submitted',
     amountHkd,
   };
 });

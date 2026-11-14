@@ -177,28 +177,53 @@ export async function searchCardsByName(
 ): Promise<CardPriceData[]> {
   const q = queryText.trim();
   if (q.length < 2) return [];
+  const lower = q.toLowerCase();
   try {
-    // Firestore doesn't have full-text search. We pull priceHkd > 0 docs
-    // (the high-signal set) and filter in-memory. For 23k docs this would
-    // be slow; but typically only ~82% (~19k) match the filter, and we
-    // cap at maxResults. Reconsider Algolia/Meili when scaling.
-    const snap = await getDocs(
-      query(collection(db, 'card_prices'),
-        where('priceHkd', '>', 0),
-        orderBy('priceHkd', 'desc'),
-        limit(500))   // upper bound for in-memory filter
-    );
-    const lower = q.toLowerCase();
-    const results: CardPriceData[] = [];
-    snap.forEach(d => {
-      const data = d.data() as any;
-      const name = (data.name || '').toLowerCase();
-      const set = (data.set || '').toLowerCase();
-      if (name.includes(lower) || set.includes(lower)) {
-        results.push(normalizePriceDoc(d.id, data));
+    // The catalogue carries a lowercased `nameLower`, so a prefix
+    // range over it finds the cards whose name starts with the text
+    // — at any price. The old version pulled the 500 most expensive
+    // cards and filtered in memory, which meant a HK$1 card could
+    // not be found at all.
+    const found = new Map<string, any>();
+    try {
+      const snap = await getDocs(
+        query(collection(db, 'card_prices'),
+          where('nameLower', '>=', lower),
+          where('nameLower', '<=', `${lower}\uf8ff`),
+          limit(60))
+      );
+      snap.forEach(d => found.set(d.id, d.data()));
+    } catch (e) {
+      console.warn('[searchCardsByName] prefix query failed', e);
+    }
+
+    // Names that contain the text rather than start with it, and set
+    // names, need a wider look. Bounded, because this is a fallback.
+    if (found.size < 20) {
+      try {
+        const scan = await getDocs(
+          query(collection(db, 'card_prices'),
+            where('priceHkd', '>', 0),
+            orderBy('priceHkd', 'desc'),
+            limit(500))
+        );
+        scan.forEach(d => {
+          if (found.has(d.id)) return;
+          const data = d.data() as any;
+          const name = (data.name || '').toLowerCase();
+          const set = (data.set || '').toLowerCase();
+          if (name.includes(lower) || set.includes(lower)) {
+            found.set(d.id, data);
+          }
+        });
+      } catch (e) {
+        console.warn('[searchCardsByName] scan failed', e);
       }
-    });
-    return results.slice(0, maxResults);
+    }
+
+    return Array.from(found.entries())
+      .map(([id, data]) => normalizePriceDoc(id, data))
+      .slice(0, maxResults);
   } catch (e) {
     console.warn('[searchCardsByName] error:', e);
     return [];

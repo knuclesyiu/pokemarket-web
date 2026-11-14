@@ -49,6 +49,11 @@ export { sellerRespondToModification } from './escrow/sellerRespondToModificatio
 
 export { stripeWebhook } from './webhooks/stripeWebhook';
 
+// Card catalogue. The prices in `card_prices` were written once by
+// the Python scraper; these keep them moving.
+export { syncCardPrices } from './prices/syncCardPrices';
+export { scheduledCardPriceSync } from './prices/syncCardPrices';
+
 export { createListing } from './listings/createListing';
 export { searchCardsWithPrices } from './listings/searchCardsWithPrices';
 export { getCardPrice } from './listings/getCardPrice';

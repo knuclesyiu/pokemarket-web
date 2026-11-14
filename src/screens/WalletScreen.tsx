@@ -100,14 +100,16 @@ const WalletScreen: React.FC = () => {
 
   const handleWithdraw = () => {
     if (available <= 0) {
-      Alert.alert('暫時無法提現', '可用餘額為 HK$ 0。完成交易後即可提現。');
+      Alert.alert(
+        '暫時無法提現',
+        '可用餘額為 HK$ 0。完成交易後賣出嘅卡入咗帳戶，就可以提現。',
+      );
       return;
     }
-    Alert.alert(
-      '提現功能即將推出',
-      `可提現餘額：HK$ ${available.toLocaleString()}\n提現管道（FPS / 銀行轉帳）即將整合。`,
-      [{ text: '好的' }],
-    );
+    // The withdrawal screen checks the seller's Stripe account and
+    // sends the payout request; the server is what decides whether
+    // the money can move.
+    navigation.navigate('Withdraw');
   };
 
   return (
@@ -153,11 +155,16 @@ const WalletScreen: React.FC = () => {
             </Text>
           </View>
         </View>
-        <View style={styles.fpsBadge}>
+        <TouchableOpacity
+          style={styles.fpsBadge}
+          onPress={() => navigation.navigate('SellerOnboarding')}
+        >
           <Text style={styles.fpsBadgeText}>
-            {walletData.onboardingComplete ? 'FPS 轉數快已連結' : 'FPS 連結待設定'}
+            {walletData.onboardingComplete
+              ? '收款帳戶已設定 ✓ · 點擊查看'
+              : '設定收款帳戶先可以提現 →'}
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Escrow explainer */}

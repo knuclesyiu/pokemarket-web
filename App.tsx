@@ -24,6 +24,8 @@ import ChatDetailScreen from "./src/screens/chat/ChatDetailScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import EditProfileScreen from "./src/screens/EditProfileScreen";
+import SellerOnboardingScreen from "./src/screens/SellerOnboardingScreen";
+import WithdrawScreen from "./src/screens/WithdrawScreen";
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import type { RootStackParamList } from "./src/types/navigation";
 
@@ -203,6 +205,16 @@ function RootNavigator() {
         <Stack.Screen name="Sell" component={SellScreen} />
         <Stack.Screen name="Notifications" component={NotificationScreen} />
         <Stack.Screen name="MakeOffer" component={MakeOfferScreen} />
+        <Stack.Screen
+          name="SellerOnboarding"
+          component={SellerOnboardingScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Withdraw"
+          component={WithdrawScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="MyOffers" component={MyOffersScreen} />
         <Stack.Screen name="OfferDetail" component={OfferDetailScreen} />
         <Stack.Screen

@@ -17,4 +17,8 @@ export type RootStackParamList = {
   OfferDetail: { offer: Offer; role: 'buyer' | 'seller' };
   ChatList: undefined;
   ChatDetail: { threadId: string; otherPartyId?: string; otherPartyName?: string };
+  /** Set up a Stripe Connect account so the user can receive money. */
+  SellerOnboarding: undefined;
+  /** Move the seller's balance out to their bank. */
+  Withdraw: undefined;
 };

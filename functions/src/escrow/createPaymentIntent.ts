@@ -54,13 +54,21 @@ export const createPaymentIntent = functions.onCall(async (request) => {
     throw new functions.HttpsError('invalid-argument', '無效的賣家');
   }
 
-  // 3. Look up seller's Stripe Connect account
+  // 3. Look up seller's Stripe Connect account.
+  //    The connected account lives in `sellers/{uid}` — that is where
+  //    createSellerAccount writes it. Looking for it on the user
+  //    document instead meant every payment failed with "賣家尚未完成
+  //    Stripe 帳戶設定" even for sellers who had finished onboarding.
   const sellerSnap = await db.doc(`users/${data.sellerId}`).get();
   if (!sellerSnap.exists) {
     throw new functions.HttpsError('not-found', '賣家帳戶不存在');
   }
   const sellerData = sellerSnap.data() ?? {};
-  const sellerStripeAccountId = sellerData.stripeAccountId as string | undefined;
+
+  const sellerRecord = await db.doc(`sellers/${data.sellerId}`).get();
+  const sellerStripeAccountId = sellerRecord.data()?.stripeAccountId as
+    | string
+    | undefined;
   if (!sellerStripeAccountId) {
     throw new functions.HttpsError(
       'failed-precondition',

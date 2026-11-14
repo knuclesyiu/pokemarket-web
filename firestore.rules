@@ -224,6 +224,16 @@ service cloud.firestore {
       allow update, delete: if false; // immutable once written
     }
 
+    // ─── Payouts ─────────────────────────────────────────────────────
+    // Written by createWithdrawal with the Admin SDK. There was no
+    // rule for this collection, so Firestore's default deny applied
+    // and a seller could not see their own withdrawal history.
+    match /payouts/{payoutId} {
+      allow read: if isSignedIn()
+        && resource.data.sellerId == request.auth.uid;
+      allow write: if false; // backend-only
+    }
+
     // ─── Trade records ──────────────────────────────────────────────
     // Written by respondToOffer and executeTrade, which use the
     // Admin SDK. There was no rule for this collection at all, so
