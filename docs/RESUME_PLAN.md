@@ -175,6 +175,35 @@ v1 `accounts.create({ capabilities: { transfers: { requested: true } } })`
 
 ⚠️ 賣家 KYC 完成前，`transfers.create` 一定會被拒絕 —— 唔係 bug。
 
+## Google 登入喺手機上唔到（2026-11-15 晚，已修）
+
+### 症狀
+手機瀏覽器撳「用 Google 帳戶登入」，停喺 login screen，冇 error。
+
+### 根因
+唔係 provider 問題 —— Firebase 嘅 `google.com` provider 一直有開
+（`defaultSupportedIdpConfigs` → `enabled: true`），popup 都真係開咗。
+係 **mobile 瀏覽器擋 popup**：`signInWithPopup` 喺手機上會靜靜失敗，
+Firebase 官方指定要用 `signInWithRedirect`。
+
+### 修正（`src/contexts/AuthContext.tsx`）
+- mobile（UA 判定，iPadOS 用 `maxTouchPoints` 判）→ `signInWithRedirect`
+- desktop → 仍然 `signInWithPopup`
+- 桌面 popup 被擋（`auth/popup-blocked`）→ fallback 去 redirect
+- **redirect 返嚟要先 `getRedirectResult(auth)` settle 咗**，然後
+  `await auth.authStateReady()` —— 唔等就會簽匿名入去，
+  **把原本由 storage 還原嘅 session 撞爛**（我踩過，reload 就登出）
+- redirect 會跌咗 query → `src/services/returnPath.ts` 記住同還原
+- `App.tsx` 用 `initialRouteName`（唔係 `navigate()`）開賣家畫面，
+  因為 `NavigationContainer` 未 ready 時 `navigate()` 會被忽略
+
+### 驗證
+- iPhone UA → 冇 popup，直接 redirect 去 `accounts.google.com` ✅
+- 桌面 UA → 仍然 popup ✅
+- email 登入 → reload 保持登入 ✅
+- `?sellerOnboarding=refresh` → 直接開「收款帳戶」畫面 ✅
+- app tsc 0、emulator E2E 22/22
+
 ## Stripe key 輪換（2026-11-15 20:12）
 
 Ken 喺 Stripe dashboard 開咗新 key 並更新咗本機
