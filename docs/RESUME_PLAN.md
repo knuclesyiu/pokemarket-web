@@ -132,6 +132,28 @@ payload 由 6.9MB 跌到 2.9MB。
 - `ProfileScreen` 好評率 `undefined / 1` = **NaN%** → 已修
 - 主角「會員since」中英夾雜 → 「加入於 2026年11月14日」
 
+## Stripe key 輪換（2026-11-15 20:12）
+
+Ken 喺 Stripe dashboard 開咗新 key 並更新咗本機
+`~/.hermes/secrets/stripe-pokemarket.env`。
+
+**已完成**
+- 新 `STRIPE_SECRET_KEY` 推入 Firebase Secret Manager（hash 同本機檔一致）
+- `STRIPE_WEBHOOK_SECRET` 一併重推（內容無變）
+- functions 重新部署 → 線上 live Stripe E2E **20/20**（真 PaymentIntent 建到，
+  cardPrice 100 / buyerTotal 155 / sellerNet 97 / deliveryFee 35 全部正確）
+- webhook 加咗 payload 形狀守衛：壞 payload 由 500 → 200
+  （Stripe 遇 5xx 會重試 3 日然後停用 endpoint；壞 payload 重試都冇用）
+
+**⚠️ 仲要 Ken 手動做**
+舊嗰條 `sk_live_`（貼入 chat 嗰條）**仲喺 Stripe 有效** —— API 唔可以
+revoke secret key，只能喺 dashboard 撳：
+https://dashboard.stripe.com/apikeys → 搵返 20:12 之前建立嗰條 → Revoke
+
+**⚠️ Stripe Connect 仍然未開**（`/v1/accounts` 回 0）
+https://dashboard.stripe.com/connect → 揀香港 → 填公司資料 → 啟用
+未開之前，賣家收款帳戶／提現行唔到（`createSellerAccount` 會失敗）。
+
 ## 工具（scripts/）
 
 - `setup_stripe_secrets.sh <file>` — set secret + 重新部署
@@ -144,6 +166,8 @@ payload 由 6.9MB 跌到 2.9MB。
 - `migrate_alerts.py` — `Alert.alert` → `notify` / `confirmAction`（可重跑）
 - `tokenise_colors.py` — hardcoded hex → theme token（`--dry-run` 可先睇）
 - `emoji_to_icons.py` — emoji icon → `@expo/vector-icons`
+- `stripe_account_state.mjs` — 睇帳戶現況（webhook endpoints / connected accounts /
+  儲存嘅憑證），輪換後用嚟對數
 
 ## 仲未做
 
