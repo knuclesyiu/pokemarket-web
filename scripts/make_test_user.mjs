@@ -56,6 +56,15 @@ if (!uid) {
   console.error('  no current user');
   process.exit(1);
 }
+
+// `--delete` removes the account instead of creating one. A browser
+// test on the live project leaves a real user behind, and the next
+// test inherits it.
+if (process.argv.includes('--delete')) {
+  await auth.currentUser.delete();
+  console.log(`  🧹 已刪測試帳號 ${email}`);
+  process.exit(0);
+}
 await setDoc(doc(db, 'users', uid), {
   uid,
   email,

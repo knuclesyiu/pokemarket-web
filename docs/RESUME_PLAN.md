@@ -93,6 +93,45 @@ variable" → 唯一解係刪除重建嗰啲 function。
 以前只會見到 `INTERNAL`。→ 而家會講「平台未開通 Stripe Connect，
 需要管理員到 dashboard 開通先可以開通賣家收款帳戶。」
 
+## UI 改進（2026-11-15 下午，已上線）
+
+### 1. 網頁版之前完全冇 feedback
+`Alert.alert` 喺 react-native-web **係 no-op** —— 85 個 call site 全部無聲：
+驗證失敗、網絡錯誤、「已儲存」都冇提示。用家撳掣冇反應，唔知點解。
+（實測：註冊撞「email 已存在」→ 畫面乜都冇出現。）
+→ `src/components/Feedback.tsx`：toast + 對話框，兩個平台一致。
+
+### 2. 三套 palette 混用
+Login `#12121F`、主頁 `#080810`、SearchBar `#1E1E2E`；同一個品牌紅有兩個版本。
+→ `src/theme.ts` 統一，937 處 hardcoded hex 換成 token。
+
+### 3. 冇載字體 / emoji 做 icon / tab bar 係 emoji
+→ Sora（`expo-font` + `@expo-google-fonts/sora`），價格用 tabular figures
+→ `@expo/vector-icons`，140 處 emoji icon 換晒
+
+### 4. 主頁三個 stat tile 係寫死 `--` 而且 `onPress={() => {}}`
+→ 改用真 24h 升跌數據（升幅最多/跌幅最多嗰張卡，可撳入去）
+→ 熱門卡 / 市場掛牌加咗 empty state
+
+### 🔴 部署時踩到嘅坑（好易再踩）
+`firebase.json` hosting `ignore` 有 `"**/node_modules/**"`，但 Expo 將匯出嘅
+字體放喺 `dist/assets/node_modules/...` → **所有字體檔都冇部署**。
+後果：@font-face 有註冊但 font 永遠 `unloaded`、`useFonts` 唔 resolve、
+**成個 app 卡喺 loading screen**；而且 Ionicons 字體一樣冇部署，
+所有 vector icon 會變豆腐。
+
+修正：`ignore` 改成 `"node_modules/**"`（只擋頂層）。另外將
+`@expo/vector-icons` 嘅 barrel import 改成直接 import 個別 family，
+payload 由 6.9MB 跌到 2.9MB。
+
+⚠️ 壞回應被瀏覽器 cache 咗（Firebase Hosting `max-age=3600`），
+所以修正後要等 cache 過期先見到效果 —— 驗證要用
+`document.fonts.check('16px FamilyName')` 同每個 face 嘅 status。
+
+### 另外捉到
+- `ProfileScreen` 好評率 `undefined / 1` = **NaN%** → 已修
+- 主角「會員since」中英夾雜 → 「加入於 2026年11月14日」
+
 ## 工具（scripts/）
 
 - `setup_stripe_secrets.sh <file>` — set secret + 重新部署
@@ -101,10 +140,16 @@ variable" → 唯一解係刪除重建嗰啲 function。
 - `stripe_live_e2e.mjs` — 線上真 Stripe E2E（20 項檢查）
 - `cleanup_live_test_data.mjs <uid...>` — 清測試殘留
 - `purge_test_users.mjs` — 刪測試帳號（含 random 密碼嗰啲）
+- `make_test_user.mjs <email> <pw> [--delete]` — 開/刪測試帳號
+- `migrate_alerts.py` — `Alert.alert` → `notify` / `confirmAction`（可重跑）
+- `tokenise_colors.py` — hardcoded hex → theme token（`--dry-run` 可先睇）
+- `emoji_to_icons.py` — emoji icon → `@expo/vector-icons`
 
 ## 仲未做
 
 - **賣家開通收款**：Connect 開通之後先驗得
+- **25 個匿名帳號**：app 每次 cold launch 都自動匿名登入，累積咗 25 個
+  冇 email 嘅 session。有冇清嘅話要你自己決定
 - **真卡付款**：live mode 要真卡號；web 版有 `<CardElement />`，
   但未用真卡試過一次完整 `payment_intent.succeeded` → webhook →
   `releasePayment` → 賣家餘額

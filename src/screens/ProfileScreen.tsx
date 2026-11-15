@@ -34,10 +34,14 @@ const ProfileScreen: React.FC = () => {
   const [upgrading, setUpgrading] = useState(false);
 
   const profile = userProfile;
-  const positiveRate = profile
-    ? Math.round((profile.positiveReviews / (profile.positiveReviews + profile.negativeReviews || 1)) * 100)
+  // A user with no reviews yet has no positiveReviews field at all, so
+  // the division was `undefined / 1` and the screen said "NaN%".
+  const positiveCount = profile?.positiveReviews ?? 0;
+  const negativeCount = profile?.negativeReviews ?? 0;
+  const totalReviews = positiveCount + negativeCount;
+  const positiveRate = totalReviews > 0
+    ? Math.round((positiveCount / totalReviews) * 100)
     : 0;
-  const totalReviews = (profile?.positiveReviews ?? 0) + (profile?.negativeReviews ?? 0);
 
   const handleChangeLanguage = async (lang: Language) => {
     setChangingLang(true);
