@@ -16,6 +16,7 @@ import {
   Functions,
   connectFunctionsEmulator,
 } from "firebase/functions";
+import { restoreReturnPath } from './returnPath';
 
 const PROJECT_ID = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? "pokemarket-255c6";
 
@@ -50,6 +51,9 @@ let db: Firestore;
 let functions: Functions;
 
 export function initFirebase() {
+  // Put back the place the user was heading for, if a sign-in left the
+  // page and dropped the query string on the way back.
+  restoreReturnPath();
   if (!app) {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);

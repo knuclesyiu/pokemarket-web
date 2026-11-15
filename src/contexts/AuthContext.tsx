@@ -18,6 +18,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
+import { rememberReturnPath } from '../services/returnPath';
 import { UserProfile } from '../types/user';
 import {
   signInEmailOrPromptSignup, EmailSignInResult,
@@ -25,6 +26,7 @@ import {
   registerWithEmail as registerWithEmailImpl, RegisterResult,
   refreshSession as refreshSessionImpl,
   isPhoneProviderDisabled,
+  isMobileBrowser,
 } from '../services/authFlow';
 
 interface AuthContextValue {
@@ -34,7 +36,7 @@ interface AuthContextValue {
   isAnonymous: boolean;
   signInWithPhone: (phone: string) => Promise<ConfirmationResult>;
   signInWithEmail: (email: string, password: string) => Promise<EmailSignInResult>;
-  signInWithGoogle: () => Promise<User>;
+  signInWithGoogle: () => Promise<User | null>;
   signInAnonymously: () => Promise<User>;
   upgradeFromAnonymous: (email: string, password: string) => Promise<UpgradeResult>;
   registerWithEmail: (email: string, password: string) => Promise<RegisterResult>;
@@ -113,6 +115,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Listen to Firebase Auth state
   useEffect(() => {
+    // A redirect sign-in has to be settled before anything else signs
+    // the user in. The anonymous fallback below would otherwise take
+    // the session while the redirect result is still waiting, and the
+    // result would be lost — the user would come back to the app
+    // signed in as a guest instead of as themselves.
+    const redirectPending = { current: typeof window !== 'undefined' };
+
+    if (typeof window !== 'undefined') {
+      (async () => {
+        let cameBackSignedIn = false;
+        try {
+          const { getRedirectResult } = await import('firebase/auth');
+          const result = await getRedirectResult(auth);
+          cameBackSignedIn = Boolean(result?.user);
+        } catch (e) {
+          console.warn('[AuthContext] redirect result failed:', e);
+        }
+        redirectPending.current = false;
+
+        // Wait for the SDK to settle the initial auth state before
+        // deciding that nobody is signed in. A user who was signed in
+        // earlier is restored from storage asynchronously, and
+        // deciding too early would sign a guest in over the top of
+        // them and throw their session away.
+        try {
+          await auth.authStateReady();
+        } catch (e) {
+          console.warn('[AuthContext] auth state never settled:', e);
+        }
+
+        // Nobody came back from a redirect, and there is no restored
+        // user — make sure there is at least a guest to look at.
+        if (!cameBackSignedIn && !auth.currentUser && !anonSignInInFlight.current) {
+          anonSignInInFlight.current = true;
+          try {
+            const { signInAnonymously: anonSignIn } = await import('firebase/auth');
+            await anonSignIn(auth);
+          } catch (e) {
+            console.warn('[AuthContext] Anonymous auth not available:', e);
+            setUserProfile(null);
+          } finally {
+            anonSignInInFlight.current = false;
+          }
+        }
+      })();
+    }
+
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       setCurrentUser(user);
       if (user) {
@@ -142,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {
           console.warn('[AuthContext] profile load/create failed:', e);
         }
-      } else if (!isUpgrading.current) {
+      } else if (!isUpgrading.current && !redirectPending.current) {
         // Auto sign-in as anonymous on first visit — but only if not
         // already in-flight, to avoid a re-entrant onAuthStateChanged
         // loop when the anon sign-in itself fires the callback.
@@ -178,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return signInEmailOrPromptSignup(auth, email, password);
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (): Promise<User | null> => {
     // On web, signInWithPopup works. On React Native, the Firebase JS SDK
     // cannot do Google sign-in directly — use @react-native-google-signin/
     // google-signin, or expo-auth-session with Google provider, or a
@@ -189,12 +238,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         'Use email/phone sign-in for now.',
       );
     }
-    const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+    const { GoogleAuthProvider, signInWithPopup, signInWithRedirect } =
+      await import('firebase/auth');
     const provider = new GoogleAuthProvider();
     provider.addScope('profile');
     provider.addScope('email');
-    const result = await signInWithPopup(auth, provider);
-    return result.user;
+
+    // A popup is blocked outright by most mobile browsers, and the
+    // sign-in then never finishes — the user comes back to the login
+    // screen with no error to show for it. A redirect leaves the page
+    // and comes back to it, which every browser allows, so mobile goes
+    // that way. A desktop browser keeps the popup, which does not take
+    // the app off the screen.
+    if (isMobileBrowser()) {
+      // The redirect comes back to the app root — keep where the user
+      // was going so it can be restored.
+      rememberReturnPath();
+      await signInWithRedirect(auth, provider);
+      // The page navigates away here; this never settles.
+      return null;
+    }
+
+    try {
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    } catch (e: any) {
+      // A blocked popup is recoverable — fall back to the redirect
+      // rather than leaving the user on the login screen.
+      if (e?.code === 'auth/popup-blocked') {
+        rememberReturnPath();
+        await signInWithRedirect(auth, provider);
+        return null;
+      }
+      throw e;
+    }
   }, []);
 
   const signInAnonymously = useCallback(async () => {

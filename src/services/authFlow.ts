@@ -160,6 +160,29 @@ export async function refreshSession(auth: Auth): Promise<string | null> {
  * Surfacing this clearly helps the user know the app needs admin setup
  * rather than thinking they did something wrong.
  */
+/**
+ * Whether this browser is a phone or tablet.
+ *
+ * Google sign-in goes through a popup on a desktop browser, but most
+ * mobile browsers block popups outright — the window opens and is then
+ * dismissed, and the sign-in never completes. A redirect works
+ * everywhere, so the mobile path takes it.
+ *
+ * iPadOS reports itself as a Mac, so the touch points are the tell.
+ */
+export function isMobileBrowser(): boolean {
+  if (typeof window === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  const iPadOS =
+    /Macintosh/.test(ua) &&
+    typeof navigator.maxTouchPoints === 'number' &&
+    navigator.maxTouchPoints > 1;
+  return (
+    /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua) ||
+    iPadOS
+  );
+}
+
 export function isPhoneProviderDisabled(e: unknown): boolean {
   const code = (e as FirebaseError)?.code ?? '';
   return (

@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import initFirebase from "./src/services/firebase";
+import { sellerOnboardingRequested } from "./src/services/returnPath";
 import ErrorBoundary from "./src/components/ErrorBoundary";
 import { FeedbackProvider } from "./src/components/Feedback";
 import TabBarIcon from "./src/components/TabBarIcon";
@@ -174,8 +175,18 @@ function RootNavigator() {
 
   // Real signed-in user (email / phone / Google) → MainTabs
   // Anonymous user → Login (they can browse but must upgrade to trade)
+  // Stripe sends the seller away to finish their account and sends
+  // them back with `?sellerOnboarding=`. If they had to sign in on
+  // the way back, the query may only have been restored now — so the
+  // seller screen is the route the stack opens on. The stack remounts
+  // when the signed-in user changes, so this is read again at the
+  // moment the guest becomes the real account.
   const initialRoute: keyof RootStackParamList =
-    currentUser && !isAnonymous ? 'Main' : 'Login';
+    currentUser && !isAnonymous
+      ? sellerOnboardingRequested()
+        ? 'SellerOnboarding'
+        : 'Main'
+      : 'Login';
 
   return (
     <NavigationContainer>
