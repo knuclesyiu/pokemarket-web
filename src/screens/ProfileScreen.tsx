@@ -18,8 +18,8 @@ import { C, themed, ThemeName } from '../theme';
 type Language = 'zh-HK' | 'zh-CN' | 'en';
 
 const LANGUAGES: { value: Language; label: string }[] = [
-  { value: 'zh-HK', label: t('🇭🇰 繁體中文') },
-  { value: 'zh-CN', label: t('🇨🇳 簡體中文') },
+  { value: 'zh-HK', label: '🇭🇰 繁體中文' },
+  { value: 'zh-CN', label: '🇨🇳 简体中文' },
   { value: 'en', label: '🇺🇸 English' },
 ];
 
