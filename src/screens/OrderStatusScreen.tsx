@@ -176,6 +176,16 @@ const OrderStatusScreen: React.FC = () => {
     }
   };
 
+  const handleMarkShipped = async () => {
+    try {
+      const fn = getFunctions();
+      const markFn = httpsCallable(fn, 'markShipped');
+      await markFn({ orderId, trackingNumber: '' });
+    } catch (e: any) {
+      notify(t('操作失敗'), e?.message ?? t('請稍後再試'));
+    }
+  };
+
   const handleReleaseFund = () => {
     setReleaseAmountText(String(card?.price ?? ''));
     setShowReleaseModal(true);
@@ -388,6 +398,18 @@ const OrderStatusScreen: React.FC = () => {
       </View>
 
       {/* Action area — varies by role and step */}
+      {/* The seller says the card is on its way. Without this the
+          order stops at 'paid' and the money can never be released. */}
+      {currentStep === 1 && isSeller && order?.deliveryMethod !== 'meetup' && (
+        <View style={styles.actionArea}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="paper-plane-outline" size={14} color={C.textTertiary} /><Text style={styles.actionHint}>{t('買家已付款，請寄出卡片')}</Text></View>
+          <Text style={styles.actionSub}>{t('賣家寄出後，買家收到卡會確認收貨，款項就會釋放俾你。')}</Text>
+          <TouchableOpacity style={styles.confirmReceiptBtn} onPress={handleMarkShipped}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="send-outline" size={14} color={C.textTertiary} /><Text style={styles.confirmReceiptBtnText}>{t('我已寄出卡片')}</Text></View>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {currentStep === 1 && !isSeller && (
         <View style={styles.actionArea}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="time-outline" size={14} color={C.textTertiary} /><Text style={styles.actionHint}>{t('等待賣家發貨中...')}</Text></View>
@@ -430,7 +452,7 @@ const OrderStatusScreen: React.FC = () => {
         <View style={styles.actionArea}>
           <View style={styles.confirmingAlert}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.confirmingAlertText}>{t('已確認收貨')}</Text></View>
-            <Text style={styles.confirmingAlertSub}>{t('資金將自動釋放俾賣家，交易完成！')}</Text>
+            <Text style={styles.confirmingAlertSub}>{t('已確認收貨，可以釋放款項俾賣家。')}</Text>
           </View>
           <TouchableOpacity style={styles.releaseBtn} onPress={handleReleaseFund}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-open-outline" size={13} color={C.textTertiary} /><Text style={styles.releaseBtnText}>{t('立即釋放款項')}</Text></View>
@@ -485,7 +507,9 @@ const OrderStatusScreen: React.FC = () => {
               請確認已收到卡牌且狀態滿意。
             </Text>
             <View style={modalStyles.releaseCard}>
-              <Text style={modalStyles.releaseAmount}>HK$ {card.price.toLocaleString()}</Text>
+              <Text style={modalStyles.releaseAmount}>
+                HK$ {Number(order?.sellerNetHkd ?? card.price).toLocaleString()}
+              </Text>
               <Text style={modalStyles.releaseTo}>款項將轉俾 {card.counterparty}</Text>
             </View>
             <View style={modalStyles.actions}>

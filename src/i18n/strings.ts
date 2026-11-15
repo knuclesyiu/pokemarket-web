@@ -28,6 +28,9 @@ export interface LocalisedString {
 }
 
 export const STRINGS: Record<string, LocalisedString> = {
+  '買家已付款，請寄出卡片': { 'zh-HK': '買家已付款，請寄出卡片', 'zh-CN': '买家已付款，请寄出卡片', 'en': 'The buyer has paid — send the card' },
+  '賣家寄出後，買家收到卡會確認收貨，款項就會釋放俾你。': { 'zh-HK': '賣家寄出後，買家收到卡會確認收貨，款項就會釋放俾你。', 'zh-CN': '卖家寄出后，买家收到卡会确认收货，款项就会释放给你。', 'en': 'Once the buyer confirms the card, the money is released to you.' },
+  '我已寄出卡片': { 'zh-HK': '我已寄出卡片', 'zh-CN': '我已寄出卡片', 'en': "I've sent the card" },
   '賣俾 ': { 'zh-HK': '賣俾 ', 'zh-CN': '賣俾 ', 'en': 'To ' },
   '向 ': { 'zh-HK': '向 ', 'zh-CN': '向 ', 'en': 'To ' },
   '+ 添加': { 'zh-HK': '+ 添加', 'zh-CN': '+ 添加', 'en': '+ Add' },

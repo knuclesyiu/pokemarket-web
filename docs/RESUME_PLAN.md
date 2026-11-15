@@ -204,6 +204,54 @@ Firebase 官方指定要用 `signInWithRedirect`。
 - `?sellerOnboarding=refresh` → 直接開「收款帳戶」畫面 ✅
 - app tsc 0、emulator E2E 22/22
 
+## 付款 → 放款 嘅鏈（2026-11-16 凌晨）
+
+### 測試
+新寫 `scripts/escrow_flow_e2e.mjs`：喺 live project + live Stripe 帳戶行一次
+完整鏈，26 項檢查。測試唔會真正付款（PaymentIntent 開完就 cancel），
+賣家 Stripe 帳戶用已 onboard 嗰個，只係寫 ledger。
+
+### 原本嘅問題（全部係真 bug，全部已修）
+
+1. **買家根本冇得付款** —— `CheckoutScreen` 喺 App.tsx 有註冊，但**冇任何畫面
+   navigate 過去**。「立即購買」只係切去掛牌 tab，每個掛牌只有「出價 →」
+   （走 offer 換卡，冇錢）。由掛牌到付款嘅路徑完全斷咗。
+   → 修：每個掛牌加「立即購買」掣 → Checkout。
+
+2. **賣家冇得發貨，訂單卡死喺 paid** —— 冇任何 function 寫 `status:'shipped'`，
+   而 `confirmReceipt` 要 `shipped`、`releasePayment` 要 `shipped|confirmed`，
+   所以**錢永遠放唔落賣家**。
+   → 修：新增 `functions/src/escrow/markShipped.ts` + 賣家「我已寄出卡片」掣。
+   面交（meetup）冇運費，`confirmReceipt` 接受由 `paid` 直接確認。
+
+3. **價錢由 client 決定** —— `createPaymentIntent` 收 `cardPriceHkd`，
+   買家可以自己命名金額。
+   → 修：server 查 `listings/{listingId}` 攞價，並檢查掛牌係 `active`、
+   賣家對應。運費亦改由 server 決定（順豐 HK$35 / 面交 0）。
+
+4. **重複落單 = 兩次扣款** —— 實測同一個 orderId 落兩次會開兩個 PaymentIntent。
+   → 修：同一張單已有未付嘅 PaymentIntent 就攞返嗰個。
+
+5. **webhook 唔冪等** —— Stripe 至少送一次 event，5xx 會重試三日；
+   `pendingEscrow` 會被加兩次。
+   → 修：先讀訂單狀態，`status !== 'awaiting_payment'` 就唔當新 event 計。
+
+6. **放款唔原子** —— 訂單狀態、兩邊錢包、payout_source 四個獨立寫入。
+   → 修：改用 Firestore transaction，狀態檢查喺 transaction 入面。
+
+7. **`source_transaction` 用錯 id** —— Stripe 要 **charge id**（`ch_`），
+   我哋傳緊 payment intent id（`pi_`），提現一定失敗。
+   → 修：webhook 記低 `chargeId`（`pi.latest_charge`），payout_source 存住，
+   提現時用返。
+
+8. **訂單嘅卡牌資料用賣家 profile 嘅「上一張卡」** → 改用掛牌嘅資料。
+
+9. **放款 modal 顯示卡價** —— 賣家實收係卡價減平台費，數字對唔上。
+
+### 仲未做
+- 賣家提現要賣家本人完成 Stripe KYC（`stripe_transfers` 仍 restricted）
+- 交易紀錄嘅 counterparty 仍然係 uid 前 6 位，應該用 displayName
+
 ## 淺色主題 + 三語言（2026-11-15 晚）
 
 ### 語言掣唔 work 嘅原因

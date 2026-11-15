@@ -40,13 +40,17 @@ const db = admin.firestore();
 
 interface CreatePaymentIntentParams {
   orderId?: string;          // optional — server generates if absent
-  cardPriceHkd: number;      // the listing price
-  deliveryFeeHkd?: number;    // 0 for meetup, 35 for SF
+  listingId?: string;        // the listing being bought — the price comes from it
+  cardPriceHkd?: number;     // ignored: the listing's price is the price
+  deliveryFeeHkd?: number;   // ignored: the server decides the shipping charge
   sellerId: string;
   deliveryMethod: 'meetup' | 'sf';
-  cardName: string;
+  cardName?: string;
   cardId: string;
 }
+
+/** What the platform charges for shipping by courier. */
+const DELIVERY_FEE_SF_HKD = 35;
 
 export const createPaymentIntent = functions.onCall(
   { secrets: [stripeSecretKey] },
@@ -59,21 +63,38 @@ export const createPaymentIntent = functions.onCall(
   const data = request.data as CreatePaymentIntentParams;
 
   // 2. Validate
-  const cardPriceHkd = Number(data.cardPriceHkd);
+  if (!data.sellerId || data.sellerId === buyerId) {
+    throw new functions.HttpsError('invalid-argument', '無效的賣家');
+  }
+
+  // The price comes from the listing, not from the client. A client
+  // that named the amount would be naming what the seller agreed to
+  // sell for — which is the seller's decision, not the buyer's.
+  const listingRef = db.doc(`listings/${data.listingId ?? data.cardId}`);
+  const listingSnap = await listingRef.get();
+  if (!listingSnap.exists) {
+    throw new functions.HttpsError('not-found', '掛牌不存在或已下架');
+  }
+  const listing = listingSnap.data() ?? {};
+  if (listing.sellerId !== data.sellerId) {
+    throw new functions.HttpsError('invalid-argument', '賣家同掛牌唔對應');
+  }
+  if (listing.status !== 'active') {
+    throw new functions.HttpsError('failed-precondition', '掛牌已售出或已下架');
+  }
+  const cardPriceHkd = Number(listing.price);
   if (!cardPriceHkd || cardPriceHkd < ESCROW_MIN_HKD) {
     throw new functions.HttpsError(
       'invalid-argument',
       `金額需 >= HK$ ${ESCROW_MIN_HKD} (escrow 最低)`,
     );
   }
-  if (!data.sellerId || data.sellerId === buyerId) {
-    throw new functions.HttpsError('invalid-argument', '無效的賣家');
-  }
 
   // The delivery fee is a flat amount the platform charges for
-  // shipping, not a percentage, so it comes from the client — but it
-  // is bounded here so a client cannot post an arbitrary amount.
-  const deliveryFeeHkd = Math.min(Math.max(Number(data.deliveryFeeHkd ?? 0), 0), 100);
+  // shipping. It comes from the server: a client that chose its own
+  // shipping charge would be choosing how much of the price the
+  // platform keeps.
+  const deliveryFeeHkd = data.deliveryMethod === 'sf' ? DELIVERY_FEE_SF_HKD : 0;
 
   // 3. Look up seller's Stripe Connect account.
   //    The connected account lives in `sellers/{uid}` — that is where
@@ -84,7 +105,6 @@ export const createPaymentIntent = functions.onCall(
   if (!sellerSnap.exists) {
     throw new functions.HttpsError('not-found', '賣家帳戶不存在');
   }
-  const sellerData = sellerSnap.data() ?? {};
 
   const sellerRecord = await db.doc(`sellers/${data.sellerId}`).get();
   const sellerStripeAccountId = sellerRecord.data()?.stripeAccountId as
@@ -110,6 +130,37 @@ export const createPaymentIntent = functions.onCall(
     : db.collection('orders').doc();
   const orderId = orderRef.id;
 
+  // 5b. Idempotency. A buyer who taps twice, or whose network drops
+  //     after the first call, must not end up with two charges. If the
+  //     order already has a PaymentIntent that has not been paid, that
+  //     one is the answer.
+  const existingOrder = await orderRef.get();
+  if (existingOrder.exists) {
+    const existing = existingOrder.data() as any;
+    if (
+      existing.paymentIntentId &&
+      existing.paymentIntentStatus !== 'canceled' &&
+      ['awaiting_payment', 'payment_failed'].includes(existing.status)
+    ) {
+      const existingPi = await stripeClient().paymentIntents.retrieve(
+        existing.paymentIntentId,
+      );
+      if (!['canceled', 'succeeded'].includes(existingPi.status)) {
+        return {
+          orderId,
+          clientSecret: existingPi.client_secret,
+          paymentIntentId: existingPi.id,
+          amount: Number(existing.buyerTotalHkd ?? cardPriceHkd),
+          cardPrice: cardPriceHkd,
+          platformFee: Number(existing.platformFeeHkd ?? fee.platformFeeHkd),
+          totalFee: Number(existing.totalFeeHkd ?? fee.totalFeeHkd),
+          sellerNet: Number(existing.sellerNetHkd ?? fee.sellerNetHkd),
+          reused: true,
+        };
+      }
+    }
+  }
+
   // 6. Create the Stripe PaymentIntent. The charge lands on the
   //    platform account, so Stripe holds the buyer's money until the
   //    release. No transfer_data, no application_fee_amount — the
@@ -134,9 +185,10 @@ export const createPaymentIntent = functions.onCall(
     buyerId,
     sellerId: data.sellerId,
     cardId: data.cardId,
-    cardName: data.cardName,
-    cardSet: sellerData.lastCardSet ?? '',
-    cardImageUrl: sellerData.lastCardImageUrl ?? '',
+    listingId: listingRef.id,
+    cardName: listing.cardName ?? data.cardName ?? '',
+    cardSet: listing.card?.set?.name ?? listing.cardSet ?? '',
+    cardImageUrl: listing.imageUrl ?? listing.card?.imageUrl ?? '',
     cardPriceHkd,
     amountHkd: cardPriceHkd,
     deliveryFeeHkd,

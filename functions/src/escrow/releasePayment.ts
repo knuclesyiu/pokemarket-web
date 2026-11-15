@@ -66,37 +66,74 @@ export const releasePayment = functions.onCall(
   );
   const now = FieldValue.serverTimestamp();
 
-  await orderRef.update({
-    status: 'released',
-    releasedAt: now,
-    updatedAt: now,
-  });
-
-  // Update wallets
+  // The release is one thing that happens, not four. The order's
+  // status, both wallets and the payout source are written in one
+  // transaction: a buyer who taps the button twice, or a write that
+  // fails half way, must not leave the seller's balance credited
+  // twice or the buyer's escrow debited without the money moving.
   const buyerWalletRef = db.doc(`users/${buyerId}/wallet/main`);
   const sellerWalletRef = db.doc(`users/${order.sellerId}/wallet/main`);
-  await buyerWalletRef.set({
-    pendingEscrow: FieldValue.increment(-buyerPaidHkd),
-    updatedAt: now,
-  }, { merge: true });
-  await sellerWalletRef.set({
-    balance: FieldValue.increment(releaseAmountHkd),
-    updatedAt: now,
-  }, { merge: true });
+  const sourceRef = db.collection('payout_sources').doc();
 
-  // Record where this money came from. A withdrawal can then name the
-  // charge it draws against, which is what lets Stripe move money
-  // that has not cleared yet.
-  const sourceId = db.collection('payout_sources').doc();
-  await sourceId.set({
-    id: sourceId.id,
-    sellerId: order.sellerId,
-    orderId,
-    paymentIntentId: order.paymentIntentId ?? null,
-    amountHkd: releaseAmountHkd,
-    remainingHkd: releaseAmountHkd,
-    createdAt: now,
-  });
+  try {
+    await db.runTransaction(async (tx) => {
+      const fresh = await tx.get(orderRef);
+      const current = fresh.data() as any;
+      if (!current) {
+        throw new Error('訂單不存在');
+      }
+      if (!['shipped', 'confirmed', 'pending_release'].includes(current.status)) {
+        // Already released, or not ready. The status check inside the
+        // transaction is what makes a second call a no-op.
+        throw new Error(
+          `訂單狀態 ${current.status} 不允許確認收貨`,
+        );
+      }
+
+      tx.update(orderRef, {
+        status: 'released',
+        releasedAt: now,
+        updatedAt: now,
+      });
+
+      tx.set(
+        buyerWalletRef,
+        {
+          pendingEscrow: FieldValue.increment(-buyerPaidHkd),
+          updatedAt: now,
+        },
+        { merge: true },
+      );
+      tx.set(
+        sellerWalletRef,
+        {
+          balance: FieldValue.increment(releaseAmountHkd),
+          updatedAt: now,
+        },
+        { merge: true },
+      );
+
+      // Record where this money came from. A withdrawal can then name
+      // the charge it draws against, which is what lets Stripe move
+      // money that has not cleared yet. Stripe's source_transaction
+      // wants the CHARGE id — a payment intent id is not one.
+      tx.create(sourceRef, {
+        id: sourceRef.id,
+        sellerId: order.sellerId,
+        orderId,
+        paymentIntentId: order.paymentIntentId ?? null,
+        chargeId: order.chargeId ?? null,
+        amountHkd: releaseAmountHkd,
+        remainingHkd: releaseAmountHkd,
+        createdAt: now,
+      });
+    });
+  } catch (err: any) {
+    throw new functions.HttpsError(
+      'failed-precondition',
+      err?.message ?? '放款失敗',
+    );
+  }
 
   // Write transaction records
   await db.collection(`users/${buyerId}/transactions`).add({

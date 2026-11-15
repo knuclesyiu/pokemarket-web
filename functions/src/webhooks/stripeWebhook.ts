@@ -61,23 +61,46 @@ export const stripeWebhook = functions.onRequest(
           console.warn('[stripeWebhook] no orderId in metadata');
           break;
         }
-        // Update order to 'paid' (funds now in escrow on platform)
-        await db.doc(`orders/${orderId}`).update({
-          status: 'paid',
-          paidAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        });
+        // Stripe delivers an event at least once, and retries it for
+        // three days if the endpoint answers 5xx. The escrow has to be
+        // counted once: the order's own status says whether this
+        // event has already been counted.
+        const orderRef = db.doc(`orders/${orderId}`);
+        const orderSnap = await orderRef.get();
+        const order = orderSnap.data() as any;
+        const alreadyCounted = !!order && order.status !== 'awaiting_payment';
+
+        // The charge id, not the payment intent id: a withdrawal names
+        // the charge it draws against, and Stripe's source_transaction
+        // wants that charge.
+        const chargeId =
+          typeof pi.latest_charge === 'string'
+            ? pi.latest_charge
+            : (pi.latest_charge as any)?.id ?? null;
+
+        if (!alreadyCounted) {
         // Update buyer's wallet pendingEscrow. The amount is what the
         // buyer actually paid — the card price plus the fees — and it
         // is held until the release.
-        const buyerId = pi.metadata?.buyerId;
-        if (buyerId) {
-          await db.doc(`users/${buyerId}/wallet/main`).set({
-            pendingEscrow: FieldValue.increment(pi.amount / 100),
+          await orderRef.update({
+            status: 'paid',
+            paidAt: FieldValue.serverTimestamp(),
+            chargeId,
             updatedAt: FieldValue.serverTimestamp(),
-          }, { merge: true });
+          });
+          const buyerId = pi.metadata?.buyerId;
+          if (buyerId) {
+            await db.doc(`users/${buyerId}/wallet/main`).set({
+              pendingEscrow: FieldValue.increment(pi.amount / 100),
+              updatedAt: FieldValue.serverTimestamp(),
+            }, { merge: true });
+          }
+          console.log(`[stripeWebhook] order ${orderId} paid`);
+        } else {
+          console.log(
+            `[stripeWebhook] order ${orderId} already ${order.status}, not counting it again`,
+          );
         }
-        console.log(`[stripeWebhook] order ${orderId} paid`);
         break;
       }
       case 'payment_intent.payment_failed': {

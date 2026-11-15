@@ -19,9 +19,13 @@ export const confirmReceipt = functions.onCall(async (request) => {
   if (order.buyerId !== request.auth.uid) {
     throw new functions.HttpsError('permission-denied', '只有買家可以確認收貨');
   }
-  if (order.status !== 'shipped') {
-    throw new functions.HttpsError('failed-precondition', '賣家尚未發貨');
-  }
+  // A meetup has no shipping: the buyer confirms the card straight
+    // from 'paid'. A courier order has to reach 'shipped' first.
+    const meetup = order.deliveryMethod === 'meetup';
+    const allowed = meetup ? ['paid', 'shipped'] : ['shipped'];
+    if (!allowed.includes(order.status)) {
+      throw new functions.HttpsError('failed-precondition', '賣家尚未發貨');
+    }
   await orderRef.update({
     status: 'confirmed',
     confirmedAt: FieldValue.serverTimestamp(),

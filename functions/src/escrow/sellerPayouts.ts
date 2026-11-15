@@ -368,7 +368,11 @@ export const createWithdrawal = functions.onCall(
     .get();
   const sources = sourcesSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
   const exactSource = sources.find(
-    (src) => Math.abs(Number(src.remainingHkd) - amountHkd) < 0.005 && src.paymentIntentId,
+    (src) =>
+      Math.abs(Number(src.remainingHkd) - amountHkd) < 0.005 &&
+      // Stripe's source_transaction is a CHARGE id. A payment intent
+      // id is not one, and passing it fails the transfer.
+      (src.chargeId ?? null) !== null,
   );
 
   // A Stripe payout cannot name a connected account: it pays out to a
@@ -385,7 +389,7 @@ export const createWithdrawal = functions.onCall(
         amount: Math.round(amountHkd * 100),
         currency: 'hkd',
         destination: onFile,
-        ...(exactSource ? { source_transaction: exactSource.paymentIntentId } : {}),
+        ...(exactSource ? { source_transaction: exactSource.chargeId } : {}),
         metadata: { firebaseUid: uid, sellerId: uid },
       },
       {
@@ -430,7 +434,7 @@ export const createWithdrawal = functions.onCall(
       sellerId: uid,
       stripeAccountId: onFile,
       stripeTransferId: transfer.id,
-      sourceTransaction: exactSource?.paymentIntentId ?? null,
+      sourceTransaction: exactSource?.chargeId ?? null,
       amountHkd,
       status: 'submitted',
       createdAt: FieldValue.serverTimestamp(),

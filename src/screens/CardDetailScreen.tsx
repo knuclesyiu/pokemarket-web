@@ -244,6 +244,25 @@ const CardDetailScreen: React.FC = () => {
                   </View>
                   <View style={styles.listingRight}>
                     <Text style={styles.listingPrice}>{formatPrice(listing.price)}</Text>
+                    {listing.type !== 'auction' && (
+                      <TouchableOpacity
+                        style={styles.bidBtn}
+                        onPress={() =>
+                          navigation.navigate('Checkout', {
+                            card: {
+                              id: listing.id,
+                              name: listing.card?.name ?? '',
+                              imageUrl: listing.card?.imageUrl ?? '',
+                              price: listing.price,
+                              set: listing.card?.set,
+                            } as any,
+                            seller: listing.sellerId,
+                          })
+                        }
+                      >
+                        <Text style={styles.bidBtnText}>{t('立即購買')}</Text>
+                      </TouchableOpacity>
+                    )}
                     <TouchableOpacity
                       style={styles.bidBtn}
                       onPress={() => navigation.navigate('MakeOffer', { listing })}

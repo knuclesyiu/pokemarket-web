@@ -92,7 +92,8 @@ const CheckoutScreen: React.FC = () => {
       //    the money until the buyer confirms the card.
       const { clientSecret, paymentIntentId } = await createEscrowPayment({
         orderId: '', // server fills in
-        cardPriceHkd: card.price,
+        listingId: card.id, // the server reads the price from this
+        cardPriceHkd: card.price, // for display; the server ignores it
         deliveryFeeHkd: deliveryFee,
         sellerId: route.params.seller ?? '',
         deliveryMethod: delivery,

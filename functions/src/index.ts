@@ -44,6 +44,7 @@ export { confirmPayment } from './escrow/sellerPayouts';
 
 export { extendEscrow } from './escrow/extendEscrow';
 export { confirmReceipt } from './escrow/confirmReceipt';
+export { markShipped } from './escrow/markShipped';
 export { createDispute } from './escrow/createDispute';
 export { sellerRespondToModification } from './escrow/sellerRespondToModification';
 

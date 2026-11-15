@@ -24,12 +24,19 @@ export { confirmCardPayment };
 export interface CreatePaymentParams {
   orderId: string;
   /**
+   * The listing being bought. The server reads the price from it: the
+   * amount the buyer is charged is the seller's decision, not the
+   * buyer's.
+   */
+  listingId?: string;
+  /**
    * The card's listing price. The client does not send the total it
    * expects to pay: the fee policy belongs to the server, and a
-   * client that sent a total would be choosing its own fees.
+   * client that sent a total would be choosing its own fees. The
+   * server reads the price from the listing and ignores this.
    */
-  cardPriceHkd: number;
-  /** Flat shipping charge, 0 for meetup. The server bounds it. */
+  cardPriceHkd?: number;
+  /** Flat shipping charge. The server decides it; this is for display. */
   deliveryFeeHkd?: number;
   sellerId: string;
   deliveryMethod: "meetup" | "sf";
