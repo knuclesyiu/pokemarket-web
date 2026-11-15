@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, TextInput, ScrollView, StyleSheet, Image,
   TouchableOpacity, FlatList, Modal,
@@ -9,12 +10,14 @@ import { collection, doc, getDocs, getDoc, query, where, setDoc } from 'firebase
 import { auth, db } from '../services/firebase';
 
 import { PortfolioItem } from '../types';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type NavProp = NativeStackNavigationProp<any>;
 
 const PortfolioScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<NavProp>();
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -173,9 +176,9 @@ const PortfolioScreen: React.FC = () => {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>我的收藏</Text>
+        <Text style={styles.headerTitle}>{t('我的收藏')}</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddModal(true)}>
-          <Text style={styles.addBtnText}>+ 添加</Text>
+          <Text style={styles.addBtnText}>{t('+ 添加')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -183,7 +186,7 @@ const PortfolioScreen: React.FC = () => {
       <View style={styles.summaryCard}>
         <View style={styles.summaryTop}>
           <View>
-            <Text style={styles.summaryLabel}>總市值</Text>
+            <Text style={styles.summaryLabel}>{t('總市值')}</Text>
             <Text style={styles.summaryValue}>HK$ {totalValue.toLocaleString()}</Text>
           </View>
           <View style={[styles.pnlBadge, isGain ? styles.pnlGain : styles.pnlLoss]}>
@@ -194,17 +197,17 @@ const PortfolioScreen: React.FC = () => {
         </View>
         <View style={styles.summaryBottom}>
           <View>
-            <Text style={styles.summarySub}>成本</Text>
+            <Text style={styles.summarySub}>{t('成本')}</Text>
             <Text style={styles.summarySubValue}>HK$ {totalCost.toLocaleString()}</Text>
           </View>
           <View>
-            <Text style={styles.summarySub}>帳面盈虧</Text>
+            <Text style={styles.summarySub}>{t('帳面盈虧')}</Text>
             <Text style={[styles.summarySubValue, isGain ? styles.pnlGainText : styles.pnlLossText]}>
               {isGain ? '+' : ''}{totalPnL.toLocaleString()}
             </Text>
           </View>
           <View>
-            <Text style={styles.summarySub}>卡牌數量</Text>
+            <Text style={styles.summarySub}>{t('卡牌數量')}</Text>
             <Text style={styles.summarySubValue}>{portfolioItems.length}</Text>
           </View>
         </View>
@@ -212,7 +215,7 @@ const PortfolioScreen: React.FC = () => {
 
       {/* Holdings */}
       <View style={styles.sectionHeader}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="briefcase-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>持有卡牌</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="briefcase-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>{t('持有卡牌')}</Text></View>
         <Text style={styles.count}>{portfolioItems.length} 張</Text>
       </View>
 
@@ -229,15 +232,15 @@ const PortfolioScreen: React.FC = () => {
             <Text style={styles.holdingSet}>{item.card.set}</Text>
             <View style={styles.holdingBottom}>
               <View>
-                <Text style={styles.holdingLabel}>持有</Text>
+                <Text style={styles.holdingLabel}>{t('持有')}</Text>
                 <Text style={styles.holdingQty}>{item.quantity}x</Text>
               </View>
               <View>
-                <Text style={styles.holdingLabel}>均價</Text>
+                <Text style={styles.holdingLabel}>{t('均價')}</Text>
                 <Text style={styles.holdingAvg}>HK${item.avgBuyPrice.toLocaleString()}</Text>
               </View>
               <View>
-                <Text style={styles.holdingLabel}>現值</Text>
+                <Text style={styles.holdingLabel}>{t('現值')}</Text>
                 <Text style={styles.holdingValue}>HK${item.currentValue.toLocaleString()}</Text>
                 {item.pnlPercent >= 50 && (
                   <Ionicons name="trophy-outline" size={14} color={C.textTertiary} />
@@ -258,7 +261,7 @@ const PortfolioScreen: React.FC = () => {
 
       {/* Transaction History */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>📜 成交記錄</Text>
+        <Text style={styles.sectionTitle}>{t('📜 成交記錄')}</Text>
       </View>
       {[
         { type: 'buy', card: 'Charizard VMAX', price: 4100, date: '2 小時前' },
@@ -288,7 +291,7 @@ const PortfolioScreen: React.FC = () => {
         }}
         activeOpacity={0.8}
       >
-        <Text style={styles.fabText}>📦 放售卡牌</Text>
+        <Text style={styles.fabText}>{t('📦 放售卡牌')}</Text>
       </TouchableOpacity>
 
       {/* ── P1.5: Real Card Add Modal with Firestore Search ── */}
@@ -296,14 +299,14 @@ const PortfolioScreen: React.FC = () => {
         <View style={addModalStyles.overlay}>
           <View style={addModalStyles.sheet}>
             <View style={addModalStyles.handle} />
-            <Text style={addModalStyles.title}>添加卡牌到收藏</Text>
+            <Text style={addModalStyles.title}>{t('添加卡牌到收藏')}</Text>
 
             {/* Search Bar */}
             <View style={addModalStyles.searchWrap}>
               <Ionicons name="search-outline" size={16} color={C.textTertiary} />
               <TextInput
                 style={addModalStyles.searchInput}
-                placeholder="搜尋卡名..."
+                placeholder={t('搜尋卡名...')}
                 placeholderTextColor={C.textDisabled}
                 value={searchQuery}
                 onChangeText={handleSearchChange}
@@ -347,7 +350,7 @@ const PortfolioScreen: React.FC = () => {
 
             {/* Quantity */}
             <View style={addModalStyles.field}>
-              <Text style={addModalStyles.label}>數量</Text>
+              <Text style={addModalStyles.label}>{t('數量')}</Text>
               <View style={addModalStyles.qtyRow}>
                 <TouchableOpacity style={addModalStyles.qtyBtn} onPress={() => setAddQty(v => String(Math.max(1, parseInt(v) - 1)))}>
                   <Text style={{ color: C.text, fontSize: 18 }}>−</Text>
@@ -379,7 +382,7 @@ const PortfolioScreen: React.FC = () => {
               <Text style={addModalStyles.confirmBtnText}>{saving ? '保存中...' : '確認添加'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[addModalStyles.cancelBtn]} onPress={() => { setShowAddModal(false); setSearchQuery(''); setSearchResults([]); setSelectedCard(null); }}>
-              <Text style={addModalStyles.cancelText}>取消</Text>
+              <Text style={addModalStyles.cancelText}>{t('取消')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -391,7 +394,7 @@ const PortfolioScreen: React.FC = () => {
 };
 
 // NEW: Obsidian Gallery design system
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
@@ -532,10 +535,10 @@ const styles = StyleSheet.create({
   txCard: { color: C.text, fontSize: 13, fontWeight: '600' },
   txDate: { color: C.textSecondary, fontSize: 10, marginTop: 2 },
   txPrice: { fontSize: 14, fontWeight: '700' },
-});
+}))
 
 // NEW: Obsidian Gallery design system
-const addModalStyles = StyleSheet.create({
+const addModalStyles = themed((C) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
@@ -622,7 +625,7 @@ const addModalStyles = StyleSheet.create({
     borderWidth: 1, borderColor: C.border,
   },
   totalText: { color: C.action, fontSize: 13, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
-});
+}))
 
 
 export default PortfolioScreen;

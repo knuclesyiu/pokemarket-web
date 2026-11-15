@@ -37,7 +37,8 @@ import {
   View,
 } from 'react-native';
 
-import { C, R, SP, T } from '../theme';
+import { C, R, SP, T, themed } from '../theme';
+import { useAppearance } from '../contexts/AppearanceContext';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -233,6 +234,7 @@ const ToastRow: React.FC<{ toast: Toast; onDismiss: (id: number) => void }> = ({
   toast,
   onDismiss,
 }) => {
+  const { t } = useAppearance();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -291,7 +293,7 @@ const ToastRow: React.FC<{ toast: Toast; onDismiss: (id: number) => void }> = ({
         hitSlop={10}
         style={styles.toastClose}
         accessibilityRole="button"
-        accessibilityLabel="關閉提示"
+        accessibilityLabel={t('關閉提示')}
       >
         <Text style={styles.toastCloseText}>✕</Text>
       </Pressable>
@@ -377,7 +379,7 @@ const ConfirmDialog: React.FC<{
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   toastLayer: {
     position: 'absolute',
     top: 0,
@@ -478,6 +480,6 @@ const styles = StyleSheet.create({
   dialogButtonPressed: { opacity: 0.7 },
   dialogButtonText: { ...T.bodyStrong, color: C.text },
   dialogButtonTextDestructive: { color: C.action },
-});
+}))
 
 export { TONE_COLOR, TONE_ICON };

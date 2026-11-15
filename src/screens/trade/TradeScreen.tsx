@@ -10,6 +10,8 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { t } from '../../i18n';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, FlatList,
   TouchableOpacity, TextInput, Image, Dimensions,
@@ -19,7 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { MarketListing } from '../../types/trade';
-import { C } from '../../theme';
+import { C, themed } from '../../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type NavProp = NativeStackNavigationProp<any>;
@@ -99,6 +101,8 @@ const SkeletonCard = () => (
 // ─── Main Screen ────────────────────────────────────────────────────────────────
 
 const TradeScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<NavProp>();
 
   const [listings, setListings] = useState<MarketListing[]>([]);
@@ -169,14 +173,14 @@ const TradeScreen: React.FC = () => {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>訓練員，你好 👋</Text>
-          <Text style={styles.headerTitle}>📤 卡片交換</Text>
+          <Text style={styles.greeting}>{t('訓練員，你好 👋')}</Text>
+          <Text style={styles.headerTitle}>{t('📤 卡片交換')}</Text>
         </View>
         <TouchableOpacity
           style={styles.filterBtn}
           onPress={() => setShowFilterModal(true)}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="search-outline" size={16} color={C.textTertiary} /><Text style={styles.filterBtnText}>篩選</Text></View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="search-outline" size={16} color={C.textTertiary} /><Text style={styles.filterBtnText}>{t('篩選')}</Text></View>
         </TouchableOpacity>
       </View>
 
@@ -185,7 +189,7 @@ const TradeScreen: React.FC = () => {
         <Ionicons name="search-outline" size={16} color={C.textTertiary} />
         <TextInput
           style={styles.searchInput}
-          placeholder="搜尋卡名、Series..."
+          placeholder={t('搜尋卡名、Series...')}
           placeholderTextColor={C.textTertiary}
           value={searchText}
           onChangeText={setSearchText}
@@ -244,14 +248,14 @@ const TradeScreen: React.FC = () => {
         <View style={styles.errorWrap}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={() => loadListings()}>
-            <Text style={styles.retryBtnText}>重試</Text>
+            <Text style={styles.retryBtnText}>{t('重試')}</Text>
           </TouchableOpacity>
         </View>
       ) : displayListings.length === 0 ? (
         <View style={styles.emptyWrap}>
           <Ionicons name="card-outline" size={22} color={C.textTertiary} />
-          <Text style={styles.emptyTitle}>目前沒有掛牌卡</Text>
-          <Text style={styles.emptySub}>試試調整篩選條件，或先上傳你的收藏卡！</Text>
+          <Text style={styles.emptyTitle}>{t('目前沒有掛牌卡')}</Text>
+          <Text style={styles.emptySub}>{t('試試調整篩選條件，或先上傳你的收藏卡！')}</Text>
         </View>
       ) : (
         <FlatList
@@ -276,7 +280,7 @@ const TradeScreen: React.FC = () => {
         style={styles.fabOffers}
         onPress={() => navigation.navigate('MyOffers')}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.fabText}>我的 OFFER</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.fabText}>{t('我的 OFFER')}</Text></View>
       </TouchableOpacity>
     </View>
   );
@@ -340,7 +344,7 @@ const FilterModal: React.FC<{
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="search-outline" size={16} color={C.textTertiary} /><Text style={styles.modalTitle}>篩選條件</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="search-outline" size={16} color={C.textTertiary} /><Text style={styles.modalTitle}>{t('篩選條件')}</Text></View>
             <TouchableOpacity onPress={onClose}><Text style={{ color: '#888' }}>✕</Text></TouchableOpacity>
           </View>
           <ScrollView style={{ maxHeight: '75%' }}>
@@ -349,24 +353,24 @@ const FilterModal: React.FC<{
                 <Chip key={opt} label={opt} selected={s === opt} onPress={() => setS(opt)} />
               ))}
             </Section>
-            <Section title="稀有度">
+            <Section title={t('稀有度')}>
               {RARITY_OPTIONS.map(opt => (
                 <Chip key={opt} label={opt} selected={r === opt} onPress={() => setR(opt)} />
               ))}
             </Section>
-            <Section title="狀態">
+            <Section title={t('狀態')}>
               {CONDITION_OPTIONS.map(opt => (
                 <Chip key={opt} label={opt} selected={c === opt} onPress={() => setC(opt)} />
               ))}
             </Section>
-            <Section title="價格範圍">
+            <Section title={t('價格範圍')}>
               {PRICE_OPTIONS.map((opt, i) => (
                 <Chip key={opt.label} label={opt.label} selected={p === i} onPress={() => setP(i)} />
               ))}
             </Section>
           </ScrollView>
           <TouchableOpacity style={styles.applyBtn} onPress={apply}>
-            <Text style={styles.applyBtnText}>套用篩選 ✅</Text>
+            <Text style={styles.applyBtnText}>{t('套用篩選 ✅')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -376,7 +380,7 @@ const FilterModal: React.FC<{
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.surface },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -466,6 +470,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginTop: 16,
   },
   applyBtnText: { color: C.text, fontSize: 16, fontWeight: '800' },
-});
+}))
 
 export default TradeScreen;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform,
@@ -10,7 +11,7 @@ import {
 import { db } from '../../services/firebase';
 import { ChatMessage } from '../../types/chat';
 import { useAuth } from '../../contexts/AuthContext';
-import { C } from '../../theme';
+import { C, themed } from '../../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface Props {
@@ -24,6 +25,8 @@ interface Props {
 }
 
 const ChatDetailScreen: React.FC<Props> = ({ route }) => {
+  const { t } = useAppearance();
+
   const { threadId, otherPartyName = '未知用戶', otherPartyId } = route.params;
   const { currentUser, userProfile } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -179,8 +182,8 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
         ListEmptyComponent={
           <View style={styles.emptyList}>
             <Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} />
-            <Text style={styles.emptyText}>開始新對話吧！</Text>
-            <Text style={styles.emptySub}>你可以在卡牌詳情頁主動聯絡賣家</Text>
+            <Text style={styles.emptyText}>{t('開始新對話吧！')}</Text>
+            <Text style={styles.emptySub}>{t('你可以在卡牌詳情頁主動聯絡賣家')}</Text>
           </View>
         }
       />
@@ -189,7 +192,7 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
       <View style={styles.inputRow}>
         <TextInput
           style={styles.input}
-          placeholder="輸入訊息..."
+          placeholder={t('輸入訊息...')}
           placeholderTextColor={C.textTertiary}
           value={inputText}
           onChangeText={setInputText}
@@ -209,7 +212,7 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.surface },
   chatHeader: {
     paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
@@ -273,6 +276,6 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: { backgroundColor: '#3A3A4E' },
   sendBtnText: { color: C.text, fontSize: 20 },
-});
+}))
 
 export default ChatDetailScreen;

@@ -18,6 +18,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
+import { setActiveTheme } from '../theme';
 import { rememberReturnPath } from '../services/returnPath';
 import { UserProfile } from '../types/user';
 import {
@@ -163,12 +164,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      // Every change of the signed-in account is worth a line in the
+      // log: "why am I a guest again" is otherwise unanswerable.
+      console.info(
+        '[auth] state →',
+        user ? (user.isAnonymous ? 'guest' : user.email ?? user.uid) : 'signed out',
+      );
       setCurrentUser(user);
       if (user) {
         try {
           const snap = await getDoc(doc(db, 'users', user.uid));
           if (snap.exists()) {
-            setUserProfile(snap.data() as UserProfile);
+            const stored = snap.data() as UserProfile;
+            setActiveTheme(stored.theme ?? 'dark');
+            setUserProfile(stored);
           } else {
             // Create skeleton profile on first login
             const profile: UserProfile = {
@@ -184,8 +193,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               negativeReviews: 0,
               language: 'zh-HK',
               notificationsEnabled: true,
+              theme: 'dark' as const,
             };
             await setDoc(doc(db, 'users', user.uid), profile);
+            setActiveTheme(profile.theme ?? 'dark');
             setUserProfile(profile);
           }
         } catch (e) {
@@ -333,6 +344,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = useCallback(async (data: Partial<UserProfile>) => {
     if (!currentUser) throw new Error('Not logged in');
     await setDoc(doc(db, 'users', currentUser.uid), data, { merge: true });
+    // The theme is a palette the whole app reads from, so it is
+    // applied before the state change — the screens pick the new
+    // colours up on the render that follows.
+    if (data.theme) setActiveTheme(data.theme);
     setUserProfile(prev => prev ? { ...prev, ...data } : null);
   }, [currentUser]);
 

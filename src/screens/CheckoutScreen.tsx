@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Image, Modal, ActivityIndicator, Alert, TextInput,
@@ -12,7 +13,7 @@ import { calculateFee, formatHkd, PLATFORM_FEE_PERCENT, STRIPE_PERCENT_FEE } fro
 import { createEscrowPayment, confirmCardPayment } from '../services/stripeService';
 import CardPaymentForm from '../components/CardPaymentForm';
 import { notify } from '../components/Feedback';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard; seller?: string } }, 'params'>;
@@ -42,6 +43,8 @@ const MTR_LINES = [
 ];
 
 const CheckoutScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NavProp>();
   const { card } = route.params;
@@ -71,7 +74,7 @@ const CheckoutScreen: React.FC = () => {
     if (!delivery || !payment) return;
     const uid = getAuth().currentUser?.uid;
     if (!uid) {
-      notify('需要登入', '請先登入再下單');
+      notify(t('需要登入'), '請先登入再下單');
       return;
     }
     // Card payments require entering card details first
@@ -124,7 +127,7 @@ const CheckoutScreen: React.FC = () => {
       <View style={styles.confirmContainer}>
         <View style={styles.confirmContent}>
           <Ionicons name="checkmark-circle" size={14} color={C.textTertiary} />
-          <Text style={styles.confirmTitle}>訂單已確認！</Text>
+          <Text style={styles.confirmTitle}>{t('訂單已確認！')}</Text>
           <Text style={styles.confirmSub}>
             款項 HK$ {total.toLocaleString()} 已由平台托管
           </Text>
@@ -139,10 +142,10 @@ const CheckoutScreen: React.FC = () => {
             onPress={() => navigation.navigate('OrderStatus', { orderId: createdOrderId ?? '', txId: createdOrderId ?? '' })}
             disabled={!createdOrderId}
           >
-            <Text style={styles.trackBtnText}>追蹤訂單 →</Text>
+            <Text style={styles.trackBtnText}>{t('追蹤訂單 →')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backHome}>返回首頁</Text>
+            <Text style={styles.backHome}>{t('返回首頁')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -156,7 +159,7 @@ const CheckoutScreen: React.FC = () => {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backBtnText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>確認訂單</Text>
+        <Text style={styles.headerTitle}>{t('確認訂單')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -164,7 +167,7 @@ const CheckoutScreen: React.FC = () => {
       <View style={styles.escrowBanner}>
         <Text style={styles.escrowBannerIcon}>🔐</Text>
         <View style={styles.escrowBannerText}>
-          <Text style={styles.escrowBannerTitle}>資金託付安全保障</Text>
+          <Text style={styles.escrowBannerTitle}>{t('資金託付安全保障')}</Text>
           <Text style={styles.escrowBannerDesc}>
             款項由平台代為保管，收卡確認後先轉俾賣家，如有问题可提出争议
           </Text>
@@ -186,7 +189,7 @@ const CheckoutScreen: React.FC = () => {
 
       {/* Delivery Method */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📦 交收方式</Text>
+        <Text style={styles.sectionTitle}>{t('📦 交收方式')}</Text>
         <View style={styles.optionGrid}>
           <TouchableOpacity
             style={[styles.optionCard, delivery === 'meetup' ? styles.optionCardActive : null]}
@@ -196,7 +199,7 @@ const CheckoutScreen: React.FC = () => {
             <Text style={[styles.optionLabel, delivery === 'meetup' ? styles.optionLabelActive : null]}>
               面交
             </Text>
-            <Text style={styles.optionDesc}>地鐵站當面交收</Text>
+            <Text style={styles.optionDesc}>{t('地鐵站當面交收')}</Text>
             <Text style={[styles.optionPrice, delivery === 'meetup' ? styles.optionPriceActive : null]}>
               免費
             </Text>
@@ -209,7 +212,7 @@ const CheckoutScreen: React.FC = () => {
             <Text style={[styles.optionLabel, delivery === 'sf' ? styles.optionLabelActive : null]}>
               順豐快遞
             </Text>
-            <Text style={styles.optionDesc}>送貨上門</Text>
+            <Text style={styles.optionDesc}>{t('送貨上門')}</Text>
             <Text style={[styles.optionPrice, delivery === 'sf' ? styles.optionPriceActive : null]}>
               HK$ 35
             </Text>
@@ -218,22 +221,22 @@ const CheckoutScreen: React.FC = () => {
 
         {delivery === 'meetup' && selectedStation && (
           <View style={styles.selectedDetail}>
-            <Text style={styles.selectedDetailLabel}>📍 面交站</Text>
+            <Text style={styles.selectedDetailLabel}>{t('📍 面交站')}</Text>
             <Text style={styles.selectedDetailValue}>
               {selectedLine} · {selectedStation}
             </Text>
             <TouchableOpacity onPress={() => setShowMeetupModal(true)}>
-              <Text style={styles.changeLink}>更換 →</Text>
+              <Text style={styles.changeLink}>{t('更換 →')}</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {delivery === 'sf' && address.length > 0 && (
           <View style={styles.selectedDetail}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="home-outline" size={14} color={C.textTertiary} /><Text style={styles.selectedDetailLabel}>送貨地址</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="home-outline" size={14} color={C.textTertiary} /><Text style={styles.selectedDetailLabel}>{t('送貨地址')}</Text></View>
             <Text style={styles.selectedDetailValue} numberOfLines={2}>{address}</Text>
             <TouchableOpacity onPress={() => setShowAddressModal(true)}>
-              <Text style={styles.changeLink}>更改 →</Text>
+              <Text style={styles.changeLink}>{t('更改 →')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -241,7 +244,7 @@ const CheckoutScreen: React.FC = () => {
 
       {/* Payment Method */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💳 支付方式</Text>
+        <Text style={styles.sectionTitle}>{t('💳 支付方式')}</Text>
         <View style={styles.paymentOptions}>
           <TouchableOpacity
             style={[styles.paymentCard, payment === 'fps' ? styles.paymentCardActive : null]}
@@ -253,7 +256,7 @@ const CheckoutScreen: React.FC = () => {
                 <Text style={[styles.paymentLabel, payment === 'fps' ? styles.paymentLabelActive : null]}>
                   FPS 轉數快
                 </Text>
-                <Text style={styles.paymentSub}>即時轉帳</Text>
+                <Text style={styles.paymentSub}>{t('即時轉帳')}</Text>
               </View>
             </View>
             <View style={[styles.paymentRadio, payment === 'fps' ? styles.paymentRadioActive : null]}>
@@ -283,7 +286,7 @@ const CheckoutScreen: React.FC = () => {
 
       {/* Price breakdown */}
       <View style={styles.section}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="wallet-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>金額明細</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="wallet-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>{t('金額明細')}</Text></View>
         <View style={styles.breakdown}>
           {[
             ['商品金額', formatHkd(fee.cardPriceHkd)],
@@ -298,7 +301,7 @@ const CheckoutScreen: React.FC = () => {
             </View>
           ))}
           <View style={[styles.breakdownRow, styles.breakdownTotal]}>
-            <Text style={styles.totalLabel}>總計</Text>
+            <Text style={styles.totalLabel}>{t('總計')}</Text>
             <Text style={styles.totalValueGold}>HK$ {total.toLocaleString()}</Text>
           </View>
         </View>
@@ -334,7 +337,7 @@ const CheckoutScreen: React.FC = () => {
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
-            <Text style={modalStyles.title}>選擇面交站</Text>
+            <Text style={modalStyles.title}>{t('選擇面交站')}</Text>
             <ScrollView>
               {MTR_LINES.map(l => (
                 <View key={l.line} style={modalStyles.lineGroup}>
@@ -368,7 +371,7 @@ const CheckoutScreen: React.FC = () => {
               style={modalStyles.closeBtn}
               onPress={() => setShowMeetupModal(false)}
             >
-              <Text style={modalStyles.closeText}>關閉</Text>
+              <Text style={modalStyles.closeText}>{t('關閉')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -379,12 +382,12 @@ const CheckoutScreen: React.FC = () => {
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
-            <Text style={modalStyles.title}>填寫送貨地址</Text>
+            <Text style={modalStyles.title}>{t('填寫送貨地址')}</Text>
             <View style={modalStyles.addressForm}>
-              <Text style={modalStyles.fieldLabel}>香港地址</Text>
+              <Text style={modalStyles.fieldLabel}>{t('香港地址')}</Text>
               <TextInput
                 style={modalStyles.addressInputField}
-                placeholder="例：九龍觀塘偉業街 163 號 10 樓"
+                placeholder={t('例：九龍觀塘偉業街 163 號 10 樓')}
                 placeholderTextColor={C.textDisabled}
                 value={address}
                 onChangeText={setAddress}
@@ -394,21 +397,21 @@ const CheckoutScreen: React.FC = () => {
                 style={modalStyles.confirmAddressBtn}
                 onPress={() => {
                   if (!address.trim()) {
-                    notify('請填地址', '送貨地址不能空白');
+                    notify(t('請填地址'), '送貨地址不能空白');
                     return;
                   }
                   setShowAddressModal(false);
                   setDelivery('sf');
                 }}
               >
-                <Text style={modalStyles.confirmAddressBtnText}>確認地址</Text>
+                <Text style={modalStyles.confirmAddressBtnText}>{t('確認地址')}</Text>
               </TouchableOpacity>
             </View>
             <TouchableOpacity
               style={modalStyles.closeBtn}
               onPress={() => setShowAddressModal(false)}
             >
-              <Text style={modalStyles.closeText}>取消</Text>
+              <Text style={modalStyles.closeText}>{t('取消')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -419,7 +422,7 @@ const CheckoutScreen: React.FC = () => {
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
-            <Text style={modalStyles.title}>💳 信用卡資料</Text>
+            <Text style={modalStyles.title}>{t('💳 信用卡資料')}</Text>
             <Text style={modalStyles.subtitle}>
               透過 Stripe 加密處理。款項先由平台託管，收卡後釋放。
             </Text>
@@ -446,7 +449,7 @@ const CheckoutScreen: React.FC = () => {
               style={modalStyles.closeBtn}
               onPress={() => setShowCardForm(false)}
             >
-              <Text style={modalStyles.closeText}>返回</Text>
+              <Text style={modalStyles.closeText}>{t('返回')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -456,7 +459,7 @@ const CheckoutScreen: React.FC = () => {
 };
 
 // NEW: Obsidian Gallery design system
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
@@ -620,9 +623,9 @@ const styles = StyleSheet.create({
   trackBtn: { backgroundColor: C.gold, borderRadius: 14, paddingVertical: 16, paddingHorizontal: 40, marginBottom: 12 },
   trackBtnText: { color: C.void, fontSize: 15, fontWeight: '700' },
   backHome: { color: C.textSecondary, fontSize: 14 },
-});
+}))
 
-const modalStyles = StyleSheet.create({
+const modalStyles = themed((C) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.elevated, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, borderWidth: 1, borderColor: C.border },
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: C.borderActive, alignSelf: 'center', marginBottom: 16 },
@@ -653,6 +656,6 @@ const modalStyles = StyleSheet.create({
   addressPlaceholder: { color: C.textDisabled, fontSize: 14 },
   confirmAddressBtn: { backgroundColor: C.gold, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
   confirmAddressBtnText: { color: C.void, fontSize: 14, fontWeight: '700' },
-});
+}))
 
 export default CheckoutScreen;

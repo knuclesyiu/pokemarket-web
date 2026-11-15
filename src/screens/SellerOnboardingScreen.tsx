@@ -9,6 +9,8 @@
  * trusted to report its own account as ready.
  */
 import React, { useCallback, useEffect, useState } from 'react';
+import { t } from '../i18n';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   ActivityIndicator, Alert, Platform, Linking,
@@ -22,7 +24,7 @@ import {
   checkSellerOnboarding,
 } from '../services/stripeService';
 import { notify } from '../components/Feedback';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 
 type NavProp = NativeStackNavigationProp<any>;
 
@@ -52,6 +54,8 @@ const STATUS_TEXT: Record<Status, { title: string; body: string; tone: string }>
 };
 
 const SellerOnboardingScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<NavProp>();
   const [status, setStatus] = useState<Status>('unknown');
   const [accountId, setAccountId] = useState<string | null>(null);
@@ -115,13 +119,13 @@ const SellerOnboardingScreen: React.FC = () => {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>← 返回</Text>
+          <Text style={styles.backText}>{t('← 返回')}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>收款帳戶</Text>
+        <Text style={styles.headerTitle}>{t('收款帳戶')}</Text>
       </View>
 
       <View style={[styles.statusCard, { borderColor: info.tone }]}>
-        <Text style={[styles.statusTitle, { color: info.tone }]}>{info.title}</Text>
+        <Text style={[styles.statusTitle, { color: info.tone }]}>{t(info.title)}</Text>
         <Text style={styles.statusBody}>{info.body}</Text>
 
         {accountId ? (
@@ -130,7 +134,7 @@ const SellerOnboardingScreen: React.FC = () => {
       </View>
 
       <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>你需要準備</Text>
+        <Text style={styles.infoTitle}>{t('你需要準備')}</Text>
         {[
           '香港身份證（用於 KYC）',
           '本人名下的銀行戶口',
@@ -149,7 +153,7 @@ const SellerOnboardingScreen: React.FC = () => {
             style={[styles.primaryBtn, styles.secondaryBtn]}
             onPress={() => navigation.navigate('WalletTab')}
           >
-            <Text style={styles.secondaryBtnText}>去錢包提現</Text>
+            <Text style={styles.secondaryBtnText}>{t('去錢包提現')}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
@@ -168,7 +172,7 @@ const SellerOnboardingScreen: React.FC = () => {
         )}
 
         <TouchableOpacity style={styles.secondaryBtn} onPress={refresh} disabled={busy}>
-          <Text style={styles.secondaryBtnText}>檢查狀態</Text>
+          <Text style={styles.secondaryBtnText}>{t('檢查狀態')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -180,7 +184,7 @@ const SellerOnboardingScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
@@ -256,6 +260,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 40,
   },
-});
+}))
 
 export default SellerOnboardingScreen;

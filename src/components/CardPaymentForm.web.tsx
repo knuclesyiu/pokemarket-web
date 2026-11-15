@@ -18,7 +18,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import type { CardDetails } from '../types/stripe';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 
 const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
 
@@ -114,7 +114,7 @@ const CardPaymentForm: React.FC<Props> = ({ onPaymentMethodReady, submitting }) 
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   cardElementWrap: {
     backgroundColor: C.card,
     borderRadius: 12,
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,107,53,0.3)',
   },
   missingKeyText: { color: C.warn, fontSize: 13, lineHeight: 20 },
-});
+}))
 
 export default CardPaymentForm;
 export type { CardDetails };

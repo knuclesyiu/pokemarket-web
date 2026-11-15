@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Image, Modal, TextInput, Alert, ActivityIndicator,
@@ -11,7 +12,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { releaseFundsToSeller, raiseDispute } from '../services/stripeService';
 import { notify } from '../components/Feedback';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type RouteProps = RouteProp<{ params: { txId?: string; orderId?: string } }, 'params'>;
@@ -34,6 +35,8 @@ const TIMELINE_STEPS: TimelineStep[] = [
 ];
 
 const OrderStatusScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const route = useRoute<RouteProps>();
   const navigation = useNavigation();
   const orderId = route.params.orderId ?? route.params.txId ?? '';
@@ -121,7 +124,7 @@ const OrderStatusScreen: React.FC = () => {
       const extendFn = httpsCallable(getFunctions(), 'extendEscrow');
       await extendFn({ orderId });
       setIsExtended(true);
-      notify('已延長', '款項釋放期限已延長至 14 日，請放心。');
+      notify(t('已延長'), '款項釋放期限已延長至 14 日，請放心。');
     } catch (e: any) {
       notify('延長失敗', e.message ?? '請稍後再試');
     } finally {
@@ -131,7 +134,7 @@ const OrderStatusScreen: React.FC = () => {
 
   const handleCreateDispute = async () => {
     if (!disputeReason.trim()) {
-      notify('請輸入', '請描述問題原因才能提交 dispute');
+      notify(t('請輸入'), '請描述問題原因才能提交 dispute');
       return;
     }
     setDisputing(true);
@@ -139,7 +142,7 @@ const OrderStatusScreen: React.FC = () => {
       await raiseDispute({ orderId, reason: disputeReason.trim() });
       setShowDisputeModal(false);
       setOrderStatus('disputed');
-      notify('Dispute 已提交', '我們會在 24 小時內處理，請留意通知。');
+      notify(t('Dispute 已提交'), '我們會在 24 小時內處理，請留意通知。');
     } catch (e: any) {
       notify('提交失敗', e?.message ?? '請稍後再試');
     } finally {
@@ -228,17 +231,17 @@ const OrderStatusScreen: React.FC = () => {
     return (
       <View style={{ flex: 1, backgroundColor: C.void, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={C.gold} size="large" />
-        <Text style={{ color: C.textSecondary, marginTop: 12 }}>載入訂單中…</Text>
+        <Text style={{ color: C.textSecondary, marginTop: 12 }}>{t('載入訂單中…')}</Text>
       </View>
     );
   }
   if (orderError || !order || !card) {
     return (
       <View style={{ flex: 1, backgroundColor: C.void, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-        <Text style={{ color: C.text, fontSize: 18, marginBottom: 8 }}>😕 訂單未找到</Text>
+        <Text style={{ color: C.text, fontSize: 18, marginBottom: 8 }}>{t('😕 訂單未找到')}</Text>
         <Text style={{ color: C.textSecondary, fontSize: 13, textAlign: 'center' }}>{orderError ?? `orderId: ${orderId}`}</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 24, padding: 12 }}>
-          <Text style={{ color: C.gold, fontSize: 14, fontWeight: '700' }}>← 返回</Text>
+          <Text style={{ color: C.gold, fontSize: 14, fontWeight: '700' }}>{t('← 返回')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -251,7 +254,7 @@ const OrderStatusScreen: React.FC = () => {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backBtnText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>訂單詳情</Text>
+        <Text style={styles.headerTitle}>{t('訂單詳情')}</Text>
         <TouchableOpacity style={styles.chatBtn}>
           <Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} />
         </TouchableOpacity>
@@ -292,7 +295,7 @@ const OrderStatusScreen: React.FC = () => {
 
       {/* Escrow Timeline */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📍 交易進度</Text>
+        <Text style={styles.sectionTitle}>{t('📍 交易進度')}</Text>
         <View style={styles.timeline}>
           {TIMELINE_STEPS.map((step, index) => {
             const isCompleted = index < currentStep;
@@ -342,22 +345,22 @@ const OrderStatusScreen: React.FC = () => {
       {/* Delivery info */}
       {(currentStep >= 2) && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🚚 物流資訊</Text>
+          <Text style={styles.sectionTitle}>{t('🚚 物流資訊')}</Text>
           <View style={styles.deliveryCard}>
             <View style={styles.deliveryRow}>
-              <Text style={styles.deliveryLabel}>方式</Text>
+              <Text style={styles.deliveryLabel}>{t('方式')}</Text>
               <Text style={styles.deliveryValue}>
                 {card.deliveryMethod === 'sf' ? '📦 順豐快遞' : '🤝 面交'}
               </Text>
             </View>
             {card.trackingNumber && (
               <View style={styles.deliveryRow}>
-                <Text style={styles.deliveryLabel}>運單號</Text>
+                <Text style={styles.deliveryLabel}>{t('運單號')}</Text>
                 <Text style={styles.deliveryValue}>{card.trackingNumber}</Text>
               </View>
             )}
             <View style={styles.deliveryRow}>
-              <Text style={styles.deliveryLabel}>對方</Text>
+              <Text style={styles.deliveryLabel}>{t('對方')}</Text>
               <Text style={styles.deliveryValue}>{card.counterparty}</Text>
             </View>
           </View>
@@ -366,7 +369,7 @@ const OrderStatusScreen: React.FC = () => {
 
       {/* Counterparty info */}
       <View style={styles.section}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="person-outline" size={14} color={C.textTertiary} /><Text style={styles.sectionTitle}>交易對方</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="person-outline" size={14} color={C.textTertiary} /><Text style={styles.sectionTitle}>{t('交易對方')}</Text></View>
         <View style={styles.counterpartyCard}>
           <View style={styles.counterpartyAvatar}>
             <Text style={styles.counterpartyInitial}>
@@ -375,7 +378,7 @@ const OrderStatusScreen: React.FC = () => {
           </View>
           <View style={styles.counterpartyInfo}>
             <Text style={styles.counterpartyName}>{card.counterparty}</Text>
-            <Text style={styles.counterpartyStats}>4.8 ⭐ · 328 筆成交</Text>
+            <Text style={styles.counterpartyStats}>{t('4.8 ⭐ · 328 筆成交')}</Text>
           </View>
           <TouchableOpacity style={styles.chatBtnLarge}>
             <Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} />
@@ -386,32 +389,32 @@ const OrderStatusScreen: React.FC = () => {
       {/* Action area — varies by role and step */}
       {currentStep === 1 && !isSeller && (
         <View style={styles.actionArea}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="time-outline" size={14} color={C.textTertiary} /><Text style={styles.actionHint}>等待賣家發貨中...</Text></View>
-          <Text style={styles.actionSub}>通常 1-2 個工作天內發貨</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="time-outline" size={14} color={C.textTertiary} /><Text style={styles.actionHint}>{t('等待賣家發貨中...')}</Text></View>
+          <Text style={styles.actionSub}>{t('通常 1-2 個工作天內發貨')}</Text>
         </View>
       )}
 
       {currentStep === 2 && !isSeller && (
         <View style={styles.actionArea}>
           <View style={styles.shippedAlert}>
-            <Text style={styles.shippedAlertText}>📦 賣家已發貨！</Text>
+            <Text style={styles.shippedAlertText}>{t('📦 賣家已發貨！')}</Text>
             <Text style={styles.shippedAlertSub}>
               收到卡後，請檢查卡牌狀態再確認。如有問題可提出爭議。
             </Text>
           </View>
           <TouchableOpacity style={styles.confirmReceiptBtn} onPress={handleConfirmReceipt}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.confirmReceiptBtnText}>確認收貨</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.confirmReceiptBtnText}>{t('確認收貨')}</Text></View>
           </TouchableOpacity>
           
           {/* Extend button - only show if not yet extended */}
           {!isExtended && (
             <TouchableOpacity style={styles.extendBtn} onPress={handleExtendEscrow}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="time-outline" size={13} color={C.textTertiary} /><Text style={styles.extendBtnText}>延長期限 (14日)</Text></View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="time-outline" size={13} color={C.textTertiary} /><Text style={styles.extendBtnText}>{t('延長期限 (14日)')}</Text></View>
             </TouchableOpacity>
           )}
           {isExtended && (
             <View style={styles.extendedBadge}>
-              <Text style={styles.extendedBadgeText}>✓ 已延長至 14 日</Text>
+              <Text style={styles.extendedBadgeText}>{t('✓ 已延長至 14 日')}</Text>
             </View>
           )}
           
@@ -419,7 +422,7 @@ const OrderStatusScreen: React.FC = () => {
             style={styles.disputeBtn}
             onPress={() => setShowDisputeModal(true)}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="shield-checkmark-outline" size={15} color={C.textTertiary} /><Text style={styles.disputeBtnText}>有問題？提出爭議</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="shield-checkmark-outline" size={15} color={C.textTertiary} /><Text style={styles.disputeBtnText}>{t('有問題？提出爭議')}</Text></View>
           </TouchableOpacity>
         </View>
       )}
@@ -427,13 +430,13 @@ const OrderStatusScreen: React.FC = () => {
       {currentStep === 3 && !isSeller && (
         <View style={styles.actionArea}>
           <View style={styles.confirmingAlert}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.confirmingAlertText}>已確認收貨</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.confirmingAlertText}>{t('已確認收貨')}</Text></View>
             <Text style={styles.confirmingAlertSub}>
               資金將自動釋放俾賣家，交易完成！
             </Text>
           </View>
           <TouchableOpacity style={styles.releaseBtn} onPress={handleReleaseFund}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-open-outline" size={13} color={C.textTertiary} /><Text style={styles.releaseBtnText}>立即釋放款項</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-open-outline" size={13} color={C.textTertiary} /><Text style={styles.releaseBtnText}>{t('立即釋放款項')}</Text></View>
           </TouchableOpacity>
         </View>
       )}
@@ -442,7 +445,7 @@ const OrderStatusScreen: React.FC = () => {
         <View style={styles.actionArea}>
           <View style={styles.completeCard}>
             <Text style={styles.completeEmoji}>🎉</Text>
-            <Text style={styles.completeTitle}>交易完成！</Text>
+            <Text style={styles.completeTitle}>{t('交易完成！')}</Text>
             <Text style={styles.completeSub}>資金已轉俾 {card.counterparty}</Text>
           </View>
           
@@ -451,7 +454,7 @@ const OrderStatusScreen: React.FC = () => {
             style={styles.reportProblemBtn}
             onPress={() => setShowDisputeModal(true)}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="shield-checkmark-outline" size={15} color={C.textTertiary} /><Text style={styles.reportProblemBtnText}>報告問題（30日內）</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="shield-checkmark-outline" size={15} color={C.textTertiary} /><Text style={styles.reportProblemBtnText}>{t('報告問題（30日內）')}</Text></View>
           </TouchableOpacity>
         </View>
       )}
@@ -464,7 +467,7 @@ const OrderStatusScreen: React.FC = () => {
         >
           <Ionicons name="shield-checkmark-outline" size={15} color={C.textTertiary} />
           <View style={styles.disputeBannerText}>
-            <Text style={styles.disputeBannerTitle}>需要提出爭議？</Text>
+            <Text style={styles.disputeBannerTitle}>{t('需要提出爭議？')}</Text>
             <Text style={styles.disputeBannerDesc}>
               如卡牌與描述不符、未能如期交收，平台將在 24 小時內審查
             </Text>
@@ -481,7 +484,7 @@ const OrderStatusScreen: React.FC = () => {
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-open-outline" size={13} color={C.textTertiary} /><Text style={modalStyles.title}>確認釋放款項？</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-open-outline" size={13} color={C.textTertiary} /><Text style={modalStyles.title}>{t('確認釋放款項？')}</Text></View>
             <Text style={modalStyles.subtitle}>
               資金將直接轉俾賣家，交易完成後無法撤回。{'\n'}
               請確認已收到卡牌且狀態滿意。
@@ -495,13 +498,13 @@ const OrderStatusScreen: React.FC = () => {
                 style={modalStyles.cancelBtn}
                 onPress={() => setShowReleaseModal(false)}
               >
-                <Text style={modalStyles.cancelBtnText}>取消</Text>
+                <Text style={modalStyles.cancelBtnText}>{t('取消')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={modalStyles.releaseConfirmBtn}
                 onPress={confirmRelease}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={modalStyles.releaseConfirmBtnText}>確認釋放款項</Text></View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={modalStyles.releaseConfirmBtnText}>{t('確認釋放款項')}</Text></View>
               </TouchableOpacity>
             </View>
           </View>
@@ -512,12 +515,12 @@ const OrderStatusScreen: React.FC = () => {
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
-            <Text style={modalStyles.title}>提出爭議</Text>
+            <Text style={modalStyles.title}>{t('提出爭議')}</Text>
             <Text style={modalStyles.subtitle}>
               請詳細描述問題，並上傳卡牌相片作為證據
             </Text>
 
-            <Text style={modalStyles.fieldLabel}>問題類型</Text>
+            <Text style={modalStyles.fieldLabel}>{t('問題類型')}</Text>
             <View style={modalStyles.reasonOptions}>
               {['卡牌與描述不符', '收到爛卡/假卡', '未能如期交收', '賣家無回應', '其他'].map(r => (
                 <TouchableOpacity
@@ -536,19 +539,19 @@ const OrderStatusScreen: React.FC = () => {
               ))}
             </View>
 
-            <Text style={modalStyles.fieldLabel}>詳細描述</Text>
+            <Text style={modalStyles.fieldLabel}>{t('詳細描述')}</Text>
             <View style={modalStyles.textArea}>
               <Text style={modalStyles.textAreaPlaceholder}>
                 請描述你遇到的問題...
               </Text>
             </View>
 
-            <Text style={modalStyles.fieldLabel}>上傳圖片（最多 3 張）</Text>
+            <Text style={modalStyles.fieldLabel}>{t('上傳圖片（最多 3 張）')}</Text>
             <TouchableOpacity
               style={modalStyles.uploadBtn}
               onPress={() => setShowImagePicker(true)}
             >
-              <Text style={modalStyles.uploadBtnText}>📷 添加圖片</Text>
+              <Text style={modalStyles.uploadBtnText}>{t('📷 添加圖片')}</Text>
             </TouchableOpacity>
 
             <View style={modalStyles.actions}>
@@ -556,13 +559,13 @@ const OrderStatusScreen: React.FC = () => {
                 style={modalStyles.submitBtn}
                 disabled={!disputeReason}
               >
-                <Text style={modalStyles.submitBtnText}>提交爭議</Text>
+                <Text style={modalStyles.submitBtnText}>{t('提交爭議')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={modalStyles.cancelBtn}
                 onPress={() => setShowDisputeModal(false)}
               >
-                <Text style={modalStyles.cancelBtnText}>取消</Text>
+                <Text style={modalStyles.cancelBtnText}>{t('取消')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -572,7 +575,7 @@ const OrderStatusScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
@@ -803,9 +806,9 @@ const styles = StyleSheet.create({
   extendedBadgeText: { color: C.up, fontSize: 12, fontWeight: '700' },
   reportProblemBtn: { backgroundColor: 'rgba(255,60,60,0.1)', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,60,60,0.3)' },
   reportProblemBtnText: { color: C.ruby, fontSize: 13, fontWeight: '600' },
-});
+}))
 
-const modalStyles = StyleSheet.create({
+const modalStyles = themed((C) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#3A3A4E', alignSelf: 'center', marginBottom: 16 },
@@ -852,6 +855,6 @@ const modalStyles = StyleSheet.create({
   consentLabel: { color: C.textSecondary, fontSize: 11, marginBottom: 2 },
   consentOriginal: { color: C.textSecondary, fontSize: 16, fontWeight: '600', marginBottom: 12 },
   consentRequested: { color: C.gold, fontSize: 24, fontWeight: '800' },
-});
+}))
 
 export default OrderStatusScreen;

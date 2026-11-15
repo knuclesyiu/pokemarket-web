@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, Image,
   TouchableOpacity, TextInput, FlatList, Alert,
@@ -21,7 +22,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { MarketListing, TradeCard, UserCard, OfferCard } from '../../types/trade';
 import { confirmAction, notify } from '../../components/Feedback';
-import { C } from '../../theme';
+import { C, themed } from '../../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type NavProp = NativeStackNavigationProp<any>;
@@ -69,6 +70,8 @@ const SelectableCard: React.FC<{
 // ─── Main Screen ────────────────────────────────────────────────────────────────
 
 const MakeOfferScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<NavProp>();
   const route = useRoute<any>();
   const listing: MarketListing = route.params?.listing;
@@ -95,7 +98,7 @@ const MakeOfferScreen: React.FC = () => {
       setMyCards(data.cards || []);
     } catch (err) {
       console.error('loadMyCards error:', err);
-      notify('載入失敗', '無法讀取你的收藏，請稍後重試');
+      notify(t('載入失敗'), '無法讀取你的收藏，請稍後重試');
     } finally {
       setLoading(false);
     }
@@ -129,7 +132,7 @@ const MakeOfferScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!isValid) {
-      notify('無法發送', '請選擇至少一張卡或填寫現金補貼');
+      notify(t('無法發送'), '請選擇至少一張卡或填寫現金補貼');
       return;
     }
     if (listing.sellerId) {
@@ -153,7 +156,7 @@ const MakeOfferScreen: React.FC = () => {
         message: message.trim(),
       });
       const data = result.data as { offerId: string; status: string };
-      confirmAction('Offer 已發出！', `你的交換提議已發送給 ${listing.sellerName}`, [
+      confirmAction(t('Offer 已發出！'), `你的交換提議已發送給 ${listing.sellerName}`, [
         { text: '查看我的 Offer', onPress: () => navigation.navigate('MyOffers') },
         { text: '返回', onPress: () => navigation.goBack() },
       ]);
@@ -170,16 +173,16 @@ const MakeOfferScreen: React.FC = () => {
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>← 返回</Text>
+          <Text style={styles.backBtnText}>{t('← 返回')}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>發出 Offer</Text>
+        <Text style={styles.headerTitle}>{t('發出 Offer')}</Text>
         <View style={{ width: 60 }} />
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── Target Card ── */}
         <View style={styles.section}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="albums-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>目標卡片</Text></View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="albums-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>{t('目標卡片')}</Text></View>
           <View style={styles.targetCard}>
             {listing.card?.imageUrl ? (
               <Image
@@ -207,7 +210,7 @@ const MakeOfferScreen: React.FC = () => {
         {/* ── Offer Cards ── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🃏 選擇你的卡片作為 Offer</Text>
+            <Text style={styles.sectionTitle}>{t('🃏 選擇你的卡片作為 Offer')}</Text>
             <Text style={styles.selectedCount}>
               已選 {selectedCardIds.size} 張（約 HK${selectedValue.toLocaleString()}）
             </Text>
@@ -217,8 +220,8 @@ const MakeOfferScreen: React.FC = () => {
             <ActivityIndicator color={C.action} style={{ marginTop: 20 }} />
           ) : myCards.length === 0 ? (
             <View style={styles.emptyCards}>
-              <Text style={styles.emptyCardsText}>你的收藏是空的</Text>
-              <Text style={styles.emptyCardsSub}>先去新增卡片吧！</Text>
+              <Text style={styles.emptyCardsText}>{t('你的收藏是空的')}</Text>
+              <Text style={styles.emptyCardsSub}>{t('先去新增卡片吧！')}</Text>
             </View>
           ) : (
             <View style={styles.cardsList}>
@@ -236,7 +239,7 @@ const MakeOfferScreen: React.FC = () => {
 
         {/* ── Cash Add ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💵 現金補貼（可選）</Text>
+          <Text style={styles.sectionTitle}>{t('💵 現金補貼（可選）')}</Text>
           <Text style={styles.cashHint}>
             若你的卡片市值不足目標卡，可補貼現金差額
           </Text>
@@ -256,13 +259,13 @@ const MakeOfferScreen: React.FC = () => {
               style={[styles.cashChip, showCashInput ? styles.cashChipActive : null]}
               onPress={() => setShowCashInput(v => !v)}
             >
-              <Text style={[styles.cashChipText, showCashInput ? styles.cashChipTextActive : null]}>自訂</Text>
+              <Text style={[styles.cashChipText, showCashInput ? styles.cashChipTextActive : null]}>{t('自訂')}</Text>
             </TouchableOpacity>
           </View>
           {showCashInput && (
             <TextInput
               style={styles.cashInput}
-              placeholder="輸入金額（HKD）"
+              placeholder={t('輸入金額（HKD）')}
               placeholderTextColor={C.textTertiary}
               keyboardType="numeric"
               value={cashAddHkd > 0 && !CASH_QUICK_ADD.includes(cashAddHkd) ? String(cashAddHkd) : ''}
@@ -273,10 +276,10 @@ const MakeOfferScreen: React.FC = () => {
 
         {/* ── Message ── */}
         <View style={styles.section}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>留言（可選）</Text></View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>{t('留言（可選）')}</Text></View>
           <TextInput
             style={styles.messageInput}
-            placeholder="給賣家留個言...（例：熱交，prefer面交）"
+            placeholder={t('給賣家留個言...（例：熱交，prefer面交）')}
             placeholderTextColor={C.textTertiary}
             multiline
             maxLength={200}
@@ -313,7 +316,7 @@ const MakeOfferScreen: React.FC = () => {
 
 const CARD_H = 88;
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.surface },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -411,6 +414,6 @@ const styles = StyleSheet.create({
   },
   submitBtnDisabled: { opacity: 0.4 },
   submitBtnText: { color: C.text, fontSize: 17, fontWeight: '800' },
-});
+}))
 
 export default MakeOfferScreen;

@@ -8,6 +8,7 @@
  * write that records the payout, so a retry cannot pay twice.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity,
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
@@ -22,13 +23,15 @@ import {
   createWithdrawal,
 } from '../services/stripeService';
 import { confirmAction, notify } from '../components/Feedback';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 
 type NavProp = NativeStackNavigationProp<any>;
 
 const MIN_WITHDRAWAL_HKD = 50;
 
 const WithdrawScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<NavProp>();
   const { currentUser } = useAuth();
 
@@ -98,8 +101,7 @@ const WithdrawScreen: React.FC = () => {
     setBusy(true);
     try {
       const res = await createWithdrawal(parsed, accountId);
-      confirmAction(
-        '提現已提交',
+      confirmAction(t('提現已提交'),
         `HK$ ${parsed.toFixed(2)} 已經交俾 Stripe 處理。\n` +
           `一般 1–3 個工作日到账。\n\n提現編號：${res.payoutId}`,
         [{ text: '好', onPress: () => navigation.goBack() }],
@@ -120,13 +122,13 @@ const WithdrawScreen: React.FC = () => {
             onPress={() => navigation.goBack()}
             style={styles.backBtn}
           >
-            <Text style={styles.backText}>← 返回</Text>
+            <Text style={styles.backText}>{t('← 返回')}</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>提現</Text>
+          <Text style={styles.headerTitle}>{t('提現')}</Text>
         </View>
 
         <View style={styles.noticeCard}>
-          <Text style={styles.noticeTitle}>未設定收款帳戶</Text>
+          <Text style={styles.noticeTitle}>{t('未設定收款帳戶')}</Text>
           <Text style={styles.noticeBody}>
             提現需要一個 Stripe 收款帳戶。設定好之後，賣卡收到嘅錢就可以直接轉去你嘅銀行戶口。
           </Text>
@@ -136,7 +138,7 @@ const WithdrawScreen: React.FC = () => {
           style={styles.primaryBtn}
           onPress={() => navigation.navigate('SellerOnboarding')}
         >
-          <Text style={styles.primaryBtnText}>去設定收款帳戶 →</Text>
+          <Text style={styles.primaryBtnText}>{t('去設定收款帳戶 →')}</Text>
         </TouchableOpacity>
       </ScrollView>
     );
@@ -153,13 +155,13 @@ const WithdrawScreen: React.FC = () => {
             onPress={() => navigation.goBack()}
             style={styles.backBtn}
           >
-            <Text style={styles.backText}>← 返回</Text>
+            <Text style={styles.backText}>{t('← 返回')}</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>提現</Text>
+          <Text style={styles.headerTitle}>{t('提現')}</Text>
         </View>
 
         <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>可提現餘額</Text>
+          <Text style={styles.balanceLabel}>{t('可提現餘額')}</Text>
           <Text style={styles.balanceValue}>
             {loading ? '—' : `HK$ ${available.toLocaleString(undefined, {
               minimumFractionDigits: 2,
@@ -172,7 +174,7 @@ const WithdrawScreen: React.FC = () => {
         </View>
 
         <View style={styles.formCard}>
-          <Text style={styles.inputLabel}>提現金額 (HK$)</Text>
+          <Text style={styles.inputLabel}>{t('提現金額 (HK$)')}</Text>
           <View style={styles.inputRow}>
             <Text style={styles.currency}>HK$</Text>
             <TextInput
@@ -187,7 +189,7 @@ const WithdrawScreen: React.FC = () => {
               style={styles.maxBtn}
               onPress={() => setAmount(available.toFixed(2))}
             >
-              <Text style={styles.maxBtnText}>全部</Text>
+              <Text style={styles.maxBtnText}>{t('全部')}</Text>
             </TouchableOpacity>
           </View>
           {reason ? <Text style={styles.errorText}>{reason}</Text> : null}
@@ -216,7 +218,7 @@ const WithdrawScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
@@ -297,6 +299,6 @@ const styles = StyleSheet.create({
     marginTop: 14,
     marginBottom: 40,
   },
-});
+}))
 
 export default WithdrawScreen;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, Image,
   TouchableOpacity, Dimensions, Modal, ActivityIndicator, Alert,
@@ -15,13 +16,15 @@ import { PokemonCard } from '../types';
 import { getCardPrice, buildPriceHistory, CardPriceData } from '../services/cardPriceService';
 import type { MarketListing } from '../types/trade';
 import { confirmAction } from '../components/Feedback';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard } }, 'params'>;
 const { width } = Dimensions.get('window');
 
 const CardDetailScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { card } = route.params;
@@ -168,13 +171,13 @@ const CardDetailScreen: React.FC = () => {
             style={[styles.actionBtn, styles.buyBtn]}
             onPress={() => setActiveTab('listings')}
           >
-            <Text style={styles.actionBtnText}>立即購買</Text>
+            <Text style={styles.actionBtnText}>{t('立即購買')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, styles.sellBtn]}
             onPress={() => setShowSellModal(true)}
           >
-            <Text style={styles.sellBtnText}>放售</Text>
+            <Text style={styles.sellBtnText}>{t('放售')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -183,7 +186,7 @@ const CardDetailScreen: React.FC = () => {
           style={styles.contactBtn}
           onPress={async () => {
             if (!auth.currentUser) {
-              confirmAction('需要登入', '請先登入再聯絡賣家', [
+              confirmAction(t('需要登入'), '請先登入再聯絡賣家', [
                 { text: '登入', onPress: () => navigation.navigate('Login') },
                 { text: '取消' },
               ]);
@@ -205,7 +208,7 @@ const CardDetailScreen: React.FC = () => {
             }
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.contactBtnText}>聯絡賣家</Text></View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.contactBtnText}>{t('聯絡賣家')}</Text></View>
         </TouchableOpacity>
 
         {/* Tabs */}
@@ -260,7 +263,7 @@ const CardDetailScreen: React.FC = () => {
         {activeTab === 'history' && (
           <View style={styles.chartSection}>
             <View style={styles.chartHeader}>
-              <Text style={styles.chartTitle}>30天價格走势</Text>
+              <Text style={styles.chartTitle}>{t('30天價格走势')}</Text>
               <Text style={styles.chartRange}>
                 {priceHistory.length > 0
                   ? `HK$ ${Math.min(...priceHistory.map(p => p.price)).toLocaleString()} → HK$ ${Math.max(...priceHistory.map(p => p.price)).toLocaleString()}`
@@ -270,7 +273,7 @@ const CardDetailScreen: React.FC = () => {
             {historyLoading ? (
               <View style={{ alignItems: 'center', paddingVertical: 24 }}>
                 <ActivityIndicator color={C.gold} />
-                <Text style={{ color: C.textSecondary, fontSize: 12, marginTop: 8 }}>由 TCGdex 載入即時行情…</Text>
+                <Text style={{ color: C.textSecondary, fontSize: 12, marginTop: 8 }}>{t('由 TCGdex 載入即時行情…')}</Text>
               </View>
             ) : priceHistory.length > 0 ? (
               <>
@@ -290,7 +293,7 @@ const CardDetailScreen: React.FC = () => {
 
         {/* Card Details */}
         <View style={styles.detailSection}>
-          <Text style={styles.detailTitle}>卡牌資料</Text>
+          <Text style={styles.detailTitle}>{t('卡牌資料')}</Text>
           {[
             ['Series', card.series],
             ['Set', card.set],
@@ -315,7 +318,7 @@ const CardDetailScreen: React.FC = () => {
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
             <Text style={modalStyles.title}>放售 {card.name}</Text>
-            <Text style={modalStyles.subtitle}>選擇掛牌方式</Text>
+            <Text style={modalStyles.subtitle}>{t('選擇掛牌方式')}</Text>
             <TouchableOpacity
               style={modalStyles.option}
               onPress={() => {
@@ -327,8 +330,8 @@ const CardDetailScreen: React.FC = () => {
                 });
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="wallet-outline" size={15} color={C.textTertiary} /><Text style={modalStyles.optionTitle}>定價出售</Text></View>
-              <Text style={modalStyles.optionDesc}>設定固定價格，買家即時購買</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="wallet-outline" size={15} color={C.textTertiary} /><Text style={modalStyles.optionTitle}>{t('定價出售')}</Text></View>
+              <Text style={modalStyles.optionDesc}>{t('設定固定價格，買家即時購買')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={modalStyles.option}
@@ -341,14 +344,14 @@ const CardDetailScreen: React.FC = () => {
                 });
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="pricetag-outline" size={14} color={C.textTertiary} /><Text style={modalStyles.optionTitle}>拍賣</Text></View>
-              <Text style={modalStyles.optionDesc}>設定底價，讓買家競標</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="pricetag-outline" size={14} color={C.textTertiary} /><Text style={modalStyles.optionTitle}>{t('拍賣')}</Text></View>
+              <Text style={modalStyles.optionDesc}>{t('設定底價，讓買家競標')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[modalStyles.option, modalStyles.cancelBtn]}
               onPress={() => setShowSellModal(false)}
             >
-              <Text style={modalStyles.cancelText}>取消</Text>
+              <Text style={modalStyles.cancelText}>{t('取消')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -357,7 +360,7 @@ const CardDetailScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
@@ -560,9 +563,9 @@ const styles = StyleSheet.create({
   },
   detailLabel: { color: C.textSecondary, fontSize: 12 },
   detailValue: { color: C.text, fontSize: 12, fontWeight: '600' },
-});
+}))
 
-const modalStyles = StyleSheet.create({
+const modalStyles = themed((C) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -605,6 +608,6 @@ const modalStyles = StyleSheet.create({
     borderColor: C.border,
   },
   contactBtnText: { color: C.text, fontSize: 14, fontWeight: '700' },
-});
+}))
 
 export default CardDetailScreen;

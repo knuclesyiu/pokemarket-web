@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet,
   FlatList, TouchableOpacity, Dimensions,
@@ -18,7 +19,7 @@ import { getCardPrice, getCardPrices, priceDataToCard, CardPriceData } from '../
 import Ionicons from '@expo/vector-icons/Ionicons';
 import CardItem from '../components/CardItem';
 import SearchBar from '../components/search/SearchBar';
-import { C, R, SP, T } from '../theme';
+import { C, R, SP, T, themed } from '../theme';
 
 import { PokemonCard } from '../types';
 
@@ -67,6 +68,8 @@ const EmptyState: React.FC<{
 );
 
 const HomeScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<NavProp>();
   const [searchResults, setSearchResults] = useState<PokemonCard[] | null>(null);
   const [activeFilter, setActiveFilter] = useState('全部');
@@ -257,14 +260,14 @@ const HomeScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>訓練員，你好</Text>
+          <Text style={styles.greeting}>{t('訓練員，你好')}</Text>
           <Text style={styles.headerTitle}>PokéMarket</Text>
         </View>
         <TouchableOpacity
           style={styles.bellBtn}
           onPress={() => navigation.navigate('Notifications')}
           accessibilityRole="button"
-          accessibilityLabel="通知"
+          accessibilityLabel={t('通知')}
         >
           <Ionicons name="notifications-outline" size={20} color={C.text} />
           {priceMap[Object.keys(priceMap)[0]]?.source === 'tcgdex' && (
@@ -272,14 +275,14 @@ const HomeScreen: React.FC = () => {
           )}
         </TouchableOpacity>
         {syncing && (
-          <Text style={styles.syncBadge}>同步行情中…</Text>
+          <Text style={styles.syncBadge}>{t('同步行情中…')}</Text>
         )}
       </View>
 
       {/* Market stats — real numbers, and tapping one opens the card */}
       <View style={styles.statsBar}>
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>實時報價</Text>
+          <Text style={styles.statLabel}>{t('實時報價')}</Text>
           <Text style={styles.statValueGold}>{quotedCount}</Text>
           <Text style={styles.statSub} numberOfLines={1}>上次更新：{timeLabel}</Text>
         </View>
@@ -291,7 +294,7 @@ const HomeScreen: React.FC = () => {
           }
           disabled={!movers}
         >
-          <Text style={styles.statLabel}>今日升幅</Text>
+          <Text style={styles.statLabel}>{t('今日升幅')}</Text>
           <Text style={styles.statValueJade}>
             {movers ? `+${movers.up.priceChange24h.toFixed(1)}%` : '--'}
           </Text>
@@ -307,7 +310,7 @@ const HomeScreen: React.FC = () => {
           }
           disabled={!movers}
         >
-          <Text style={styles.statLabel}>今日跌幅</Text>
+          <Text style={styles.statLabel}>{t('今日跌幅')}</Text>
           <Text style={styles.statValueRuby}>
             {movers ? `${movers.down.priceChange24h.toFixed(1)}%` : '--'}
           </Text>
@@ -320,7 +323,7 @@ const HomeScreen: React.FC = () => {
       {/* Search + Version Filter */}
       <SearchBar
         onResults={setSearchResults}
-        placeholder="搜尋卡名、系列、稀有度…"
+        placeholder={t('搜尋卡名、系列、稀有度…')}
       />
 
       {/* Series Filter — gold active state */}
@@ -352,16 +355,16 @@ const HomeScreen: React.FC = () => {
       <View style={styles.sectionHeader}>
         <View style={styles.sectionTitleRow}>
           <Ionicons name="flame" size={16} color={C.action} />
-          <Text style={styles.sectionTitle}>熱門卡</Text>
+          <Text style={styles.sectionTitle}>{t('熱門卡')}</Text>
         </View>
         <TouchableOpacity onPress={() => navigation.navigate('Main')}>
-          <Text style={styles.seeAll}>查看全部 →</Text>
+          <Text style={styles.seeAll}>{t('查看全部 →')}</Text>
         </TouchableOpacity>
       </View>
       {enrichedTrending.length === 0 ? (
         <EmptyState
           icon="cloud-offline-outline"
-          title="暫時攞唔到行情"
+          title={t('暫時攞唔到行情')}
           body="價格服務未回應，或者未有卡喺呢個價位帶。向下拉可以重新整理。"
         />
       ) : (
@@ -385,7 +388,7 @@ const HomeScreen: React.FC = () => {
       <View style={styles.sectionHeader}>
         <View style={styles.sectionTitleRow}>
           <Ionicons name="stats-chart" size={16} color={C.gold} />
-          <Text style={styles.sectionTitle}>市場掛牌</Text>
+          <Text style={styles.sectionTitle}>{t('市場掛牌')}</Text>
         </View>
         <TouchableOpacity>
           <Text style={styles.seeAll}>
@@ -396,7 +399,7 @@ const HomeScreen: React.FC = () => {
       {enrichedFiltered.length === 0 ? (
         <EmptyState
           icon="card-outline"
-          title="未有掛牌"
+          title={t('未有掛牌')}
           body="市場暫時未有掛牌嘅卡。撳下面「全部」睇現貨價格，或者自己掛一張。"
         />
       ) : (
@@ -417,7 +420,7 @@ const HomeScreen: React.FC = () => {
 };
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },
 
   // ─── Header ───────────────────────────────────────────────────────────────
@@ -567,6 +570,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 19,
   },
-});
+}))
 
 export default HomeScreen;

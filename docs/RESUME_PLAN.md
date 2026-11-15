@@ -204,6 +204,44 @@ Firebase 官方指定要用 `signInWithRedirect`。
 - `?sellerOnboarding=refresh` → 直接開「收款帳戶」畫面 ✅
 - app tsc 0、emulator E2E 22/22
 
+## 淺色主題 + 三語言（2026-11-15 晚）
+
+### 語言掣唔 work 嘅原因
+`src/i18n/useTranslation.ts` 一直係 **DEPRECATED stub**，冇任何畫面用緊。
+Profile 個掣做嘅 `updateProfile({language})` 有寫入 Firestore，
+但**全 app 冇一處讀呢個值** —— 所以撳落去乜都冇發生。
+實際規模：248 條中文 hard-code，原表只有 55 個 key。
+
+### 做法
+- `src/i18n/strings.ts` —— 三語言表（key = 原本嘅中文原文）
+- `src/i18n/index.ts` —— module-level `t()`，唔使逐個檔案插 hook
+- `src/contexts/AppearanceContext.tsx` —— theme + language 一個 context
+- `scripts/localise_screens.py` —— 自動把 hard-code 換成 `t('...')`
+- `scripts/fix_localisation_hooks.py` —— 補返漏咗嘅 hook
+
+### 淺色主題
+`src/theme.ts` 加咗 `darkPalette` / `lightPalette`、`C` 改成 live proxy、
+`themed()` factory。30 個畫面嘅 `StyleSheet.create` 改成
+`themed((C) => StyleSheet.create({...}))` —— 樣式跟 palette 重建。
+
+### 途中揾到嘅 3 個真 bug
+1. **theme cache 用錯 key** —— 第一版 `themed()` 個 cache 用 palette 做 key，
+   **所有畫面共用同一個 stylesheet**，第一個被讀嘅贏咗，其他畫面
+   `styles.xxx` = undefined → Profile 畫面完全冇 style。要每個 `themed()`
+   自己嘅 cache。
+2. **強制 refresh token 令用戶靜靜登出** —— `refreshSession()` 每次 cold start
+   都 `getIdToken(u, true)`，失敗時 SDK 登出，錯誤被 `.catch(() => {})` 吞死。
+   改成非強制 refresh + 記低失敗碼。
+3. **`refreshSession` 吞咗所有錯誤** —— 而家會 log 失敗 code，同埋每次
+   auth state 轉變都 log。
+
+### 驗證
+- 淺色：Firestore theme → reload → 成個 app 淺色 ✅（root 背景跟 palette）
+- 語言：Firestore language=en → reload → "Hello, Trainer" / "Live quotes 50" ✅
+- 主題掣：Profile 撳深色/淺色 → 即時切 ✅
+- 語言掣：Profile 撳 English/簡體 → 即時切 ✅
+- app tsc 0、emulator E2E 22/22 ✅
+
 ## Stripe key 輪換（2026-11-15 20:12）
 
 Ken 喺 Stripe dashboard 開咗新 key 並更新咗本機

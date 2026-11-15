@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type ReviewStatus = 'pending' | 'approved' | 'rejected';
@@ -42,7 +42,7 @@ const ReviewBadge: React.FC<Props> = ({ status, grade, size = 'md' }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -64,6 +64,6 @@ const styles = StyleSheet.create({
   label: { fontWeight: '700' },
   labelMd: { fontSize: 11 },
   labelSm: { fontSize: 9 },
-});
+}))
 
 export default ReviewBadge;

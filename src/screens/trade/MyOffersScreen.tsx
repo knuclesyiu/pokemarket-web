@@ -9,6 +9,8 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { t } from '../../i18n';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator, Image, Alert, Dimensions,
@@ -18,7 +20,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { Offer, OfferStatus } from '../../types/trade';
 import { confirmAction, notify } from '../../components/Feedback';
-import { C } from '../../theme';
+import { C, themed } from '../../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type NavProp = NativeStackNavigationProp<any>;
@@ -105,7 +107,7 @@ const OfferRow: React.FC<{
               style={[styles.quickBtn, styles.quickBtnAccept]}
               onPress={() => onQuickAction('accept')}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.quickBtnAcceptText}>接受</Text></View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.quickBtnAcceptText}>{t('接受')}</Text></View>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.quickBtn, styles.quickBtnReject]}
@@ -125,6 +127,8 @@ const OfferRow: React.FC<{
 type TabType = 'sent' | 'received';
 
 const MyOffersScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<NavProp>();
   const [activeTab, setActiveTab] = useState<TabType>('received');
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -155,8 +159,7 @@ const MyOffersScreen: React.FC = () => {
 
   const handleQuickAction = async (offer: Offer, action: 'accept' | 'reject') => {
     if (action === 'reject') {
-      confirmAction(
-        '拒絕 Offer',
+      confirmAction(t('拒絕 Offer'),
         `確定要拒絕 ${offer.buyerName} 的這個 Offer 嗎？`,
         [
           { text: '取消', style: 'cancel' },
@@ -221,9 +224,9 @@ const MyOffersScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>← 返回</Text>
+          <Text style={styles.backBtnText}>{t('← 返回')}</Text>
         </TouchableOpacity>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.headerTitle}>我的 Offer</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.headerTitle}>{t('我的 Offer')}</Text></View>
         <View style={{ width: 60 }} />
       </View>
 
@@ -274,7 +277,7 @@ const MyOffersScreen: React.FC = () => {
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.surface },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -333,6 +336,6 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 60, opacity: 0.3 },
   emptyTitle: { color: C.text, fontSize: 16, fontWeight: '700', marginTop: 16, textAlign: 'center' },
   emptySub: { color: C.textTertiary, fontSize: 13, marginTop: 8, textAlign: 'center' },
-});
+}))
 
 export default MyOffersScreen;

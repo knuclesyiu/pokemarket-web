@@ -17,6 +17,7 @@ export interface UserProfile {
   negativeReviews: number;
   // Preferences
   language: 'zh-HK' | 'zh-CN' | 'en';
+  theme?: 'dark' | 'light';
   notificationsEnabled: boolean;
   // Security
   transactionPinHash?: string; // SHA-256 hash of user's transaction PIN

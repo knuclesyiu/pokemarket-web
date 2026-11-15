@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -45,7 +45,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ data }) => {
   );
 };
 
-const chartStyles = StyleSheet.create({
+const chartStyles = themed((C) => StyleSheet.create({
   container: { paddingVertical: 8 },
   bars: {
     flexDirection: 'row',
@@ -74,6 +74,6 @@ const chartStyles = StyleSheet.create({
     color: C.textTertiary,
     fontSize: 10,
   },
-});
+}))
 
 export default PriceChart;

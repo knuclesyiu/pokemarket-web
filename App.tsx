@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -10,7 +10,9 @@ import ErrorBoundary from "./src/components/ErrorBoundary";
 import { FeedbackProvider } from "./src/components/Feedback";
 import TabBarIcon from "./src/components/TabBarIcon";
 import { useAppFonts } from "./src/hooks/useAppFonts";
-import { C, FONT, R, SP, T } from "./src/theme";
+import {
+  C, FONT, R, SP, T, themed, subscribeTheme, getThemeSnapshot,
+} from "./src/theme";
 import HomeScreen from "./src/screens/HomeScreen";
 import CardDetailScreen from "./src/screens/CardDetailScreen";
 import PortfolioScreen from "./src/screens/PortfolioScreen";
@@ -32,6 +34,7 @@ import EditProfileScreen from "./src/screens/EditProfileScreen";
 import SellerOnboardingScreen from "./src/screens/SellerOnboardingScreen";
 import WithdrawScreen from "./src/screens/WithdrawScreen";
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
+import { AppearanceProvider } from "./src/contexts/AppearanceContext";
 import type { RootStackParamList } from "./src/types/navigation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -118,6 +121,10 @@ const LoadingScreen = () => (
 );
 
 export default function App() {
+  // The palette is an external store, so a change of theme re-renders
+  // the app from the root — including the parts of it that sit above
+  // the provider holding the account's preferences.
+  useSyncExternalStore(subscribeTheme, getThemeSnapshot, getThemeSnapshot);
   const fontsReady = useAppFonts();
   const [ready, setReady] = useState(false);
 
@@ -136,13 +143,15 @@ export default function App() {
   // covered by the next screen.
   return (
     <AuthProvider>
-      <FeedbackProvider>
+      <AppearanceProvider>
+        <FeedbackProvider>
         <ErrorBoundary>
           <View style={styles.root}>
             <RootNavigator />
           </View>
         </ErrorBoundary>
-      </FeedbackProvider>
+        </FeedbackProvider>
+      </AppearanceProvider>
     </AuthProvider>
   );
 }
@@ -237,7 +246,7 @@ function RootNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: C.void,
@@ -254,4 +263,4 @@ const styles = StyleSheet.create({
     color: C.text,
     marginTop: SP.lg,
   },
-});
+}));

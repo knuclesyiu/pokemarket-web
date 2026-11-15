@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, Image,
   TextInput, TouchableOpacity, Modal, Alert, ActivityIndicator,
@@ -15,7 +16,7 @@ import ReviewBadge from '../components/ReviewBadge';
 import { calculateFee, PLATFORM_FEE_PERCENT, STRIPE_PERCENT_FEE, STRIPE_FIXED_CENTS, ORDER_MIN_FEE_HKD } from '../utils/feeCalculator';
 import type { CardCondition as CardCondType } from '../types';
 import { confirmAction, notify } from '../components/Feedback';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type SellRouteProp = RouteProp<RootStackParamList, 'Sell'>;
@@ -52,6 +53,8 @@ const COLORS = {
 const REVIEW_THRESHOLD = 500;
 
 const SellScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const route = useRoute<SellRouteProp>();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   // If the user came from CardDetail's "sell this card" modal, they passed
@@ -159,7 +162,7 @@ const SellScreen: React.FC = () => {
 
   const handleCardSelect = (card: PokemonCard) => {
     if (!auth.currentUser) {
-      confirmAction('需要登入', '請先登入再放售卡牌', [
+      confirmAction(t('需要登入'), '請先登入再放售卡牌', [
         { text: '登入', onPress: () => navigation.navigate('Login') },
         { text: '取消' },
       ]);
@@ -171,7 +174,7 @@ const SellScreen: React.FC = () => {
 
   const handleConfirmListing = async () => {
     if (!auth.currentUser) {
-      notify('需要登入', '請先登入');
+      notify(t('需要登入'), '請先登入');
       return;
     }
     if (!selectedCard || !price) return;
@@ -205,7 +208,7 @@ const SellScreen: React.FC = () => {
         resetForm();
       }
     } catch (err) {
-      notify('掛牌失敗', '請稍後再試。');
+      notify(t('掛牌失敗'), '請稍後再試。');
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -225,9 +228,9 @@ const SellScreen: React.FC = () => {
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>放售卡牌</Text>
+        <Text style={styles.headerTitle}>{t('放售卡牌')}</Text>
         <TouchableOpacity>
-          <Text style={styles.headerGuide}>📖 指南</Text>
+          <Text style={styles.headerGuide}>{t('📖 指南')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -254,7 +257,7 @@ const SellScreen: React.FC = () => {
       {/* Step 1: Select Card */}
       {step === 1 && (
         <View style={styles.stepContent}>
-          <Text style={styles.stepTitle}>選擇要放售的卡牌</Text>
+          <Text style={styles.stepTitle}>{t('選擇要放售的卡牌')}</Text>
           <TouchableOpacity
             style={styles.selectedCardPreview}
             onPress={() => setShowCardPicker(true)}
@@ -270,17 +273,17 @@ const SellScreen: React.FC = () => {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="globe-outline" size={13} color={C.textTertiary} /><Text style={styles.previewLang}>{selectedCard.language}</Text></View>
                   )}
                 </View>
-                <Text style={styles.changeBtn}>更換 →</Text>
+                <Text style={styles.changeBtn}>{t('更換 →')}</Text>
               </View>
             ) : (
               <View style={styles.placeholderCard}>
                 <Ionicons name="search-outline" size={16} color={C.textTertiary} />
-                <Text style={styles.placeholderText}>點擊搜尋卡牌...</Text>
+                <Text style={styles.placeholderText}>{t('點擊搜尋卡牌...')}</Text>
               </View>
             )}
           </TouchableOpacity>
 
-          <Text style={styles.sectionLabel}>或從列表選擇</Text>
+          <Text style={styles.sectionLabel}>{t('或從列表選擇')}</Text>
           <View style={styles.quickGrid}>
             {portfolioCards.length === 0 ? (
               <Text style={styles.quickEmpty}>
@@ -306,7 +309,7 @@ const SellScreen: React.FC = () => {
             onPress={() => selectedCard && setStep(2)}
             disabled={!selectedCard}
           >
-            <Text style={styles.nextBtnText}>下一步 →</Text>
+            <Text style={styles.nextBtnText}>{t('下一步 →')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -314,10 +317,10 @@ const SellScreen: React.FC = () => {
       {/* Step 2: Pricing + Condition */}
       {step === 2 && selectedCard && (
         <View style={styles.stepContent}>
-          <Text style={styles.stepTitle}>設定價格</Text>
+          <Text style={styles.stepTitle}>{t('設定價格')}</Text>
 
           <View style={styles.refPrice}>
-            <Text style={styles.refLabel}>市場參考價</Text>
+            <Text style={styles.refLabel}>{t('市場參考價')}</Text>
             <Text style={styles.refValue}>HK$ {selectedCard.price.toLocaleString()}</Text>
           </View>
 
@@ -335,7 +338,7 @@ const SellScreen: React.FC = () => {
             ))}
           </View>
 
-          <Text style={styles.fieldLabel}>你的掛牌價 (HKD)</Text>
+          <Text style={styles.fieldLabel}>{t('你的掛牌價 (HKD)')}</Text>
           <View style={styles.priceInputWrap}>
             <Text style={styles.pricePrefix}>HK$</Text>
             <TextInput
@@ -367,7 +370,7 @@ const SellScreen: React.FC = () => {
             </View>
           )}
 
-          <Text style={styles.fieldLabel}>卡牌狀態（品相）</Text>
+          <Text style={styles.fieldLabel}>{t('卡牌狀態（品相）')}</Text>
           <View style={styles.conditionRow}>
             {CONDITIONS.map(c => (
               <TouchableOpacity
@@ -381,7 +384,7 @@ const SellScreen: React.FC = () => {
           </View>
 
           <View style={styles.feeInfo}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="list-outline" size={15} color={C.textTertiary} /><Text style={styles.feeTitle}>費用說明</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="list-outline" size={15} color={C.textTertiary} /><Text style={styles.feeTitle}>{t('費用說明')}</Text></View>
             <Text style={styles.feeRow}>
               平台服務費：成交金額 × {Math.round(PLATFORM_FEE_PERCENT * 100)}%
             </Text>
@@ -408,14 +411,14 @@ const SellScreen: React.FC = () => {
 
           <View style={styles.stepNav}>
             <TouchableOpacity style={styles.backBtn} onPress={() => setStep(1)}>
-              <Text style={styles.backBtnText}>← 上一步</Text>
+              <Text style={styles.backBtnText}>{t('← 上一步')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.nextBtn, !price ? styles.nextBtnDisabled : null]}
               onPress={() => price && setStep(3)}
               disabled={!price}
             >
-              <Text style={styles.nextBtnText}>下一步 →</Text>
+              <Text style={styles.nextBtnText}>{t('下一步 →')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -424,7 +427,7 @@ const SellScreen: React.FC = () => {
       {/* Step 3: Confirm */}
       {step === 3 && selectedCard && (
         <View style={styles.stepContent}>
-          <Text style={styles.stepTitle}>確認掛牌</Text>
+          <Text style={styles.stepTitle}>{t('確認掛牌')}</Text>
 
           <View style={styles.confirmCard}>
             <Image source={{ uri: selectedCard.imageUrl }} style={styles.confirmImage} />
@@ -439,29 +442,29 @@ const SellScreen: React.FC = () => {
 
           <View style={styles.confirmDetails}>
             <View style={styles.confirmRow}>
-              <Text style={styles.confirmLabel}>掛牌類型</Text>
+              <Text style={styles.confirmLabel}>{t('掛牌類型')}</Text>
               <Text style={styles.confirmValue}>{priceType === 'fixed' ? '定價' : '拍賣'}</Text>
             </View>
             <View style={styles.confirmRow}>
-              <Text style={styles.confirmLabel}>掛牌價</Text>
+              <Text style={styles.confirmLabel}>{t('掛牌價')}</Text>
               <Text style={styles.confirmPriceGold}>HK$ {Number(price).toLocaleString()}</Text>
             </View>
             <View style={styles.confirmRow}>
-              <Text style={styles.confirmLabel}>品相</Text>
+              <Text style={styles.confirmLabel}>{t('品相')}</Text>
               <Text style={styles.confirmValue}>
                 {condition}
-                {needsReview && <Text style={{ color: COLORS.accentRed }}> · 待審核</Text>}
+                {needsReview && <Text style={{ color: COLORS.accentRed }}>{t('· 待審核')}</Text>}
               </Text>
             </View>
             <View style={styles.confirmRow}>
-              <Text style={styles.confirmLabel}>預計收款</Text>
+              <Text style={styles.confirmLabel}>{t('預計收款')}</Text>
               <Text style={styles.confirmNet}>HK$ {(Number(price) * 0.97 - 15).toFixed(0)}</Text>
             </View>
           </View>
 
           {needsReview && (
             <View style={styles.reviewInfo}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="list-outline" size={15} color={C.textTertiary} /><Text style={styles.reviewInfoTitle}>品相審核須知</Text></View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="list-outline" size={15} color={C.textTertiary} /><Text style={styles.reviewInfoTitle}>{t('品相審核須知')}</Text></View>
               <Text style={styles.reviewInfoText}>
                 · HK${REVIEW_THRESHOLD}+ 掛牌需上傳卡牌相片{'\n'}
                 · 有 PSA/BGS 證書可即時通過{'\n'}
@@ -481,7 +484,7 @@ const SellScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.backBtnCenter} onPress={() => setStep(2)}>
-            <Text style={styles.backBtnText}>返回修改</Text>
+            <Text style={styles.backBtnText}>{t('返回修改')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -489,8 +492,8 @@ const SellScreen: React.FC = () => {
       {/* Step 4: Review Submit */}
       {step === 4 && selectedCard && (
         <View style={styles.stepContent}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="list-outline" size={15} color={C.textTertiary} /><Text style={styles.stepTitle}>品相審核</Text></View>
-          <Text style={styles.stepSubtitle}>上傳卡牌相片，讓買家更信任你的掛牌</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="list-outline" size={15} color={C.textTertiary} /><Text style={styles.stepTitle}>{t('品相審核')}</Text></View>
+          <Text style={styles.stepSubtitle}>{t('上傳卡牌相片，讓買家更信任你的掛牌')}</Text>
 
           <View style={styles.reviewCardRecap}>
             <Image source={{ uri: selectedCard.imageUrl }} style={styles.reviewCardThumb} />
@@ -503,18 +506,18 @@ const SellScreen: React.FC = () => {
           </View>
 
           <View style={styles.photoGuide}>
-            <Text style={styles.photoGuideTitle}>📸 需要上傳</Text>
+            <Text style={styles.photoGuideTitle}>{t('📸 需要上傳')}</Text>
             <View style={styles.photoGuide}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.photoGuideItem}>卡牌正面（光線均勻，無反光）</Text></View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.photoGuideItem}>卡牌背面（可選，但推薦）</Text></View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.photoGuideItem}>角落/邊緣特寫（如有損壞）</Text></View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.photoGuideItem}>{t('卡牌正面（光線均勻，無反光）')}</Text></View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.photoGuideItem}>{t('卡牌背面（可選，但推薦）')}</Text></View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.photoGuideItem}>{t('角落/邊緣特寫（如有損壞）')}</Text></View>
             </View>
           </View>
 
           <View style={styles.photoSlots}>
             {[0, 1, 2].map(i => (
               <TouchableOpacity key={i} style={styles.photoSlot} onPress={() => {
-                notify('📷 提示', '請在真實設備上使用 react-native-image-picker 上傳相片');
+                notify(t('📷 提示'), '請在真實設備上使用 react-native-image-picker 上傳相片');
               }}>
                 <Text style={styles.photoSlotIcon}>+ 📷</Text>
                 <Text style={styles.photoSlotLabel}>
@@ -526,27 +529,27 @@ const SellScreen: React.FC = () => {
 
           <View style={styles.certSection}>
             <TouchableOpacity style={styles.certToggle} onPress={() => {}}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkbox-outline" size={14} color={C.textTertiary} /><Text style={styles.certToggleText}>我有 PSA/BGS 證書（快速通過審核）</Text></View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkbox-outline" size={14} color={C.textTertiary} /><Text style={styles.certToggleText}>{t('我有 PSA/BGS 證書（快速通過審核）')}</Text></View>
             </TouchableOpacity>
           </View>
 
           <View style={styles.reviewStatusBox}>
             <Ionicons name="time-outline" size={14} color={C.textTertiary} />
             <View>
-              <Text style={styles.reviewStatusTitle}>審核已提交</Text>
-              <Text style={styles.reviewStatusSub}>3 名已認證用戶將投票評級</Text>
+              <Text style={styles.reviewStatusTitle}>{t('審核已提交')}</Text>
+              <Text style={styles.reviewStatusSub}>{t('3 名已認證用戶將投票評級')}</Text>
             </View>
           </View>
 
           <TouchableOpacity
             style={styles.continueBtn}
             onPress={() => {
-              confirmAction('品相審核已提交！', '你的掛牌已成功上架，買家會看到「⏳ 評審中」標記。', [
+              confirmAction(t('品相審核已提交！'), '你的掛牌已成功上架，買家會看到「⏳ 評審中」標記。', [
                 { text: '完成', onPress: () => { setStep(1); setSelectedCard(null); setPrice(''); setListing(null); } }
               ]);
             }}
           >
-            <Text style={styles.continueBtnText}>完成 →</Text>
+            <Text style={styles.continueBtnText}>{t('完成 →')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -556,12 +559,12 @@ const SellScreen: React.FC = () => {
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
-            <Text style={modalStyles.title}>搜尋卡牌</Text>
+            <Text style={modalStyles.title}>{t('搜尋卡牌')}</Text>
             <View style={modalStyles.searchBarWrap}>
               <Ionicons name="search-outline" size={16} color={C.textTertiary} />
               <TextInput
                 style={modalStyles.searchInput}
-                placeholder="輸入卡名..."
+                placeholder={t('輸入卡名...')}
                 placeholderTextColor={C.textDisabled}
                 value={pickerQuery}
                 onChangeText={setPickerQuery}
@@ -595,7 +598,7 @@ const SellScreen: React.FC = () => {
               )}
             </ScrollView>
             <TouchableOpacity style={modalStyles.closeBtn} onPress={() => setShowCardPicker(false)}>
-              <Text style={modalStyles.closeText}>關閉</Text>
+              <Text style={modalStyles.closeText}>{t('關閉')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -607,7 +610,7 @@ const SellScreen: React.FC = () => {
 };
 
 // NEW: Obsidian Gallery design system
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
@@ -809,9 +812,9 @@ const styles = StyleSheet.create({
   reviewStatusSub: { color: C.textSecondary, fontSize: 11 },
   continueBtn: { backgroundColor: COLORS.accentRed, borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
   continueBtnText: { color: C.void, fontSize: 15, fontWeight: '700' },
-});
+}))
 
-const modalStyles = StyleSheet.create({
+const modalStyles = themed((C) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.elevated, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, borderWidth: 1, borderColor: C.border },
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: C.borderActive, alignSelf: 'center', marginBottom: 16 },
@@ -826,6 +829,6 @@ const modalStyles = StyleSheet.create({
   cardPrice: { color: COLORS.accentRed, fontSize: 13, fontWeight: '700' },
   closeBtn: { alignItems: 'center', marginTop: 16 },
   closeText: { color: C.textSecondary, fontSize: 14, fontWeight: '600' },
-});
+}))
 
 export default SellScreen;

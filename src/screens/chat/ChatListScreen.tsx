@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
 } from 'react-native';
@@ -7,7 +8,7 @@ import { onSnapshot, query, orderBy, where, collection } from 'firebase/firestor
 import { auth, db } from '../../services/firebase';
 import { ChatThread } from '../../types/chat';
 import { useAuth } from '../../contexts/AuthContext';
-import { C } from '../../theme';
+import { C, themed } from '../../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface Props {
@@ -15,6 +16,8 @@ interface Props {
 }
 
 const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<any>();
   const { currentUser } = useAuth();
   const [threads, setThreads] = useState<ChatThread[]>([]);
@@ -112,7 +115,7 @@ const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.headerTitle}>我的訊息</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.headerTitle}>{t('我的訊息')}</Text></View>
         {totalUnread > 0 && (
           <View style={styles.totalBadge}>
             <Text style={styles.totalBadgeText}>{totalUnread} 未讀</Text>
@@ -122,7 +125,7 @@ const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
 
       {loading ? (
         <View style={styles.loading}>
-          <Text style={{ color: C.textTertiary }}>載入中...</Text>
+          <Text style={{ color: C.textTertiary }}>{t('載入中...')}</Text>
         </View>
       ) : (
         <FlatList
@@ -133,7 +136,7 @@ const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} />
-              <Text style={styles.emptyTitle}>尚無訊息</Text>
+              <Text style={styles.emptyTitle}>{t('尚無訊息')}</Text>
               <Text style={styles.emptySub}>開始與賣家傾偈吧！{'\n'}去卡牌詳情頁撳「聯絡賣家」即可開始。</Text>
             </View>
           }
@@ -143,7 +146,7 @@ const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.surface },
   header: {
     flexDirection: 'row',
@@ -196,6 +199,6 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 56, marginBottom: 16 },
   emptyTitle: { color: C.text, fontSize: 18, fontWeight: '700', marginBottom: 8 },
   emptySub: { color: C.textTertiary, fontSize: 13, textAlign: 'center', lineHeight: 22 },
-});
+}))
 
 export default ChatListScreen;

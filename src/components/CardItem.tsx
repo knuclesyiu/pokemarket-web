@@ -3,7 +3,7 @@ import {
   View, Text, Image, StyleSheet, TouchableOpacity, Animated,
 } from 'react-native';
 import { PokemonCard } from '../types';
-import { C, R, SP, T } from '../theme';
+import { C, R, SP, T, themed } from '../theme';
 
 // ─── Rarity Config ─────────────────────────────────────────────────────────────
 type RarityTier = 'standard' | 'holo' | 'ultra' | 'legendary';
@@ -277,7 +277,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
 };
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   // Full card
   card: {
     backgroundColor: C.card,
@@ -423,6 +423,6 @@ const styles = StyleSheet.create({
   },
   compactCurrency: { ...T.overline, fontSize: 9, color: C.textTertiary },
   compactPrice: { ...T.price, fontSize: 13, color: C.text },
-});
+}))
 
 export default CardItem;

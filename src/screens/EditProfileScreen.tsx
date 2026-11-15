@@ -7,6 +7,7 @@
  * and the transaction PIN hash are server-managed.
  */
 import React, { useState } from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
@@ -14,13 +15,15 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { confirmAction, notify } from '../components/Feedback';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{7,15}$/;
 
 const EditProfileScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<any>();
   const { userProfile, updateProfile } = useAuth();
 
@@ -31,10 +34,10 @@ const EditProfileScreen: React.FC = () => {
 
   const handleSave = async () => {
     const name = displayName.trim();
-    if (!name) { notify('錯誤', '請輸入暱稱'); return; }
-    if (name.length < 2) { notify('錯誤', '暱稱至少 2 個字'); return; }
-    if (phone && !PHONE_REGEX.test(phone.trim())) { notify('錯誤', '電話格式不正確'); return; }
-    if (email && !EMAIL_REGEX.test(email.trim())) { notify('錯誤', 'Email 格式不正確'); return; }
+    if (!name) { notify(t('錯誤'), '請輸入暱稱'); return; }
+    if (name.length < 2) { notify(t('錯誤'), '暱稱至少 2 個字'); return; }
+    if (phone && !PHONE_REGEX.test(phone.trim())) { notify(t('錯誤'), '電話格式不正確'); return; }
+    if (email && !EMAIL_REGEX.test(email.trim())) { notify(t('錯誤'), 'Email 格式不正確'); return; }
 
     setSaving(true);
     try {
@@ -43,7 +46,7 @@ const EditProfileScreen: React.FC = () => {
         phone: phone.trim(),
         email: email.trim().toLowerCase(),
       });
-      confirmAction('已儲存', '個人資料已更新', [
+      confirmAction(t('已儲存'), '個人資料已更新', [
         { text: '完成', onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {
@@ -61,28 +64,28 @@ const EditProfileScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.topBar}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.back}>← 返回</Text>
+            <Text style={styles.back}>{t('← 返回')}</Text>
           </TouchableOpacity>
-          <Text style={styles.stepLabel}>編輯資料</Text>
+          <Text style={styles.stepLabel}>{t('編輯資料')}</Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.title}>個人資料</Text>
+          <Text style={styles.title}>{t('個人資料')}</Text>
           <Text style={styles.subtitle}>
             呢啲資料會顯示俾其他用戶睇，同埋用嚟聯絡你
           </Text>
 
-          <Text style={styles.label}>暱稱 *</Text>
+          <Text style={styles.label}>{t('暱稱 *')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="顯示名稱"
+            placeholder={t('顯示名稱')}
             placeholderTextColor={C.textTertiary}
             value={displayName}
             onChangeText={setDisplayName}
             maxLength={30}
           />
 
-          <Text style={styles.label}>電話號碼</Text>
+          <Text style={styles.label}>{t('電話號碼')}</Text>
           <TextInput
             style={styles.input}
             placeholder="+852 6123 4567"
@@ -112,7 +115,7 @@ const EditProfileScreen: React.FC = () => {
           >
             {saving
               ? <ActivityIndicator color="#FFF" />
-              : <Text style={styles.primaryBtnText}>儲存</Text>}
+              : <Text style={styles.primaryBtnText}>{t('儲存')}</Text>}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -120,7 +123,7 @@ const EditProfileScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.surface },
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 40 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
@@ -139,6 +142,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginTop: 8,
   },
   primaryBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
-});
+}))
 
 export default EditProfileScreen;

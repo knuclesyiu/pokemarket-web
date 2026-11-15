@@ -11,6 +11,7 @@
  *   - Re-subscribes when user changes
  */
 import React, { useState, useEffect } from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList,
   ActivityIndicator, Alert,
@@ -23,7 +24,7 @@ import {
   WalletState, WalletTransaction, WalletTxState,
 } from '../services/walletService';
 import { notify } from '../components/Feedback';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type NavProp = NativeStackNavigationProp<any>;
@@ -39,6 +40,8 @@ const STATE_LABELS: Record<EscrowState, { zh: string; color: string; bg: string 
 };
 
 const WalletScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<NavProp>();
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<EscrowState | 'all'>('all');
@@ -94,16 +97,14 @@ const WalletScreen: React.FC = () => {
   ];
 
   const handleTopUp = () => {
-    notify(
-      '充值功能即將推出',
+    notify(t('充值功能即將推出'),
       '我們正在整合 Stripe 信用卡及 FPS 充值管道。\n請期待下次更新，或聯絡客服協助。',
     );
   };
 
   const handleWithdraw = () => {
     if (available <= 0) {
-      notify(
-        '暫時無法提現',
+      notify(t('暫時無法提現'),
         '可用餘額為 HK$ 0。完成交易後賣出嘅卡入咗帳戶，就可以提現。',
       );
       return;
@@ -118,7 +119,7 @@ const WalletScreen: React.FC = () => {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>我的錢包</Text>
+        <Text style={styles.headerTitle}>{t('我的錢包')}</Text>
         <TouchableOpacity style={styles.settingsBtn}>
           <Ionicons name="settings-outline" size={16} color={C.textTertiary} />
         </TouchableOpacity>
@@ -128,30 +129,30 @@ const WalletScreen: React.FC = () => {
       <View style={styles.balanceCard}>
         <View style={styles.balanceHeader}>
           <View>
-            <Text style={styles.balanceLabel}>可提現餘額</Text>
+            <Text style={styles.balanceLabel}>{t('可提現餘額')}</Text>
             <Text style={styles.balanceValue}>
               {loading ? '—' : `HK$ ${available.toLocaleString()}`}
             </Text>
           </View>
           <View style={styles.balanceActions}>
             <TouchableOpacity style={styles.topupBtn} onPress={handleTopUp}>
-              <Text style={styles.topupBtnText}>↑ 充值</Text>
+              <Text style={styles.topupBtnText}>{t('↑ 充值')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.withdrawBtn} onPress={handleWithdraw}>
-              <Text style={styles.withdrawBtnText}>提現 →</Text>
+              <Text style={styles.withdrawBtnText}>{t('提現 →')}</Text>
             </TouchableOpacity>
           </View>
         </View>
         <View style={styles.balanceDivider} />
         <View style={styles.balanceSub}>
           <View style={styles.balanceSubItem}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-closed-outline" size={13} color={C.textTertiary} /><Text style={styles.balanceSubLabel}>擔保中</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-closed-outline" size={13} color={C.textTertiary} /><Text style={styles.balanceSubLabel}>{t('擔保中')}</Text></View>
             <Text style={styles.balanceSubValue}>
               {loading ? '—' : `HK$ ${inEscrow.toLocaleString()}`}
             </Text>
           </View>
           <View style={styles.balanceSubItem}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="wallet-outline" size={15} color={C.textTertiary} /><Text style={styles.balanceSubLabel}>總結餘</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="wallet-outline" size={15} color={C.textTertiary} /><Text style={styles.balanceSubLabel}>{t('總結餘')}</Text></View>
             <Text style={styles.balanceSubValue}>
               {loading ? '—' : `HK$ ${balance.toLocaleString()}`}
             </Text>
@@ -173,7 +174,7 @@ const WalletScreen: React.FC = () => {
       <View style={styles.escrowInfo}>
         <Text style={styles.escrowIcon}>🔐</Text>
         <View style={styles.escrowText}>
-          <Text style={styles.escrowTitle}>資金由平台託付</Text>
+          <Text style={styles.escrowTitle}>{t('資金由平台託付')}</Text>
           <Text style={styles.escrowDesc}>
             買家確認收卡後，款項先由平台持有，交易完成後才轉俾賣家，保障雙方
           </Text>
@@ -185,7 +186,7 @@ const WalletScreen: React.FC = () => {
         <View style={styles.warningBanner}>
           <Ionicons name="warning-outline" size={16} color={C.textTertiary} />
           <View style={styles.warningText}>
-            <Text style={styles.warningTitle}>款項即將自動釋放</Text>
+            <Text style={styles.warningTitle}>{t('款項即將自動釋放')}</Text>
             <Text style={styles.warningDesc}>
               以下款項將於 5 日內自動釋放給賣家，如未收到卡請立即聯絡
             </Text>
@@ -220,12 +221,12 @@ const WalletScreen: React.FC = () => {
         {loading ? (
           <View style={{ alignItems: 'center', paddingVertical: 32 }}>
             <ActivityIndicator color={C.gold} />
-            <Text style={{ color: C.textSecondary, fontSize: 12, marginTop: 8 }}>載入交易記錄…</Text>
+            <Text style={{ color: C.textSecondary, fontSize: 12, marginTop: 8 }}>{t('載入交易記錄…')}</Text>
           </View>
         ) : filtered.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>📭</Text>
-            <Text style={styles.emptyText}>暫時沒有記錄</Text>
+            <Text style={styles.emptyText}>{t('暫時沒有記錄')}</Text>
             <Text style={styles.emptyHint}>
               買賣卡牌後，交易會顯示喺呢度
             </Text>
@@ -273,8 +274,8 @@ const WalletScreen: React.FC = () => {
         <TouchableOpacity style={styles.disputeBanner}>
           <Ionicons name="shield-checkmark-outline" size={15} color={C.textTertiary} />
           <View style={styles.disputeText}>
-            <Text style={styles.disputeTitle}>交易爭議？</Text>
-            <Text style={styles.disputeDesc}>如遇問題，可提出爭議，平台將在 24 小時內審查</Text>
+            <Text style={styles.disputeTitle}>{t('交易爭議？')}</Text>
+            <Text style={styles.disputeDesc}>{t('如遇問題，可提出爭議，平台將在 24 小時內審查')}</Text>
           </View>
           <Text style={styles.disputeArrow}>→</Text>
         </TouchableOpacity>
@@ -285,7 +286,7 @@ const WalletScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -395,6 +396,6 @@ const styles = StyleSheet.create({
   disputeTitle: { color: C.text, fontSize: 13, fontWeight: '700' },
   disputeDesc: { color: C.textSecondary, fontSize: 11, marginTop: 2 },
   disputeArrow: { color: C.gold, fontSize: 18, fontWeight: '700' },
-});
+}))
 
 export default WalletScreen;

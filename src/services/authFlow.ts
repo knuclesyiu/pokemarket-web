@@ -149,8 +149,18 @@ export async function refreshSession(auth: Auth): Promise<string | null> {
   const u = auth.currentUser;
   if (!u) return null;
   try {
-    return await getIdToken(u, /* forceRefresh */ true);
-  } catch {
+    // Not a forced refresh. The SDK refreshes an expired token on its
+    // own, and forcing one on every cold start signs the user out
+    // silently whenever the refresh token has been revoked — the
+    // failure arrives as a rejected promise, the SDK signs the user
+    // out, and the app carries on as a guest with nothing to show
+    // for it.
+    return await getIdToken(u);
+  } catch (e: any) {
+    console.warn(
+      '[auth] could not read the session token:',
+      (e as { code?: string })?.code ?? (e as Error)?.message ?? e,
+    );
     return null;
   }
 }

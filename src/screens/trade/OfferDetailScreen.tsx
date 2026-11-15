@@ -18,7 +18,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { Offer, OfferCard, OfferStatus, TradeCard } from '../../types/trade';
 import { confirmAction, notify } from '../../components/Feedback';
-import { C } from '../../theme';
+import { C, themed } from '../../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type NavProp = NativeStackNavigationProp<any>;
@@ -363,7 +363,7 @@ const OfferDetailScreen: React.FC = () => {
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.surface },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -478,6 +478,6 @@ const styles = StyleSheet.create({
   rejectActionBtnText: { color: C.action, fontSize: 14, fontWeight: '700' },
   cancelActionBtn: { backgroundColor: '#2A0000' },
   cancelActionBtnText: { color: C.action, fontSize: 14, fontWeight: '700' },
-});
+}))
 
 export default OfferDetailScreen;

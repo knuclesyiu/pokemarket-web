@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { httpsCallable, getFunctions } from 'firebase/functions';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const CURRENT_USER_ID = 'placeholder_user';
 
 const NotificationScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<any>();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +80,7 @@ const NotificationScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="notifications-outline" size={18} color={C.textTertiary} /><Text style={styles.headerTitle}>通知</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="notifications-outline" size={18} color={C.textTertiary} /><Text style={styles.headerTitle}>{t('通知')}</Text></View>
         {notifications.filter(n => !n.read).length > 0 && (
           <Text style={styles.unreadCount}>
             {notifications.filter(n => !n.read).length} 未讀
@@ -98,8 +101,8 @@ const NotificationScreen: React.FC = () => {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="notifications-outline" size={18} color={C.textTertiary} />
-              <Text style={styles.emptyTitle}>暂无通知</Text>
-              <Text style={styles.emptySub}>有新消息時再通知你</Text>
+              <Text style={styles.emptyTitle}>{t('暂无通知')}</Text>
+              <Text style={styles.emptySub}>{t('有新消息時再通知你')}</Text>
             </View>
           }
         />
@@ -108,7 +111,7 @@ const NotificationScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -143,6 +146,6 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 56, marginBottom: 16 },
   emptyTitle: { color: C.text, fontSize: 18, fontWeight: '700', marginBottom: 8 },
   emptySub: { color: C.textDisabled, fontSize: 13 },
-});
+}))
 
 export default NotificationScreen;

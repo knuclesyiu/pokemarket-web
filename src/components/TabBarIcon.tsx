@@ -15,7 +15,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-import { C, T } from '../theme';
+import { C, T, themed } from '../theme';
+import { useAppearance } from '../contexts/AppearanceContext';
 
 export type TabIconName =
   | 'market'
@@ -41,6 +42,7 @@ interface Props {
 }
 
 const TabBarIcon: React.FC<Props> = ({ name, focused, label, badge }) => {
+  const { t } = useAppearance();
   const icon = ICONS[name];
   return (
     <View style={styles.wrap}>
@@ -59,13 +61,13 @@ const TabBarIcon: React.FC<Props> = ({ name, focused, label, badge }) => {
         ) : null}
       </View>
       <Text style={[styles.label, focused && styles.labelActive]} numberOfLines={1}>
-        {label}
+        {t(label)}
       </Text>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center', width: 76 },
   label: {
     ...T.caption,
@@ -89,6 +91,6 @@ const styles = StyleSheet.create({
     borderColor: C.surface,
   },
   badgeText: { color: '#FFF', fontSize: 9, fontWeight: '800' },
-});
+}))
 
 export default TabBarIcon;

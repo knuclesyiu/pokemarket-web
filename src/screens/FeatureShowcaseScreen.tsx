@@ -4,13 +4,14 @@
  * Deep layered surfaces with warm gold and ember accents
  */
 import React, { useEffect, useRef } from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
   Dimensions, Animated, Easing,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const { width } = Dimensions.get('window');
@@ -234,6 +235,8 @@ const FeatureCard: React.FC<{ feature: FeatureCard; index: number }> = ({ featur
 };
 
 const FeatureShowcaseScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<any>();
   const { currentUser, isAnonymous, loading } = useAuth();
 
@@ -248,8 +251,8 @@ const FeatureShowcaseScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="card-outline" size={22} color={C.textTertiary} /><Text style={styles.logo}>PokeMarket</Text></View>
-        <Text style={styles.headerSub}>Pokemon 卡片交易平台</Text>
-        <Text style={styles.headerTagline}>安全 ・ 快速 ・ 全球行情</Text>
+        <Text style={styles.headerSub}>{t('Pokemon 卡片交易平台')}</Text>
+        <Text style={styles.headerTagline}>{t('安全 ・ 快速 ・ 全球行情')}</Text>
       </View>
 
       {/* Stats strip — elevated card with gold accents */}
@@ -279,8 +282,8 @@ const FeatureShowcaseScreen: React.FC = () => {
 
         {/* CTA */}
         <View style={styles.ctaSection}>
-          <Text style={styles.ctaTitle}>準備好了嗎？</Text>
-          <Text style={styles.ctaSub}>立即開始你的第一筆安全交易</Text>
+          <Text style={styles.ctaTitle}>{t('準備好了嗎？')}</Text>
+          <Text style={styles.ctaSub}>{t('立即開始你的第一筆安全交易')}</Text>
           <TouchableOpacity style={styles.ctaBtn} onPress={() => {
             if (currentUser) {
               navigation.navigate('Main');
@@ -288,7 +291,7 @@ const FeatureShowcaseScreen: React.FC = () => {
               navigation.navigate('Login');
             }
           }}>
-            <Text style={styles.ctaBtnText}>進入市場 →</Text>
+            <Text style={styles.ctaBtnText}>{t('進入市場 →')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -299,7 +302,7 @@ const FeatureShowcaseScreen: React.FC = () => {
 };
 
 // NEW: Obsidian Gallery design system
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },  // void background
   header: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 20, alignItems: 'center' },
   logo: {
@@ -393,6 +396,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   ctaBtnText: { color: C.void, fontSize: 16, fontWeight: '800' },
-});
+}))
 
 export default FeatureShowcaseScreen;

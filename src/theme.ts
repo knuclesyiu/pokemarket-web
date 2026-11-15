@@ -6,15 +6,51 @@
  * the brand red had to be hunted down by hand. This file is the one
  * place a colour, a radius or a type step is written down.
  *
- * The palette is the "Obsidian Gallery" the app has always used: a
- * near-black violet ground, a gold that only appears where money or
- * rarity is involved, and a single hot red reserved for actions that
- * move the user forward.
+ * Two palettes live here. The dark one is the "Obsidian Gallery" the
+ * app has always used: a near-black violet ground, a gold that only
+ * appears where money or rarity is involved, and a single hot red
+ * reserved for actions that move the user forward. The light one
+ * keeps the same gold and the same red — they are the brand — and
+ * darkens them far enough to stay readable on white.
+ *
+ * `C` is a live view of whichever palette is active, and `themed()`
+ * rebuilds a screen's stylesheet when the palette changes. That is
+ * what lets the theme switch without every screen having to know
+ * about it.
  */
 
+import { StyleSheet } from 'react-native';
 import type { TextStyle } from 'react-native';
 
-export const C = {
+export interface Palette {
+  void: string;
+  surface: string;
+  card: string;
+  elevated: string;
+  border: string;
+  borderActive: string;
+  text: string;
+  textSecondary: string;
+  textTertiary: string;
+  textDisabled: string;
+  gold: string;
+  goldDim: string;
+  goldEdge: string;
+  action: string;
+  actionPressed: string;
+  actionDim: string;
+  ruby: string;
+  up: string;
+  down: string;
+  info: string;
+  warn: string;
+  violet: string;
+  overlay: string;
+}
+
+export type ThemeName = 'dark' | 'light';
+
+export const darkPalette: Palette = {
   void: '#080810',
   surface: '#0E0E1A',
   card: '#14142A',
@@ -38,7 +74,138 @@ export const C = {
   warn: '#F5A623',
   violet: '#8B5CF6',
   overlay: 'rgba(4,4,10,0.82)',
-} as const;
+};
+
+/**
+ * The light palette.
+ *
+ * The ground is a soft grey rather than pure white, so the cards read
+ * as objects sitting on it. The gold and the red are darkened — the
+ * dark palette's versions are tuned for a near-black ground and are
+ * unreadable on white.
+ */
+export const lightPalette: Palette = {
+  void: '#EFEFF4',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  elevated: '#F6F6FA',
+  border: '#E2E2EA',
+  borderActive: '#BDBDCF',
+  text: '#14142A',
+  textSecondary: '#55556E',
+  textTertiary: '#8A8AA6',
+  textDisabled: '#B8B8C8',
+  gold: '#A97A0B',
+  goldDim: 'rgba(169,122,11,0.13)',
+  goldEdge: 'rgba(169,122,11,0.38)',
+  action: '#E11D48',
+  actionPressed: '#BE123C',
+  actionDim: 'rgba(225,29,72,0.10)',
+  ruby: '#E11D48',
+  up: '#0E9F6E',
+  down: '#DC2626',
+  info: '#2563EB',
+  warn: '#B45309',
+  violet: '#7C3AED',
+  overlay: 'rgba(20,20,42,0.45)',
+};
+
+let activePalette: Palette = darkPalette;
+let activeThemeName: ThemeName = 'dark';
+
+/**
+ * The listeners that want to know when the palette changed.
+ *
+ * The theme is a module-level thing rather than React state, because
+ * the root of the app sits *above* the provider that holds the
+ * account's preferences — a context there would never reach it. An
+ * external store reaches everything: the root subscribes to it, so a
+ * change of palette re-renders the whole tree rather than the part
+ * of it that happens to consume a context.
+ */
+const themeListeners = new Set<() => void>();
+
+/** Subscribe to palette changes. Returns the unsubscribe function. */
+export function subscribeTheme(listener: () => void): () => void {
+  themeListeners.add(listener);
+  return () => {
+    themeListeners.delete(listener);
+  };
+}
+
+/** The current theme, for `useSyncExternalStore`. */
+export function getThemeSnapshot(): ThemeName {
+  return activeThemeName;
+}
+
+/** Which palette is active. */
+export function getActiveTheme(): ThemeName {
+  return activeThemeName;
+}
+
+/** The palette that is active right now. */
+export function getActivePalette(): Palette {
+  return activePalette;
+}
+
+/**
+ * Switch the active palette.
+ *
+ * Called when the account's preference is read and when the user
+ * changes it. The screens pick the new colours up on their next
+ * render, which the change of preference itself causes.
+ */
+export function setActiveTheme(name: ThemeName): void {
+  if (name === activeThemeName) return;
+  activeThemeName = name;
+  activePalette = name === 'light' ? lightPalette : darkPalette;
+  themeListeners.forEach(listener => listener());
+}
+
+/**
+ * The colour tokens, as a live view of the active palette.
+ *
+ * `C.text` reads whatever the palette says at the moment it is read,
+ * so a component that renders after the theme changed gets the new
+ * colour without anything having to be told.
+ */
+export const C: Palette = new Proxy({} as Palette, {
+  get: (_target, key: string) =>
+    (activePalette as unknown as Record<string, string>)[key],
+});
+
+/**
+ * A stylesheet that follows the active palette.
+ *
+ * A stylesheet built at module scope freezes the colours it was built
+ * with — the module is evaluated once, and the palette it read is the
+ * palette of that moment. Wrapping the factory here means the sheet is
+ * built again for whichever palette is active, and the build is
+ * remembered per palette so it only happens once per theme.
+ *
+ *     const styles = themed((C) => StyleSheet.create({ ... }));
+ */
+export function themed<T extends Record<string, unknown>>(
+  factory: (c: Palette) => T,
+): T {
+  // The cache belongs to this stylesheet, not to the palette. A cache
+  // keyed by the palette alone is shared by every screen, so the
+  // first screen to be read wins and every other screen reads its
+  // styles out of the wrong sheet — which shows up as a screen with
+  // no styles at all, and no error to point at it.
+  const cache = new WeakMap<Palette, T>();
+
+  return new Proxy({} as T, {
+    get(_target, key: string) {
+      let sheet = cache.get(activePalette);
+      if (!sheet) {
+        sheet = factory(activePalette);
+        cache.set(activePalette, sheet);
+      }
+      return sheet[key];
+    },
+  });
+}
 
 /** Spacing scale. 4pt grid. */
 export const SP = {
@@ -142,10 +309,10 @@ export const T: Record<string, TextStyle> = {
 } as const;
 
 /** Elevation, kept in one place because shadow opacity is easy to overdo. */
-export const SHADOW = {
+export const SHADOW = themed((C) => ({
   card: {
     shadowColor: '#000',
-    shadowOpacity: 0.35,
+    shadowOpacity: C.void === darkPalette.void ? 0.35 : 0.08,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
@@ -157,7 +324,7 @@ export const SHADOW = {
     shadowOffset: { width: 0, height: 0 },
     elevation: 8,
   },
-} as const;
+}));
 
 /** Market direction colour for a 24h change. */
 export function changeColor(change: number): string {

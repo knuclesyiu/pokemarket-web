@@ -1,0 +1,940 @@
+{
+ "(賣家的卡)": [
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "1 日前": [
+  "src/screens/PortfolioScreen.tsx"
+ ],
+ "2 小時前": [
+  "src/screens/PortfolioScreen.tsx"
+ ],
+ "3 日前": [
+  "src/screens/PortfolioScreen.tsx"
+ ],
+ "Biometric 原生支援 FaceID / Fingerprint": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "Day 5 自動發預警告示通知": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "Email + 密碼登入（自動註冊）": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "Email 已被註冊": [
+  "src/screens/auth/RegisterScreen.tsx"
+ ],
+ "FPS 轉數快": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "Firebase Auth 電話 SMS OTP 驗證": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "Firestore 即時訊息，無需刷新": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "Google 登入失敗": [
+  "src/screens/auth/LoginScreen.tsx"
+ ],
+ "Offer 已更新": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "PSA cert 格式不正確（需 7-10 位數字）；BGS 需 8-12 位英數": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "Stripe Connect 托管款項，平台零接觸資金": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "Stripe Connect・秒級結算": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "Stripe 仲有嘢要你填。撳下面繼續，或者檢查返啱啱做咗乜。": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "Stripe 係獨立嘅支付服務商，佢哋會按自己嘅政策審核你嘅資料。PokeMarket 唔會存你嘅銀行資料，亦唔會代你收款 —— 款項由 Stripe 直接轉入你嘅戶口。": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "Stripe 未準備好，請稍後再試": [
+  "src/components/CardPaymentForm.web.tsx"
+ ],
+ "UI 完全支援三種語言即時切換": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "一鍵「放售」直接進入掛牌流程": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "上環": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "下一步：填寫信用卡資料": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "下單失敗": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "中文版": [
+  "src/components/search/SearchBar.tsx"
+ ],
+ "中環": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "主題": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "九龍塘": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "交易 PIN（SHA-256）每筆交易驗證": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "交易保障": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "交易完成": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "交易完成，資金已轉俾賣家": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "以下款項將於 5 日內自動釋放給賣家，如未收到卡請立即聯絡": [
+  "src/screens/WalletScreen.tsx"
+ ],
+ "仲未完成設定": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "佐敦": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "你可以喺錢包提現。有新卡賣出同放款之後，餘額會喺呢度出現。": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "你可以提供不同的卡片或現金作為反提案": [
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "你可以開始買賣 Pokemon 卡片了": [
+  "src/screens/auth/RegisterScreen.tsx"
+ ],
+ "你將以訪客身份繼續瀏覽。建立交易前需要完成註冊。": [
+  "src/screens/auth/RegisterScreen.tsx"
+ ],
+ "你是買家": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "你是賣家": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "你的卡": [
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "你還沒有收到過 Offer": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "你還沒有發出過 Offer": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "保存中...": [
+  "src/screens/PortfolioScreen.tsx"
+ ],
+ "信用卡 / 扣帳卡": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "信用卡資料有問題": [
+  "src/components/CardPaymentForm.web.tsx"
+ ],
+ "信用評價影響用戶排名與曝光": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "價格服務未回應，或者未有卡喺呢個價位帶。向下拉可以重新整理。": [
+  "src/screens/HomeScreen.tsx"
+ ],
+ "儲存失敗": [
+  "src/screens/EditProfileScreen.tsx"
+ ],
+ "免費": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "免費（面交）": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "公開好評率%，雙方均可評價": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "其他": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "出價 →": [
+  "src/screens/CardDetailScreen.tsx"
+ ],
+ "前往註冊": [
+  "src/screens/auth/LoginScreen.tsx"
+ ],
+ "剛剛": [
+  "src/screens/CardDetailScreen.tsx",
+  "src/screens/HomeScreen.tsx"
+ ],
+ "功能模組": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "北角": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "升級": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "升級失敗": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "升級帳戶以開始交易": [
+  "src/screens/auth/LoginScreen.tsx"
+ ],
+ "升級為正式帳戶以建立掛牌、完成交易、保留收藏資料。": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "升級訪客帳戶": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "升級訪客帳戶，建立完整檔案以開始交易": [
+  "src/screens/auth/RegisterScreen.tsx"
+ ],
+ "卡片已交換，查看記錄吧！": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "卡牌與描述不符": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "即時通訊": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "去市場逛逛，發個 Offer 試試！": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "去登入": [
+  "src/screens/auth/RegisterScreen.tsx"
+ ],
+ "向": [
+  "src/screens/WalletScreen.tsx"
+ ],
+ "否": [
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "呢個 Email 已經註冊咗，密碼唔啱": [
+  "src/contexts/AuthContext.tsx"
+ ],
+ "呢啲資料會顯示俾其他用戶睇，同埋用嚟聯絡你": [
+  "src/screens/EditProfileScreen.tsx"
+ ],
+ "品相不符": [
+  "src/components/ReviewBadge.tsx"
+ ],
+ "商品金額": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "在其他地方放卡，就會有人向你發 Offer 了": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "坑口": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "多語言": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "天后": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "太古": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "太子": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "好": [
+  "src/components/Feedback.tsx",
+  "src/screens/WithdrawScreen.tsx",
+  "src/screens/auth/RegisterScreen.tsx"
+ ],
+ "好評差評・建立信任": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "如卡牌與描述不符、未能如期交收，平台將在 24 小時內審查": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "完成": [
+  "src/screens/EditProfileScreen.tsx",
+  "src/screens/SellScreen.tsx"
+ ],
+ "定價": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "實時行情": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "實時計算總市值與帳面 P&L": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "寶琳": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "將軍澳": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "將軍澳線": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "對話": [
+  "App.tsx"
+ ],
+ "尖沙咀": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "已付款": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "已售出": [
+  "src/screens/trade/TradeScreen.tsx"
+ ],
+ "已回覆": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "已完成": [
+  "src/screens/WalletScreen.tsx"
+ ],
+ "已拒絕": [
+  "src/screens/trade/MyOffersScreen.tsx",
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "已接受": [
+  "src/screens/trade/MyOffersScreen.tsx",
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "已發貨": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "已處理": [
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "已讀/未讀狀態指示燈": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "已過期": [
+  "src/screens/trade/TradeScreen.tsx"
+ ],
+ "已驗證": [
+  "src/components/ReviewBadge.tsx"
+ ],
+ "市場": [
+  "App.tsx"
+ ],
+ "市場暫時未有掛牌嘅卡。撳下面「全部」睇現貨價格，或者自己掛一張。": [
+  "src/screens/HomeScreen.tsx"
+ ],
+ "延長失敗": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "彩虹": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "待回覆": [
+  "src/screens/trade/MyOffersScreen.tsx",
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "待接受還價": [
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "待確認": [
+  "src/screens/WalletScreen.tsx"
+ ],
+ "快件運輸中": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "成交記錄完整保存，随時查閱": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "成交！": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "我": [
+  "src/screens/chat/ChatDetailScreen.tsx"
+ ],
+ "我收到的": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "我發出的": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "我的": [
+  "App.tsx"
+ ],
+ "或者用網頁版完成呢筆交易。": [
+  "src/components/CardPaymentForm.tsx"
+ ],
+ "所有價格即時轉換為港幣（HKD）": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "所有市場資訊、價格貨幣自動本地化": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "所有評價存入區塊鏈般不可篡改日誌": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "手機版暫時未支援信用卡付款。請改用「FPS 轉數快」付款，": [
+  "src/components/CardPaymentForm.tsx"
+ ],
+ "手機版請改用「FPS 轉數快」付款，即時轉帳一樣方便。": [
+  "src/components/CardPaymentForm.tsx"
+ ],
+ "手機（接收驗證短訊）": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "持倉成本・帳面盈虧": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "掛牌列表": [
+  "src/screens/CardDetailScreen.tsx"
+ ],
+ "掛牌成功！": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "揀卡": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "提交失敗": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "提現失敗": [
+  "src/screens/WithdrawScreen.tsx"
+ ],
+ "提現由 Stripe 處理，款項直接轉入你登記嘅銀行戶口（一般 1–3 個工作日）。 PokeMarket 唔會代收代付，平台只收固定服務費。": [
+  "src/screens/WithdrawScreen.tsx"
+ ],
+ "提現需要一個 Stripe 收款帳戶。設定好之後，賣卡收到嘅錢就可以直接轉去你嘅銀行戶口。": [
+  "src/screens/WithdrawScreen.tsx"
+ ],
+ "搵唔到相符嘅卡牌": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "操作失敗": [
+  "src/screens/trade/MyOffersScreen.tsx",
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "支付結算": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "支援信用卡/轉數快/FPS 多種方式": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "支援文字、圖片、報價訊息類型": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "收到卡後，請檢查卡牌狀態再確認。如有問題可提出爭議。": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "收到爛卡/假卡": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "收款帳戶已設定 ✓": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "收款帳戶已設定 ✓ · 點擊查看": [
+  "src/screens/WalletScreen.tsx"
+ ],
+ "收藏": [
+  "App.tsx"
+ ],
+ "收藏空空如也 — 先去「我的收藏」加入卡牌，就可以喺度快速放售": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "收藏管理": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "改用 Email": [
+  "src/screens/auth/LoginScreen.tsx"
+ ],
+ "數據源：TCGdex Cardmarket trend / 7日 / 30日均價 線性插值": [
+  "src/screens/CardDetailScreen.tsx"
+ ],
+ "新會員": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "日版": [
+  "src/components/search/SearchBar.tsx"
+ ],
+ "旺角": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "是，取消 Offer": [
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "暫時未有掛牌，成為第一個放售呢張卡嘅人吧 🎴": [
+  "src/screens/CardDetailScreen.tsx"
+ ],
+ "更改交易密碼": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "未來可擴展至日語、英語市場": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "未有升跌數據": [
+  "src/screens/HomeScreen.tsx"
+ ],
+ "未有當前用戶": [
+  "src/contexts/AuthContext.tsx"
+ ],
+ "未知": [
+  "src/screens/trade/MakeOfferScreen.tsx"
+ ],
+ "未知卡片": [
+  "src/screens/trade/MyOffersScreen.tsx",
+  "src/screens/trade/OfferDetailScreen.tsx",
+  "src/screens/trade/TradeScreen.tsx"
+ ],
+ "未知用戶": [
+  "src/screens/chat/ChatDetailScreen.tsx"
+ ],
+ "未能如期交收": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "未設定": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "未設定 Stripe publishable key，暫時無法用信用卡付款。請改用 FPS 轉數快。": [
+  "src/components/CardPaymentForm.web.tsx"
+ ],
+ "本人名下的銀行戶口": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "查唔到狀態": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "查看我的 Offer": [
+  "src/screens/trade/MakeOfferScreen.tsx"
+ ],
+ "查看收藏": [
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "款項由 PokeMarket 托管，收卡確認後自動轉俾賣家": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "款項由平台代為保管，收卡確認後先轉俾賣家，如有问题可提出争议": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "款項由平台托管": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "款項由平台托管，確認收貨後釋放": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "正面": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "此卡暫無歷史價格資料": [
+  "src/screens/CardDetailScreen.tsx"
+ ],
+ "歷史價格": [
+  "src/screens/CardDetailScreen.tsx"
+ ],
+ "每 6 小時自動同步 15 張熱門卡": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "每次交易釋放款項時都需要輸入呢個密碼": [
+  "src/screens/auth/RegisterScreen.tsx"
+ ],
+ "每筆交易完成後可留 👍 好評 或 👎 差評": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "每筆交易手續費透明，無隱藏收費": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "每筆訂單自動創建 Chat Thread": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "油塘": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "油麻地": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "深水埗": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "深色": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "淺色": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "港島線": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "港股開市": [
+  "src/screens/HomeScreen.tsx"
+ ],
+ "灣仔": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "炮台山": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "無": [
+  "src/screens/trade/MakeOfferScreen.tsx"
+ ],
+ "熱賣中": [
+  "src/screens/trade/TradeScreen.tsx"
+ ],
+ "爭議時可提交 Dispute，款項暫停釋放": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "用戶認證": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "登入即表示同意《用戶協議》及《隱私政策》": [
+  "src/screens/auth/LoginScreen.tsx"
+ ],
+ "登入失敗": [
+  "src/screens/auth/LoginScreen.tsx"
+ ],
+ "登出失敗": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "發出還價 💬": [
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "發送 Offer 🚀": [
+  "src/screens/trade/MakeOfferScreen.tsx"
+ ],
+ "發送失敗": [
+  "src/screens/auth/LoginScreen.tsx",
+  "src/screens/trade/MakeOfferScreen.tsx"
+ ],
+ "睇下你嘅收款帳戶設定咗未。": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "確認": [
+  "src/screens/ProfileScreen.tsx",
+  "src/screens/SellScreen.tsx"
+ ],
+ "確認並提交品相審核": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "確認升級": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "確認失敗": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "確認接受": [
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "確認放售": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "確認添加": [
+  "src/screens/PortfolioScreen.tsx"
+ ],
+ "私訊": [
+  "src/screens/chat/ChatListScreen.tsx"
+ ],
+ "秒級更新・覆蓋全球": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "競投 →": [
+  "src/screens/CardDetailScreen.tsx"
+ ],
+ "等待發貨": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "等待資金釋放": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "細節圖": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "結算貨幣": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "總手續費": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "繁中・簡中・English": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "繼續設定 →": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "缺少 orderId": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "背面": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "與市價相同": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "若你的卡片市值不足目標卡，可補貼現金差額": [
+  "src/screens/trade/MakeOfferScreen.tsx"
+ ],
+ "英文版": [
+  "src/components/search/SearchBar.tsx"
+ ],
+ "荃灣線": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "荔枝角": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "藍田": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "處理中...": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "觀塘": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "觀塘線": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "訂單不存在或已刪除": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "訊息": [
+  "App.tsx"
+ ],
+ "託付中": [
+  "src/screens/WalletScreen.tsx"
+ ],
+ "設定 Stripe 收款戶口，賣出嘅卡收到嘅錢會直接入你嘅銀行": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "設定咗之後你賣卡收到嘅錢先會入到你嘅戶口。Stripe 會帶你去一個官方頁面填資料，大約 3 分鐘。": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "設定失敗": [
+  "src/screens/ProfileScreen.tsx",
+  "src/screens/auth/RegisterScreen.tsx"
+ ],
+ "設定收款帳戶先可以提現 →": [
+  "src/screens/WalletScreen.tsx"
+ ],
+ "設定新密碼（最少 6 位）": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "註冊失敗": [
+  "src/screens/auth/RegisterScreen.tsx"
+ ],
+ "評審中": [
+  "src/components/ReviewBadge.tsx"
+ ],
+ "語言偏好存於用戶個人設定": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "請先填寫信用卡資料": [
+  "src/components/CardPaymentForm.web.tsx",
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "請填寫 slab 認證編號": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "請描述你遇到的問題...": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "請稍候片刻再試": [
+  "src/contexts/AuthContext.tsx"
+ ],
+ "請稍後再試": [
+  "src/screens/CheckoutScreen.tsx",
+  "src/screens/EditProfileScreen.tsx",
+  "src/screens/OrderStatusScreen.tsx",
+  "src/screens/ProfileScreen.tsx",
+  "src/screens/SellerOnboardingScreen.tsx",
+  "src/screens/WithdrawScreen.tsx",
+  "src/screens/auth/LoginScreen.tsx",
+  "src/screens/auth/RegisterScreen.tsx"
+ ],
+ "請稍後重試": [
+  "src/screens/trade/MakeOfferScreen.tsx",
+  "src/screens/trade/MyOffersScreen.tsx",
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "請詳細描述問題，並上傳卡牌相片作為證據": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "請輸入 6 位數字交易密碼": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "請輸入有效金額": [
+  "src/screens/WithdrawScreen.tsx"
+ ],
+ "讓對方知道你是邊個": [
+  "src/screens/auth/RegisterScreen.tsx"
+ ],
+ "買家": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "買家付款 → 資金託付 → 確認 → 自動結算": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "買家可延長期限最多 14 日": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "買家確認收卡後，款項先由平台持有，交易完成後才轉俾賣家，保障雙方": [
+  "src/screens/WalletScreen.tsx"
+ ],
+ "買賣卡牌後，交易會顯示喺呢度": [
+  "src/screens/WalletScreen.tsx"
+ ],
+ "買賣雙方即時溝通": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "資料未完整": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "資金將自動釋放俾賣家，交易完成！": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "資金已釋放": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "資金已釋放俾賣家": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "資金托管・零風險交易": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "資金由平台託付中": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "資金託付保障": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "賣俾": [
+  "src/screens/WalletScreen.tsx"
+ ],
+ "賣家": [
+  "src/screens/CardDetailScreen.tsx",
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "賣家準備中": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "賣家無回應": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "載入中…": [
+  "src/screens/CardDetailScreen.tsx"
+ ],
+ "載入失敗，請稍後重試": [
+  "src/screens/trade/TradeScreen.tsx"
+ ],
+ "輸入 Email 與密碼以升級帳戶，現有資料將會保留。": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "輸入至少 2 個字搜尋卡牌": [
+  "src/screens/SellScreen.tsx"
+ ],
+ "追蹤所有持有卡牌的均價與數量": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "透過 Stripe 加密處理。款項先由平台託管，收卡後釋放。": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "運費": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "運費（順豐到付）": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "選擇登入方式": [
+  "src/screens/auth/LoginScreen.tsx"
+ ],
+ "還價": [
+  "src/screens/trade/MyOffersScreen.tsx",
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "釋放失敗": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "金鐘": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "銅鑼灣": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "錢包": [
+  "App.tsx"
+ ],
+ "鑽石山": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "長沙灣": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "開唔到 Stripe 設定頁": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "開始設定收款帳戶 →": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "隱藏密碼": [
+  "src/screens/auth/LoginScreen.tsx"
+ ],
+ "電話・Email・生物識別": [
+  "src/screens/FeatureShowcaseScreen.tsx"
+ ],
+ "面交": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "順豐快遞": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "顯示密碼": [
+  "src/screens/auth/LoginScreen.tsx"
+ ],
+ "香港身份證（用於 KYC）": [
+  "src/screens/SellerOnboardingScreen.tsx"
+ ],
+ "驗證失敗": [
+  "src/screens/auth/LoginScreen.tsx"
+ ],
+ "驗證碼不正確": [
+  "src/screens/auth/LoginScreen.tsx"
+ ],
+ "鰂魚涌": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "黃大仙": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "點擊確認即表示同意款項由 PokeMarket 托管，收卡確認後自動轉俾賣家": [
+  "src/screens/CheckoutScreen.tsx"
+ ],
+ "🇨🇳 簡體中文": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "🇭🇰 繁體中文": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "📤 你的 Offer": [
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "📤 發出的": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "📥 收到的": [
+  "src/screens/trade/MyOffersScreen.tsx"
+ ],
+ "📦 順豐快遞": [
+  "src/screens/OrderStatusScreen.tsx"
+ ],
+ "🔐 設定交易密碼": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "🔐 設定密碼": [
+  "src/screens/ProfileScreen.tsx"
+ ],
+ "🚫 已取消": [
+  "src/screens/trade/MyOffersScreen.tsx",
+  "src/screens/trade/OfferDetailScreen.tsx"
+ ],
+ "🤝 面交": [
+  "src/screens/OrderStatusScreen.tsx"
+ ]
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
   StyleSheet, ActivityIndicator,
@@ -7,7 +8,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { PokemonCard } from '../../types';
 import { searchCardsByName, priceDataToCard } from '../../services/cardPriceService';
-import { C, R, SP, T } from '../../theme';
+import { C, R, SP, T, themed } from '../../theme';
 
 type VersionFilter = '全部' | '日版' | '中文版' | '英文版';
 
@@ -42,6 +43,8 @@ const SearchBar: React.FC<Props> = ({
   onLoadingChange,
   placeholder = '搜尋卡名、系列、稀有度…',
 }) => {
+  const { t } = useAppearance();
+
   const [query, setQuery] = useState('');
   const [activeVersion, setActiveVersion] = useState<VersionFilter>('全部');
   const [loading, setLoading] = useState(false);
@@ -125,7 +128,7 @@ const SearchBar: React.FC<Props> = ({
               onPress={() => setQuery('')}
               style={styles.searchAction}
               accessibilityRole="button"
-              accessibilityLabel="清除搜尋"
+              accessibilityLabel={t('清除搜尋')}
             >
               <Ionicons name="close-circle" size={18} color={C.textTertiary} />
             </TouchableOpacity>
@@ -169,7 +172,7 @@ const SearchBar: React.FC<Props> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: {
     paddingHorizontal: SP.lg,
     marginBottom: SP.md,
@@ -213,6 +216,6 @@ const styles = StyleSheet.create({
   },
   versionText: { ...T.caption, color: C.textSecondary },
   versionTextActive: { color: C.void, fontWeight: '700' },
-});
+}))
 
 export default SearchBar;

@@ -10,6 +10,7 @@
  *   - Countdown resets on OTP error so the user can immediately retry
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
@@ -18,12 +19,14 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import { confirmAction, notify } from '../../components/Feedback';
-import { C, R, SP, T } from '../../theme';
+import { C, R, SP, T, themed } from '../../theme';
 
 const PHONE_REGEX = /^\+?[0-9]{7,15}$/;
 const IS_NATIVE = typeof window === 'undefined';
 
 const LoginScreen: React.FC = () => {
+  const { t } = useAppearance();
+
   const navigation = useNavigation<any>();
   const {
     signInWithPhone, signInWithEmail, signInWithGoogle,
@@ -64,7 +67,7 @@ const LoginScreen: React.FC = () => {
 
   const handleSendOTP = async () => {
     if (!PHONE_REGEX.test(phone)) {
-      notify('錯誤', '請輸入有效電話號碼（例：+852****4567）');
+      notify(t('錯誤'), '請輸入有效電話號碼（例：+852****4567）');
       return;
     }
     setLoading(true);
@@ -75,8 +78,7 @@ const LoginScreen: React.FC = () => {
       setCountdown(60);
     } catch (e: any) {
       if (isPhoneProviderDisabled(e)) {
-        confirmAction(
-          '電話登入未啟用',
+        confirmAction(t('電話登入未啟用'),
           '此 App 尚未啟用電話登入，請改用 Email 登入，或聯絡管理員。',
           [{ text: '改用 Email', onPress: () => setMode('email') }, { text: '取消' }],
         );
@@ -93,7 +95,7 @@ const LoginScreen: React.FC = () => {
 
   const handleVerifyOTP = async () => {
     if (!confirmResult || otp.length < 6) {
-      notify('錯誤', '請輸入 6 位驗證碼');
+      notify(t('錯誤'), '請輸入 6 位驗證碼');
       return;
     }
     setLoading(true);
@@ -111,7 +113,7 @@ const LoginScreen: React.FC = () => {
 
   const handleEmailLogin = async () => {
     if (!email || !password) {
-      notify('錯誤', '請填寫 Email 及密碼');
+      notify(t('錯誤'), '請填寫 Email 及密碼');
       return;
     }
     setLoading(true);
@@ -119,8 +121,7 @@ const LoginScreen: React.FC = () => {
       const result = await signInWithEmail(email.trim().toLowerCase(), password);
       if (result.kind === 'needs_signup') {
         // User doesn't exist — offer explicit signup rather than auto-creating
-        confirmAction(
-          '帳戶未註冊',
+        confirmAction(t('帳戶未註冊'),
           `未有此 Email 帳戶。是否前往註冊？`,
           [
             { text: '前往註冊', onPress: () => navigation.navigate('Register') },
@@ -161,11 +162,11 @@ const LoginScreen: React.FC = () => {
           <Text style={styles.brandName}>
             Poke<Text style={styles.brandAccent}>Market</Text>
           </Text>
-          <Text style={styles.brandTag}>寶可夢卡 · 港版買賣平台</Text>
+          <Text style={styles.brandTag}>{t('寶可夢卡 · 港版買賣平台')}</Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.title}>登入</Text>
+          <Text style={styles.title}>{t('登入')}</Text>
           <Text style={styles.subtitle}>
             {isAnonymous ? '升級帳戶以開始交易' : '選擇登入方式'}
           </Text>
@@ -188,9 +189,7 @@ const LoginScreen: React.FC = () => {
                   styles.toggleTxt,
                   mode === 'phone' ? styles.toggleTxtActive : null,
                 ]}
-              >
-                電話
-              </Text>
+              >{t('電話')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.toggleBtn, mode === 'email' ? styles.toggleBtnActive : null]}
@@ -239,7 +238,7 @@ const LoginScreen: React.FC = () => {
             <>
               {!otpSent ? (
                 <>
-                  <Text style={styles.label}>電話號碼</Text>
+                  <Text style={styles.label}>{t('電話號碼')}</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="+852 6123 4567"
@@ -253,17 +252,17 @@ const LoginScreen: React.FC = () => {
                     {loading ? (
                       <ActivityIndicator color="#FFF" />
                     ) : (
-                      <Text style={styles.primaryBtnText}>發送驗證碼</Text>
+                      <Text style={styles.primaryBtnText}>{t('發送驗證碼')}</Text>
                     )}
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
-                  <Text style={styles.label}>輸入驗證碼</Text>
+                  <Text style={styles.label}>{t('輸入驗證碼')}</Text>
                   <Text style={styles.codeHint}>已發送至 {phone}</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="6 位數字"
+                    placeholder={t('6 位數字')}
                     placeholderTextColor={C.textTertiary}
                     keyboardType="number-pad"
                     maxLength={6}
@@ -274,14 +273,14 @@ const LoginScreen: React.FC = () => {
                     {loading ? (
                       <ActivityIndicator color="#FFF" />
                     ) : (
-                      <Text style={styles.primaryBtnText}>驗證登入</Text>
+                      <Text style={styles.primaryBtnText}>{t('驗證登入')}</Text>
                     )}
                   </TouchableOpacity>
                   {countdown > 0 ? (
                     <Text style={styles.resend}>{countdown}s 後可重發</Text>
                   ) : (
                     <TouchableOpacity onPress={handleSendOTP}>
-                      <Text style={styles.resendLink}>重發驗證碼</Text>
+                      <Text style={styles.resendLink}>{t('重發驗證碼')}</Text>
                     </TouchableOpacity>
                   )}
                 </>
@@ -303,7 +302,7 @@ const LoginScreen: React.FC = () => {
                 value={email}
                 onChangeText={setEmail}
               />
-              <Text style={styles.label}>密碼</Text>
+              <Text style={styles.label}>{t('密碼')}</Text>
               <View style={styles.passwordRow}>
                 <TextInput
                   style={[styles.input, styles.passwordInput]}
@@ -331,11 +330,11 @@ const LoginScreen: React.FC = () => {
                 {loading ? (
                   <ActivityIndicator color="#FFF" />
                 ) : (
-                  <Text style={styles.primaryBtnText}>登入</Text>
+                  <Text style={styles.primaryBtnText}>{t('登入')}</Text>
                 )}
               </TouchableOpacity>
               <TouchableOpacity style={styles.linkBtn} onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.linkText}>未有帳戶？立即註冊 →</Text>
+                <Text style={styles.linkText}>{t('未有帳戶？立即註冊 →')}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -346,7 +345,7 @@ const LoginScreen: React.FC = () => {
               {IS_NATIVE ? (
                 <View style={styles.googleDisabled}>
                   <Ionicons name="phone-portrait-outline" size={22} color={C.warn} />
-                  <Text style={styles.googleDisabledTitle}>手機版尚未支援</Text>
+                  <Text style={styles.googleDisabledTitle}>{t('手機版尚未支援')}</Text>
                   <Text style={styles.googleDisabledText}>
                     Google 登入需要安裝額外的 native SDK。{'\n'}
                     請改用 Email 登入或到網頁版體驗。
@@ -355,7 +354,7 @@ const LoginScreen: React.FC = () => {
                     style={styles.primaryBtn}
                     onPress={() => setMode('email')}
                   >
-                    <Text style={styles.primaryBtnText}>改用 Email →</Text>
+                    <Text style={styles.primaryBtnText}>{t('改用 Email →')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -374,14 +373,14 @@ const LoginScreen: React.FC = () => {
                   ) : (
                     <View style={styles.googleBtnInner}>
                       <Ionicons name="logo-google" size={18} color={C.text} />
-                      <Text style={styles.googleBtnText}>用 Google 帳戶登入</Text>
+                      <Text style={styles.googleBtnText}>{t('用 Google 帳戶登入')}</Text>
                     </View>
                   )}
                 </TouchableOpacity>
               )}
               {!IS_NATIVE && (
                 <TouchableOpacity style={styles.linkBtn} onPress={() => setMode('email')}>
-                  <Text style={styles.linkText}>改用 Email 登入 →</Text>
+                  <Text style={styles.linkText}>{t('改用 Email 登入 →')}</Text>
                 </TouchableOpacity>
               )}
             </>
@@ -396,7 +395,7 @@ const LoginScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.void },
   scroll: {
     flexGrow: 1,
@@ -549,6 +548,6 @@ const styles = StyleSheet.create({
     marginTop: SP.xl,
     lineHeight: 16,
   },
-});
+}))
 
 export default LoginScreen;

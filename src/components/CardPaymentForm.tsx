@@ -17,8 +17,9 @@
  * payment method in the app.
  */
 import React from 'react';
+import { useAppearance } from '../contexts/AppearanceContext';
 import { View, Text, StyleSheet } from 'react-native';
-import { C } from '../theme';
+import { C, themed } from '../theme';
 
 export type GetPaymentMethodId = () => Promise<string | null>;
 
@@ -33,6 +34,8 @@ interface Props {
 }
 
 const CardPaymentForm: React.FC<Props> = ({ onPaymentMethodReady }) => {
+  const { t } = useAppearance();
+
   React.useEffect(() => {
     onPaymentMethodReady?.(() =>
       Promise.reject(
@@ -47,7 +50,7 @@ const CardPaymentForm: React.FC<Props> = ({ onPaymentMethodReady }) => {
   return (
     <View style={styles.wrap}>
       <Text style={styles.icon}>💳</Text>
-      <Text style={styles.title}>信用卡付款暫時只支援網頁版</Text>
+      <Text style={styles.title}>{t('信用卡付款暫時只支援網頁版')}</Text>
       <Text style={styles.body}>
         手機版請改用「FPS 轉數快」付款，即時轉帳一樣方便。
       </Text>
@@ -55,7 +58,7 @@ const CardPaymentForm: React.FC<Props> = ({ onPaymentMethodReady }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = themed((C) => StyleSheet.create({
   wrap: {
     alignItems: 'center',
     paddingVertical: 24,
@@ -68,6 +71,6 @@ const styles = StyleSheet.create({
   icon: { fontSize: 32, marginBottom: 12 },
   title: { color: C.text, fontSize: 15, fontWeight: '700', marginBottom: 6, textAlign: 'center' },
   body: { color: C.textSecondary, fontSize: 13, lineHeight: 20, textAlign: 'center' },
-});
+}))
 
 export default CardPaymentForm;
