@@ -48,10 +48,15 @@ export const stripeWebhook = functions.onRequest(
   }
 
   try {
+    // A webhook that answers 5xx is retried by Stripe for three days
+    // and then the endpoint is switched off. An event whose shape we
+    // do not recognise is never going to be recognisable on a retry,
+    // so it is acknowledged rather than retried — only a failed write
+    // is worth another attempt.
     switch (event.type) {
       case 'payment_intent.succeeded': {
-        const pi = event.data.object as Stripe.PaymentIntent;
-        const orderId = pi.metadata.orderId;
+        const pi = (event.data?.object ?? {}) as Stripe.PaymentIntent;
+        const orderId = pi.metadata?.orderId;
         if (!orderId) {
           console.warn('[stripeWebhook] no orderId in metadata');
           break;
@@ -65,7 +70,7 @@ export const stripeWebhook = functions.onRequest(
         // Update buyer's wallet pendingEscrow. The amount is what the
         // buyer actually paid — the card price plus the fees — and it
         // is held until the release.
-        const buyerId = pi.metadata.buyerId;
+        const buyerId = pi.metadata?.buyerId;
         if (buyerId) {
           await db.doc(`users/${buyerId}/wallet/main`).set({
             pendingEscrow: FieldValue.increment(pi.amount / 100),
@@ -76,8 +81,8 @@ export const stripeWebhook = functions.onRequest(
         break;
       }
       case 'payment_intent.payment_failed': {
-        const pi = event.data.object as Stripe.PaymentIntent;
-        const orderId = pi.metadata.orderId;
+        const pi = (event.data?.object ?? {}) as Stripe.PaymentIntent;
+        const orderId = pi.metadata?.orderId;
         if (orderId) {
           await db.doc(`orders/${orderId}`).update({
             status: 'payment_failed',
@@ -89,14 +94,14 @@ export const stripeWebhook = functions.onRequest(
       }
       case 'transfer.created': {
         // Funds released from platform to seller's Connect account
-        const transfer = event.data.object as Stripe.Transfer;
+        const transfer = (event.data?.object ?? {}) as Stripe.Transfer;
         // Optional: log this for audit
         console.log(`[stripeWebhook] transfer ${transfer.id} created: ${transfer.amount}`);
         break;
       }
       case 'charge.refunded': {
         // Refund processed — flip order to 'refunded' and adjust wallets
-        const charge = event.data.object as Stripe.Charge;
+        const charge = (event.data?.object ?? {}) as Stripe.Charge;
         const piId = charge.payment_intent as string;
         if (piId) {
           // Look up order by paymentIntentId
@@ -140,8 +145,16 @@ export const stripeWebhook = functions.onRequest(
     }
     res.status(200).json({ received: true });
   } catch (err) {
+    // Only a failure to write is worth a retry. Anything the shape
+    // check above could not catch is a bug, and a retry would hit the
+    // same bug — but the event still has to be acknowledged, or Stripe
+    // will keep the endpoint disabled.
     console.error('[stripeWebhook] handler error:', err);
-    res.status(500).send('Handler error');
+    const malformed = err instanceof TypeError;
+    res.status(malformed ? 200 : 500).json({
+      received: !malformed,
+      error: malformed ? 'malformed event payload' : 'handler error',
+    });
   }
 },
 );;
