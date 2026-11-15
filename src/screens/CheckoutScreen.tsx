@@ -78,12 +78,15 @@ const CheckoutScreen: React.FC = () => {
     }
     setSubmitting(true);
     try {
-      // 1. Ask Cloud Function to create the PaymentIntent (server creates
-      //    Stripe intent with application_fee + transfer_data.destination
-      //    so funds are escrowed on the platform account).
+      // 1. Ask Cloud Function to create the PaymentIntent. The server
+      //    works out the fees and charges the buyer; we send the card
+      //    price and the shipping charge, not a total of our own.
+      //    The charge stays on the platform account, so Stripe holds
+      //    the money until the buyer confirms the card.
       const { clientSecret, paymentIntentId } = await createEscrowPayment({
         orderId: '', // server fills in
-        amountHkd: total,
+        cardPriceHkd: card.price,
+        deliveryFeeHkd: deliveryFee,
         sellerId: route.params.seller ?? '',
         deliveryMethod: delivery,
         cardName: card.name,

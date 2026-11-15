@@ -48,7 +48,10 @@ done
 
 echo
 echo "  Redeploying the functions so the new secrets are bound:"
-"$CLI" deploy --only functions --project "$PROJECT" --non-interactive 2>&1 | grep -E "✔ Deploy complete|Error" | sed 's/^/    /'
+# `grep` that matches nothing exits 1, and with `set -o pipefail` that
+# would abort the script before the check below — so the exit status is
+# deliberately ignored here.
+"$CLI" deploy --only functions --project "$PROJECT" --non-interactive 2>&1   | grep -E "✔ Deploy complete|Error|error TS" | sed 's/^/    /' || true
 
 echo
 echo "  Check the webhook endpoint answers:"

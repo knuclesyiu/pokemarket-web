@@ -25,7 +25,7 @@ import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
-import { stripeClient } from '../shared/stripe';
+import { stripeClient, stripeSecretKey } from '../shared/stripe';
 
 const db = admin.firestore();
 
@@ -54,7 +54,9 @@ async function sellerAccountId(uid: string): Promise<string | null> {
  * seller who abandons onboarding halfway can pick up where they left
  * off without ending up with two accounts.
  */
-export const createSellerAccount = functions.onCall(async (request) => {
+export const createSellerAccount = functions.onCall(
+  { secrets: [stripeSecretKey] },
+  async (request) => {
   if (!request.auth) {
     throw new functions.HttpsError('unauthenticated', '需要登入');
   }
@@ -96,16 +98,35 @@ export const createSellerAccount = functions.onCall(async (request) => {
   let accountId = await sellerAccountId(uid);
 
   if (!accountId) {
-    const account = await stripeClient().accounts.create({
-      type: 'express',
-      email: address,
-      // The platform moves the money to the seller with a transfer,
-      // so the seller needs the transfer capability — not card
-      // payments of their own.
-      capabilities: { transfers: { requested: true } },
-      business_type: 'individual',
-      metadata: { firebaseUid: uid },
-    });
+    let account;
+    try {
+      account = await stripeClient().accounts.create({
+        type: 'express',
+        email: address,
+        // The platform moves the money to the seller with a transfer,
+        // so the seller needs the transfer capability — not card
+        // payments of their own.
+        capabilities: { transfers: { requested: true } },
+        business_type: 'individual',
+        metadata: { firebaseUid: uid },
+      });
+    } catch (err: any) {
+      // Stripe refuses to create a connected account until the
+      // platform has signed up for Connect. That is a dashboard
+      // setting, and the seller cannot fix it — so say so plainly
+      // instead of returning a five-hundred.
+      const message = String(err?.message ?? '');
+      if (/signed up for Connect/i.test(message)) {
+        throw new functions.HttpsError(
+          'failed-precondition',
+          '平台未開通 Stripe Connect，需要管理員到 dashboard 開通先可以開通賣家收款帳戶。',
+        );
+      }
+      throw new functions.HttpsError(
+        'internal',
+        `開通收款帳戶失敗：${message.slice(0, 160)}`,
+      );
+    }
     accountId = account.id;
     await sellerRef.set(
       {
@@ -127,7 +148,8 @@ export const createSellerAccount = functions.onCall(async (request) => {
   });
 
   return { accountId, onboardingUrl: link.url };
-});
+},
+);;
 
 /**
  * Whether the caller has finished Stripe onboarding.
@@ -136,7 +158,9 @@ export const createSellerAccount = functions.onCall(async (request) => {
  * may have finished the form after the last time this ran, and the
  * stored copy would still say they had not.
  */
-export const getSellerOnboardingStatus = functions.onCall(async (request) => {
+export const getSellerOnboardingStatus = functions.onCall(
+  { secrets: [stripeSecretKey] },
+  async (request) => {
   if (!request.auth) {
     throw new functions.HttpsError('unauthenticated', '需要登入');
   }
@@ -198,7 +222,8 @@ export const getSellerOnboardingStatus = functions.onCall(async (request) => {
   }
 
   return { onboarded, accountId, onboardingUrl, stripeConfigured: true };
-});
+},
+);;
 
 /* ── withdrawal ─────────────────────────────────────────────── */
 
@@ -214,7 +239,9 @@ export const getSellerOnboardingStatus = functions.onCall(async (request) => {
  * connected account; Stripe then pays it out to the seller's bank
  * account on its own schedule.
  */
-export const createWithdrawal = functions.onCall(async (request) => {
+export const createWithdrawal = functions.onCall(
+  { secrets: [stripeSecretKey] },
+  async (request) => {
   if (!request.auth) {
     throw new functions.HttpsError('unauthenticated', '需要登入');
   }
@@ -261,6 +288,23 @@ export const createWithdrawal = functions.onCall(async (request) => {
     );
   }
 
+  // Which charges this money came from. Naming one as the source lets
+  // Stripe move the money before it has cleared, so the platform does
+  // not have to hold a float of its own. Only a single source that
+  // covers the whole amount can be named — Stripe takes the whole
+  // charge against the transfer, not part of it.
+  const sourcesSnap = await db
+    .collection('payout_sources')
+    .where('sellerId', '==', uid)
+    .where('remainingHkd', '>', 0)
+    .orderBy('createdAt', 'asc')
+    .limit(5)
+    .get();
+  const sources = sourcesSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+  const exactSource = sources.find(
+    (src) => Math.abs(Number(src.remainingHkd) - amountHkd) < 0.005 && src.paymentIntentId,
+  );
+
   // A Stripe payout cannot name a connected account: it pays out to a
   // bank account that belongs to the account making the payout. The
   // right call is a transfer, which moves the money from the
@@ -268,17 +312,36 @@ export const createWithdrawal = functions.onCall(async (request) => {
   // then pays it out to the seller's bank on their own schedule.
   //
   // The idempotency key means a retried request cannot pay twice.
-  const transfer = await stripeClient().transfers.create(
-    {
-      amount: Math.round(amountHkd * 100),
-      currency: 'hkd',
-      destination: onFile,
-      metadata: { firebaseUid: uid, sellerId: uid },
-    },
-    {
-      idempotencyKey: `withdrawal-${uid}-${Date.now()}`,
-    },
-  );
+  let transfer;
+  try {
+    transfer = await stripeClient().transfers.create(
+      {
+        amount: Math.round(amountHkd * 100),
+        currency: 'hkd',
+        destination: onFile,
+        ...(exactSource ? { source_transaction: exactSource.paymentIntentId } : {}),
+        metadata: { firebaseUid: uid, sellerId: uid },
+      },
+      {
+        idempotencyKey: `withdrawal-${uid}-${Date.now()}`,
+      },
+    );
+  } catch (err: any) {
+    // Stripe refuses a transfer the platform's balance cannot cover —
+    // typically because the buyer's payment has not cleared yet. That
+    // is worth saying plainly rather than passing the raw message on.
+    const message = String(err?.message ?? '');
+    if (/insufficient funds|balance/i.test(message)) {
+      throw new functions.HttpsError(
+        'failed-precondition',
+        '平台資金未清算，請稍後再試',
+      );
+    }
+    throw new functions.HttpsError(
+      'internal',
+        `提現失敗：${message.slice(0, 160)}`,
+    );
+  }
 
   // Record the payout and take the money out of the balance in one
   // transaction. If either half fails, neither happens.
@@ -301,10 +364,26 @@ export const createWithdrawal = functions.onCall(async (request) => {
       sellerId: uid,
       stripeAccountId: onFile,
       stripeTransferId: transfer.id,
+      sourceTransaction: exactSource?.paymentIntentId ?? null,
       amountHkd,
       status: 'submitted',
       createdAt: FieldValue.serverTimestamp(),
     });
+
+    // Mark the charges this money came from as used, so the same
+    // money cannot be named as the source of a second transfer.
+    let left = amountHkd;
+    for (const src of sources) {
+      if (left <= 0.005) break;
+      const srcRef = db.doc(`payout_sources/${src.id}`);
+      const take = Math.min(Number(src.remainingHkd), left);
+      tx.update(srcRef, {
+        remainingHkd: FieldValue.increment(-take),
+        spentByPayoutId: payoutRef.id,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      left -= take;
+    }
   });
 
   return {
@@ -313,7 +392,8 @@ export const createWithdrawal = functions.onCall(async (request) => {
     status: 'submitted',
     amountHkd,
   };
-});
+},
+);;
 
 /* ── buyer confirming an FPS transfer ───────────────────────── */
 

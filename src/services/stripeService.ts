@@ -23,7 +23,14 @@ export { confirmCardPayment };
 
 export interface CreatePaymentParams {
   orderId: string;
-  amountHkd: number;
+  /**
+   * The card's listing price. The client does not send the total it
+   * expects to pay: the fee policy belongs to the server, and a
+   * client that sent a total would be choosing its own fees.
+   */
+  cardPriceHkd: number;
+  /** Flat shipping charge, 0 for meetup. The server bounds it. */
+  deliveryFeeHkd?: number;
   sellerId: string;
   deliveryMethod: "meetup" | "sf";
   cardName: string;
@@ -74,8 +81,11 @@ export async function createEscrowPayment(params: CreatePaymentParams) {
   return callFunction<{
     clientSecret: string;
     paymentIntentId: string;
+    /** What the buyer is charged, fees included. */
     amount: number;
+    cardPrice: number;
     platformFee: number;
+    totalFee: number;
     sellerNet: number;
   }>("createPaymentIntent", params);
 }
@@ -99,8 +109,13 @@ export async function confirmPayment(params: ConfirmPaymentParams) {
 export async function releaseFundsToSeller(params: ReleasePaymentParams) {
   return callFunction<{
     success: boolean;
-    transferId: string;
-    amountTransferred: number;
+    /**
+     * Null: the release records that the platform owes the seller. The
+     * money moves when the seller withdraws, not here.
+     */
+    transferId: string | null;
+    payoutPending: boolean;
+    releasedAmount: number;
     orderId: string;
   }>("releasePayment", params);
 }

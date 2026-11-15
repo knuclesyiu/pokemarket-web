@@ -2,16 +2,28 @@
  * Create a Stripe PaymentIntent with escrowed funds.
  *
  * Flow:
- *   1. Client (CheckoutScreen) calls this with order details
- *   2. We compute fees via shared feeCalculator (or duplicate constants)
- *   3. Stripe Connect: if seller has a Connect account, use direct charge
- *      with `application_fee_amount` + `transfer_data.destination`
+ *   1. Client (CheckoutScreen) calls this with the card price and the
+ *      delivery fee. It does not send the total: the fee policy is
+ *      the server's to decide, and a client that sent a total would
+ *      let it pick its own fees.
+ *   2. We compute the fees via shared feeCalculator.
+ *   3. The charge stays on the platform account. Stripe holds the money
+ *      until the buyer confirms the card, and the seller's money
+ *      leaves when the seller withdraws. This is the separate-charges-
+ *      and-transfers model, and it is what makes the escrow real.
  *   4. Write orders/{orderId} doc with status='awaiting_payment'
  *   5. Return clientSecret to client for Stripe SDK confirmation
  *
  * The client then confirms payment via @stripe/stripe-react-native.
  * Stripe sends a `payment_intent.succeeded` webhook → we update
  * orders/{orderId} status='paid' (i.e. funds in escrow).
+ *
+ * Why not a destination charge: `transfer_data.destination` sends the
+ * money straight to the seller's connected account the moment the
+ * payment succeeds. The platform would then hold nothing to refund
+ * from, and the withdrawal it performs — which draws on the platform
+ * balance — would have no balance to draw on. A seller could have the
+ * money out before the buyer had the card.
  *
  * Auth: client must be signed in. Order must reference a valid seller
  * with a completed Stripe Connect onboarding.
@@ -20,7 +32,7 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import { stripeClient } from '../shared/stripe';
+import { stripeClient, stripeSecretKey } from '../shared/stripe';
 import { calculateFee, ESCROW_MIN_HKD } from '../shared/feeCalculator';
 
 const db = admin.firestore();
@@ -28,14 +40,17 @@ const db = admin.firestore();
 
 interface CreatePaymentIntentParams {
   orderId?: string;          // optional — server generates if absent
-  amountHkd: number;         // total buyer pays
+  cardPriceHkd: number;      // the listing price
+  deliveryFeeHkd?: number;    // 0 for meetup, 35 for SF
   sellerId: string;
   deliveryMethod: 'meetup' | 'sf';
   cardName: string;
   cardId: string;
 }
 
-export const createPaymentIntent = functions.onCall(async (request) => {
+export const createPaymentIntent = functions.onCall(
+  { secrets: [stripeSecretKey] },
+  async (request) => {
   // 1. Auth
   if (!request.auth) {
     throw new functions.HttpsError('unauthenticated', '需要登入');
@@ -44,7 +59,8 @@ export const createPaymentIntent = functions.onCall(async (request) => {
   const data = request.data as CreatePaymentIntentParams;
 
   // 2. Validate
-  if (!data.amountHkd || data.amountHkd < ESCROW_MIN_HKD) {
+  const cardPriceHkd = Number(data.cardPriceHkd);
+  if (!cardPriceHkd || cardPriceHkd < ESCROW_MIN_HKD) {
     throw new functions.HttpsError(
       'invalid-argument',
       `金額需 >= HK$ ${ESCROW_MIN_HKD} (escrow 最低)`,
@@ -53,6 +69,11 @@ export const createPaymentIntent = functions.onCall(async (request) => {
   if (!data.sellerId || data.sellerId === buyerId) {
     throw new functions.HttpsError('invalid-argument', '無效的賣家');
   }
+
+  // The delivery fee is a flat amount the platform charges for
+  // shipping, not a percentage, so it comes from the client — but it
+  // is bounded here so a client cannot post an arbitrary amount.
+  const deliveryFeeHkd = Math.min(Math.max(Number(data.deliveryFeeHkd ?? 0), 0), 100);
 
   // 3. Look up seller's Stripe Connect account.
   //    The connected account lives in `sellers/{uid}` — that is where
@@ -76,10 +97,12 @@ export const createPaymentIntent = functions.onCall(async (request) => {
     );
   }
 
-  // 4. Compute fees
-  const fee = calculateFee(data.amountHkd);
-  const amountCents = Math.round(data.amountHkd * 100);
-  const platformFeeCents = Math.round(fee.platformFeeHkd * 100);
+  // 4. Compute fees — the server is the only place the fee policy
+  //    lives. The client displays what this produces; it never sends
+  //    the total it wants to be charged.
+  const fee = calculateFee(cardPriceHkd);
+  const buyerTotalHkd = Math.round((fee.buyerTotalHkd + deliveryFeeHkd) * 100) / 100;
+  const amountCents = Math.round(buyerTotalHkd * 100);
 
   // 5. Create or update order
   const orderRef = data.orderId
@@ -87,13 +110,14 @@ export const createPaymentIntent = functions.onCall(async (request) => {
     : db.collection('orders').doc();
   const orderId = orderRef.id;
 
-  // 6. Create Stripe PaymentIntent with destination charge
-  //    (uses seller's connected account, platform takes application_fee)
+  // 6. Create the Stripe PaymentIntent. The charge lands on the
+  //    platform account, so Stripe holds the buyer's money until the
+  //    release. No transfer_data, no application_fee_amount — the
+  //    platform fee is kept out of the balance when the seller is
+  //    paid.
   const paymentIntent = await stripeClient().paymentIntents.create({
     amount: amountCents,
     currency: 'hkd',
-    application_fee_amount: platformFeeCents,
-    transfer_data: { destination: sellerStripeAccountId },
     metadata: {
       orderId,
       buyerId,
@@ -113,7 +137,10 @@ export const createPaymentIntent = functions.onCall(async (request) => {
     cardName: data.cardName,
     cardSet: sellerData.lastCardSet ?? '',
     cardImageUrl: sellerData.lastCardImageUrl ?? '',
-    amountHkd: data.amountHkd,
+    cardPriceHkd,
+    amountHkd: cardPriceHkd,
+    deliveryFeeHkd,
+    buyerTotalHkd,
     platformFeeHkd: fee.platformFeeHkd,
     stripeFeeHkd: fee.stripeFeeHkd,
     totalFeeHkd: fee.totalFeeHkd,
@@ -132,8 +159,11 @@ export const createPaymentIntent = functions.onCall(async (request) => {
     orderId,
     clientSecret: paymentIntent.client_secret,
     paymentIntentId: paymentIntent.id,
-    amount: data.amountHkd,
+    amount: buyerTotalHkd,
+    cardPrice: cardPriceHkd,
     platformFee: fee.platformFeeHkd,
+    totalFee: fee.totalFeeHkd,
     sellerNet: fee.sellerNetHkd,
   };
-});
+},
+);;

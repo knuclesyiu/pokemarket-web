@@ -16,6 +16,23 @@
 
 import Stripe from 'stripe';
 import { HttpsError } from 'firebase-functions/v2/https';
+import { defineSecret } from 'firebase-functions/params';
+
+/**
+ * The Stripe credentials, declared rather than merely set.
+ *
+ * `firebase functions:secrets:set` puts the value in Secret Manager,
+ * but on its own that does not bind it to anything: the secret only
+ * reaches a function that declares it and asks for it. Without the
+ * declaration the secret sits in the project unused and every call
+ * reports that Stripe is not configured, while the dashboard shows
+ * the secret right there.
+ *
+ * Only the functions that touch Stripe ask for these. The public
+ * price sync does not, so it does not get the key.
+ */
+export const stripeSecretKey = defineSecret('STRIPE_SECRET_KEY');
+export const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
 
 /** Matches the version the installed Stripe package expects. */
 export const STRIPE_API_VERSION = '2025-02-24.acacia';

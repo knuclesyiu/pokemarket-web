@@ -113,20 +113,18 @@ service cloud.firestore {
         resource.data.sellerId == request.auth.uid
       );
 
-      // Buyer creates the order (validated server-side by Cloud Function
-      // before the order is actually created — the client just calls
-      // createPaymentIntent which writes the order).
-      allow create: if isSignedIn()
-        && request.resource.data.buyerId == request.auth.uid
-        && request.resource.data.amountHkd is number
-        && request.resource.data.amountHkd > 0
-        && request.resource.data.cardId is string
-        && request.resource.data.sellerId is string
-        && request.resource.data.sellerId != request.auth.uid;
-
-      // Updates are server-only (Stripe webhook → Cloud Function updates
-      // status). Clients can NEVER modify order state.
-      allow update, delete: if false;
+      // Orders are created by createPaymentIntent, which writes them
+      // with the Admin SDK after computing the fees and creating the
+      // Stripe PaymentIntent.
+      //
+      // Clients used to be allowed to create orders themselves. A
+      // client that creates an order chooses its own amountHkd and
+      // its own status, and releasePayment pays the seller out of
+      // whatever the order says — so a hand-written order with
+      // status 'shipped' and an invented sellerNetHkd would have
+      // credited a wallet with money nobody paid. The client has no
+      // need to write here; it calls the function.
+      allow create, update, delete: if false;
     }
 
     // ─── Offers (trade flow) ─────────────────────────────────────────
@@ -229,6 +227,16 @@ service cloud.firestore {
     // rule for this collection, so Firestore's default deny applied
     // and a seller could not see their own withdrawal history.
     match /payouts/{payoutId} {
+      allow read: if isSignedIn()
+        && resource.data.sellerId == request.auth.uid;
+      allow write: if false; // backend-only
+    }
+
+    // ─── Payout sources ──────────────────────────────────────────────
+    // Which charge a seller's balance came from. A withdrawal names
+    // one of these as its source_transaction, so the same money
+    // cannot be named twice.
+    match /payout_sources/{sourceId} {
       allow read: if isSignedIn()
         && resource.data.sellerId == request.auth.uid;
       allow write: if false; // backend-only

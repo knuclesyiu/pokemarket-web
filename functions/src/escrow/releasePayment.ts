@@ -1,31 +1,34 @@
 /**
- * Release payment — buyer confirms receipt, funds release from
- * platform escrow to seller's connected account.
+ * Release payment — the buyer confirms the card arrived, and the
+ * platform owes the seller the money.
  *
  * Flow:
  *   1. Client calls releasePayment({ orderId })
- *   2. We verify buyer owns the order and order status is in
- *      ['shipped', 'confirmed'] (not 'paid' alone — must be confirmed receipt)
- *   3. Read order.paymentIntentId and amount
- *   4. Create Stripe Transfer to seller's connected account,
- *      OR for Stripe Connect destination charges, the funds are
- *      already in seller's account when PaymentIntent succeeds
- *      (with `transfer_data.destination`). For those, "release" is
- *      just a status update.
- *   5. Update orders/{orderId} status='released', releasedAt=now
- *   6. Adjust buyer wallet pendingEscrow -= amount
- *   7. Adjust seller wallet balance += sellerNet
- *   8. Write a transactions/{txId} record for both buyer (purchase) and
- *      seller (sale) so the wallet history shows the activity
+ *   2. We verify the buyer owns the order and that the order is in a
+ *      state where the card can be confirmed received
+ *   3. The buyer's pending escrow goes down by what they actually paid
+ *   4. The seller's balance goes up by the net amount
+ *   5. The charge the money came from is recorded, so that a later
+ *      withdrawal can name it
+ *   6. Transaction records are written for both sides
+ *
+ * The money itself does not move here. The charge sits on the
+ * platform account; the seller's balance is the platform's ledger of
+ * what it owes them; and the actual transfer happens when the seller
+ * withdraws. Moving money at release and again at withdrawal would
+ * pay the seller twice.
  */
 
 import * as functions from 'firebase-functions/v2/https';
+import { stripeSecretKey } from '../shared/stripe';
 import * as admin from 'firebase-admin';
 
 import { FieldValue } from 'firebase-admin/firestore';
 const db = admin.firestore();
 
-export const releasePayment = functions.onCall(async (request) => {
+export const releasePayment = functions.onCall(
+  { secrets: [stripeSecretKey] },
+  async (request) => {
   if (!request.auth) {
     throw new functions.HttpsError('unauthenticated', '需要登入');
   }
@@ -54,12 +57,13 @@ export const releasePayment = functions.onCall(async (request) => {
     );
   }
 
-  // For destination charges, the funds auto-arrived at seller's account
-  // when payment_intent.succeeded fired. The release here is bookkeeping
-  // only — update the order status and write wallet transactions.
-  // For separate-charges-and-transfers model, you'd call stripe.transfers.create here.
-
-  const releaseAmountHkd = order.sellerNetHkd ?? order.amountHkd - (order.platformFeeHkd ?? 0);
+  // What the buyer paid, and what the seller is owed. Both come from
+  // the order document, which the server wrote — the client cannot
+  // influence either number here.
+  const buyerPaidHkd = Number(order.buyerTotalHkd ?? order.amountHkd ?? 0);
+  const releaseAmountHkd = Number(
+    order.sellerNetHkd ?? order.amountHkd - (order.platformFeeHkd ?? 0),
+  );
   const now = FieldValue.serverTimestamp();
 
   await orderRef.update({
@@ -72,11 +76,27 @@ export const releasePayment = functions.onCall(async (request) => {
   const buyerWalletRef = db.doc(`users/${buyerId}/wallet/main`);
   const sellerWalletRef = db.doc(`users/${order.sellerId}/wallet/main`);
   await buyerWalletRef.set({
-    pendingEscrow: FieldValue.increment(-order.amountHkd),
+    pendingEscrow: FieldValue.increment(-buyerPaidHkd),
+    updatedAt: now,
   }, { merge: true });
   await sellerWalletRef.set({
     balance: FieldValue.increment(releaseAmountHkd),
+    updatedAt: now,
   }, { merge: true });
+
+  // Record where this money came from. A withdrawal can then name the
+  // charge it draws against, which is what lets Stripe move money
+  // that has not cleared yet.
+  const sourceId = db.collection('payout_sources').doc();
+  await sourceId.set({
+    id: sourceId.id,
+    sellerId: order.sellerId,
+    orderId,
+    paymentIntentId: order.paymentIntentId ?? null,
+    amountHkd: releaseAmountHkd,
+    remainingHkd: releaseAmountHkd,
+    createdAt: now,
+  });
 
   // Write transaction records
   await db.collection(`users/${buyerId}/transactions`).add({
@@ -84,7 +104,7 @@ export const releasePayment = functions.onCall(async (request) => {
     cardName: order.cardName,
     cardImage: order.cardImageUrl,
     counterparty: order.sellerName ?? `Seller ${order.sellerId.slice(0, 6)}`,
-    amount: order.amountHkd,
+    amount: buyerPaidHkd,
     state: 'released',
     orderId,
     createdAt: now,
@@ -100,5 +120,14 @@ export const releasePayment = functions.onCall(async (request) => {
     createdAt: now,
   });
 
-  return { orderId, status: 'released', releasedAmount: releaseAmountHkd };
-});
+  return {
+    orderId,
+    status: 'released',
+    releasedAmount: releaseAmountHkd,
+    // The money has not left the platform yet — it leaves when the
+    // seller withdraws. Saying so keeps the two apart in the client.
+    transferId: null as string | null,
+    payoutPending: true,
+  };
+},
+);;

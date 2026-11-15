@@ -17,12 +17,14 @@ import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import type Stripe from 'stripe';
-import { stripeClient } from '../shared/stripe';
+import { stripeClient, stripeSecretKey, stripeWebhookSecret } from '../shared/stripe';
 
 const db = admin.firestore();
 
 
-export const stripeWebhook = functions.onRequest(async (req, res) => {
+export const stripeWebhook = functions.onRequest(
+  { secrets: [stripeSecretKey, stripeWebhookSecret] },
+  async (req, res) => {
   const sig = req.headers['stripe-signature'] as string | undefined;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -60,11 +62,14 @@ export const stripeWebhook = functions.onRequest(async (req, res) => {
           paidAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         });
-        // Update buyer's wallet pendingEscrow
+        // Update buyer's wallet pendingEscrow. The amount is what the
+        // buyer actually paid — the card price plus the fees — and it
+        // is held until the release.
         const buyerId = pi.metadata.buyerId;
         if (buyerId) {
           await db.doc(`users/${buyerId}/wallet/main`).set({
             pendingEscrow: FieldValue.increment(pi.amount / 100),
+            updatedAt: FieldValue.serverTimestamp(),
           }, { merge: true });
         }
         console.log(`[stripeWebhook] order ${orderId} paid`);
@@ -105,10 +110,25 @@ export const stripeWebhook = functions.onRequest(async (req, res) => {
               refundedAt: FieldValue.serverTimestamp(),
               updatedAt: FieldValue.serverTimestamp(),
             });
-            // Restore buyer's wallet pendingEscrow
-            if (orderData.buyerId) {
+            // Put the ledger back where it was.
+            //
+            // If the money was still in escrow, the buyer gave it up
+            // when they paid, so their pending escrow goes back down.
+            // If it had already been released, the buyer's escrow was
+            // settled at release and what has to come back is the
+            // seller's balance — otherwise the platform would owe the
+            // seller for a card that was refunded.
+            const wasInEscrow = ['awaiting_payment', 'paid', 'shipped', 'confirmed', 'pending_release']
+              .includes(orderData.status);
+            if (wasInEscrow && orderData.buyerId) {
               await db.doc(`users/${orderData.buyerId}/wallet/main`).set({
                 pendingEscrow: FieldValue.increment(-(charge.amount / 100)),
+                updatedAt: FieldValue.serverTimestamp(),
+              }, { merge: true });
+            } else if (orderData.sellerId && orderData.sellerNetHkd) {
+              await db.doc(`users/${orderData.sellerId}/wallet/main`).set({
+                balance: FieldValue.increment(-orderData.sellerNetHkd),
+                updatedAt: FieldValue.serverTimestamp(),
               }, { merge: true });
             }
           }
@@ -123,4 +143,5 @@ export const stripeWebhook = functions.onRequest(async (req, res) => {
     console.error('[stripeWebhook] handler error:', err);
     res.status(500).send('Handler error');
   }
-});
+},
+);;
