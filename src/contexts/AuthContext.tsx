@@ -95,6 +95,25 @@ async function hashPin(pin: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+/** The profile a new account starts with, and the one a partial profile is filled out with. */
+function defaultProfile(user: User): UserProfile {
+  return {
+    uid: user.uid,
+    displayName: user.displayName ?? (user.phoneNumber ?? (user.isAnonymous ? 'Guest' : 'User')),
+    email: user.email ?? '',
+    phone: user.phoneNumber ?? '',
+    memberSince: Date.now(),
+    lastLogin: Date.now(),
+    isSeller: false,
+    isBuyer: false,
+    positiveReviews: 0,
+    negativeReviews: 0,
+    language: 'zh-HK',
+    notificationsEnabled: true,
+    theme: 'dark',
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -175,26 +194,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const snap = await getDoc(doc(db, 'users', user.uid));
           if (snap.exists()) {
-            const stored = snap.data() as UserProfile;
+            // Merge over the defaults: a profile written by an older
+            // version of the app, or written field by field, can be
+            // missing fields the screens read — and a missing field
+            // reads as undefined, not as the default.
+            const stored = {
+              ...defaultProfile(user),
+              ...(snap.data() as Partial<UserProfile>),
+            } as UserProfile;
             setActiveTheme(stored.theme ?? 'dark');
             setUserProfile(stored);
           } else {
             // Create skeleton profile on first login
-            const profile: UserProfile = {
-              uid: user.uid,
-              displayName: user.displayName ?? (user.phoneNumber ?? (user.isAnonymous ? 'Guest' : 'User')),
-              email: user.email ?? '',
-              phone: user.phoneNumber ?? '',
-              memberSince: Date.now(),
-              lastLogin: Date.now(),
-              isSeller: false,
-              isBuyer: false,
-              positiveReviews: 0,
-              negativeReviews: 0,
-              language: 'zh-HK',
-              notificationsEnabled: true,
-              theme: 'dark' as const,
-            };
+            const profile: UserProfile = defaultProfile(user);
             await setDoc(doc(db, 'users', user.uid), profile);
             setActiveTheme(profile.theme ?? 'dark');
             setUserProfile(profile);
