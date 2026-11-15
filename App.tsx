@@ -35,6 +35,7 @@ import SellerOnboardingScreen from "./src/screens/SellerOnboardingScreen";
 import WithdrawScreen from "./src/screens/WithdrawScreen";
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { AppearanceProvider } from "./src/contexts/AppearanceContext";
+import { useAppearance } from "./src/contexts/AppearanceContext";
 import type { RootStackParamList } from "./src/types/navigation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -50,7 +51,12 @@ initFirebase();
  * vector on all of them, and carries the gold active state and the
  * ruby badge that were designed in the first version but never used.
  */
-const HomeTabs = () => (
+const HomeTabs = () => {
+  // The tab bar is painted by the navigator, which does not re-render
+  // when the account's preferences change. Reading them here makes the
+  // bar follow the theme and the language like everything else.
+  useAppearance();
+  return (
   <Tab.Navigator
     screenOptions={{
       headerShown: false,
@@ -112,6 +118,7 @@ const HomeTabs = () => (
     />
   </Tab.Navigator>
 );
+};
 
 const LoadingScreen = () => (
   <View style={styles.loading}>
