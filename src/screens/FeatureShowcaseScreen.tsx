@@ -4,6 +4,7 @@
  * Deep layered surfaces with warm gold and ember accents
  */
 import React, { useEffect, useRef } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
@@ -56,10 +57,8 @@ const FEATURES: FeatureCard[] = [
     title: 'Live Market Prices',
     subtitle: '秒級更新・覆蓋全球',
     bullets: [
-      'TCGdex API CardMarket EUR + TCGPlayer USD',
-      '每 6 小時自動同步 15 張熱門卡',
-      '',
-      '所有價格即時轉換為港幣（HKD）',
+      'TCGdex API CardMarket EUR + TCGPlayer USD', '每 6 小時自動同步 15 張熱門卡',
+      '', '所有價格即時轉換為港幣（HKD）',
     ],
     accent: C.gold,
   },
@@ -71,10 +70,7 @@ const FEATURES: FeatureCard[] = [
     title: '資金託付保障',
     subtitle: '資金托管・零風險交易',
     bullets: [
-      '款項由平台托管，確認收貨後釋放',
-      'Day 5 自動發預警告示通知',
-      '買家可延長期限最多 14 日',
-      '爭議時可提交 Dispute，款項暫停釋放',
+      '款項由平台托管，確認收貨後釋放', 'Day 5 自動發預警告示通知', '買家可延長期限最多 14 日', '爭議時可提交 Dispute，款項暫停釋放',
     ],
     accent: C.warn,
   },
@@ -86,10 +82,7 @@ const FEATURES: FeatureCard[] = [
     title: 'Secure Authentication',
     subtitle: '電話・Email・生物識別',
     bullets: [
-      'Firebase Auth 電話 SMS OTP 驗證',
-      'Email + 密碼登入（自動註冊）',
-      '交易 PIN（SHA-256）每筆交易驗證',
-      'Biometric 原生支援 FaceID / Fingerprint',
+      'Firebase Auth 電話 SMS OTP 驗證', 'Email + 密碼登入（自動註冊）', '交易 PIN（SHA-256）每筆交易驗證', 'Biometric 原生支援 FaceID / Fingerprint',
     ],
     accent: C.up,
   },
@@ -101,10 +94,7 @@ const FEATURES: FeatureCard[] = [
     title: 'Peer Review System',
     subtitle: '好評差評・建立信任',
     bullets: [
-      '每筆交易完成後可留 👍 好評 或 👎 差評',
-      '信用評價影響用戶排名與曝光',
-      '公開好評率%，雙方均可評價',
-      '所有評價存入區塊鏈般不可篡改日誌',
+      '每筆交易完成後可留 👍 好評 或 👎 差評', '信用評價影響用戶排名與曝光', '公開好評率%，雙方均可評價', '所有評價存入區塊鏈般不可篡改日誌',
     ],
     accent: C.violet,
   },
@@ -116,10 +106,7 @@ const FEATURES: FeatureCard[] = [
     title: 'Multi-Language',
     subtitle: '繁中・簡中・English',
     bullets: [
-      'UI 完全支援三種語言即時切換',
-      '語言偏好存於用戶個人設定',
-      '所有市場資訊、價格貨幣自動本地化',
-      '未來可擴展至日語、英語市場',
+      'UI 完全支援三種語言即時切換', '語言偏好存於用戶個人設定', '所有市場資訊、價格貨幣自動本地化', '未來可擴展至日語、英語市場',
     ],
     accent: '#00AADD',
   },
@@ -131,10 +118,7 @@ const FEATURES: FeatureCard[] = [
     title: 'In-App Messaging',
     subtitle: '買賣雙方即時溝通',
     bullets: [
-      'Firestore 即時訊息，無需刷新',
-      '每筆訂單自動創建 Chat Thread',
-      '支援文字、圖片、報價訊息類型',
-      '已讀/未讀狀態指示燈',
+      'Firestore 即時訊息，無需刷新', '每筆訂單自動創建 Chat Thread', '支援文字、圖片、報價訊息類型', '已讀/未讀狀態指示燈',
     ],
     accent: C.warn,
   },
@@ -146,10 +130,7 @@ const FEATURES: FeatureCard[] = [
     title: 'Portfolio Tracker',
     subtitle: '持倉成本・帳面盈虧',
     bullets: [
-      '追蹤所有持有卡牌的均價與數量',
-      '實時計算總市值與帳面 P&L',
-      '成交記錄完整保存，随時查閱',
-      '一鍵「放售」直接進入掛牌流程',
+      '追蹤所有持有卡牌的均價與數量', '實時計算總市值與帳面 P&L', '成交記錄完整保存，随時查閱', '一鍵「放售」直接進入掛牌流程',
     ],
     accent: C.ruby,
   },
@@ -161,10 +142,7 @@ const FEATURES: FeatureCard[] = [
     title: 'Stripe Payments',
     subtitle: 'Stripe Connect・秒級結算',
     bullets: [
-      'Stripe Connect 托管款項，平台零接觸資金',
-      '買家付款 → 資金託付 → 確認 → 自動結算',
-      '支援信用卡/轉數快/FPS 多種方式',
-      '每筆交易手續費透明，無隱藏收費',
+      'Stripe Connect 托管款項，平台零接觸資金', '買家付款 → 資金託付 → 確認 → 自動結算', '支援信用卡/轉數快/FPS 多種方式', '每筆交易手續費透明，無隱藏收費',
     ],
     accent: C.up,
   },
@@ -211,8 +189,8 @@ const FeatureCard: React.FC<{ feature: FeatureCard; index: number }> = ({ featur
           </View>
           <Text style={styles.emoji}>{feature.emoji}</Text>
         </View>
-        <Text style={styles.cardTitle}>{feature.title}</Text>
-        <Text style={styles.cardSubtitle}>{feature.subtitle}</Text>
+        <Text style={styles.cardTitle}>{t(feature.title)}</Text>
+        <Text style={styles.cardSubtitle}>{t(feature.subtitle)}</Text>
       </View>
 
       {/* Divider */}
@@ -223,7 +201,7 @@ const FeatureCard: React.FC<{ feature: FeatureCard; index: number }> = ({ featur
         {feature.bullets.map((b, i) => (
           <View key={i} style={styles.bulletRow}>
             <View style={[styles.bulletDot, { backgroundColor: feature.accent }]} />
-            <Text style={styles.bulletText}>{b}</Text>
+            <Text style={styles.bulletText}>{t(b)}</Text>
           </View>
         ))}
       </View>
@@ -258,10 +236,10 @@ const FeatureShowcaseScreen: React.FC = () => {
       {/* Stats strip — elevated card with gold accents */}
       <View style={styles.statsStrip}>
         {[
-          { val: '8+', label: '功能模組' },
+          { val: '8+', label: t('功能模組') },
           { val: '27+', label: 'Cloud Functions' },
-          { val: '3', label: '語言' },
-          { val: 'HKD', label: '結算貨幣' },
+          { val: '3', label: t('語言') },
+          { val: 'HKD', label: t('結算貨幣') },
         ].map((s, i) => (
           <View key={i} style={styles.stat}>
             <Text style={styles.statVal}>{s.val}</Text>

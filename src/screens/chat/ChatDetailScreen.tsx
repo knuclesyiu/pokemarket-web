@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { t } from '../../i18n';
 import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
@@ -27,7 +28,7 @@ interface Props {
 const ChatDetailScreen: React.FC<Props> = ({ route }) => {
   const { t } = useAppearance();
 
-  const { threadId, otherPartyName = '未知用戶', otherPartyId } = route.params;
+  const { threadId, otherPartyName = t('未知用戶'), otherPartyId } = route.params;
   const { currentUser, userProfile } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
@@ -97,7 +98,7 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
       const msgsRef = collection(threadDoc, 'messages');
       await addDoc(msgsRef, {
         senderId: currentUser.uid,
-        senderName: userProfile?.displayName ?? '我',
+        senderName: userProfile?.displayName ?? t('我'),
         text,
         createdAt: Date.now(),
         readBy: [currentUser.uid],

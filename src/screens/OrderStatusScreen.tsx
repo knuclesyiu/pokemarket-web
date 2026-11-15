@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
@@ -27,11 +28,11 @@ interface TimelineStep {
 }
 
 const TIMELINE_STEPS: TimelineStep[] = [
-  { key: 'paid', label: '已付款', sublabel: '款項由平台托管', icon: '💳' },
-  { key: 'awaiting_ship', label: '等待發貨', sublabel: '賣家準備中', icon: '📦' },
-  { key: 'shipped', label: '已發貨', sublabel: '快件運輸中', icon: '🚚' },
-  { key: 'confirmed', label: '已確認收貨', sublabel: '等待資金釋放', icon: '' },
-  { key: 'released', label: '資金已釋放', sublabel: '交易完成', icon: '🎉' },
+  { key: 'paid', label: t('已付款'), sublabel: t('款項由平台托管'), icon: '💳' },
+  { key: 'awaiting_ship', label: t('等待發貨'), sublabel: t('賣家準備中'), icon: '📦' },
+  { key: 'shipped', label: t('已發貨'), sublabel: t('快件運輸中'), icon: '🚚' },
+  { key: 'confirmed', label: t('已確認收貨'), sublabel: t('等待資金釋放'), icon: '' },
+  { key: 'released', label: t('資金已釋放'), sublabel: t('交易完成'), icon: '🎉' },
 ];
 
 const OrderStatusScreen: React.FC = () => {
@@ -50,7 +51,7 @@ const OrderStatusScreen: React.FC = () => {
 
   useEffect(() => {
     if (!orderId) {
-      setOrderError('缺少 orderId');
+      setOrderError(t('缺少 orderId'));
       setLoadingOrder(false);
       return;
     }
@@ -59,7 +60,7 @@ const OrderStatusScreen: React.FC = () => {
       doc(db, 'orders', orderId),
       (snap) => {
         if (snap.exists()) setOrder({ id: snap.id, ...snap.data() });
-        else setOrderError('訂單不存在或已刪除');
+        else setOrderError(t('訂單不存在或已刪除'));
         setLoadingOrder(false);
       },
       (err) => {
@@ -124,9 +125,9 @@ const OrderStatusScreen: React.FC = () => {
       const extendFn = httpsCallable(getFunctions(), 'extendEscrow');
       await extendFn({ orderId });
       setIsExtended(true);
-      notify(t('已延長'), '款項釋放期限已延長至 14 日，請放心。');
+      notify(t('已延長'), t('款項釋放期限已延長至 14 日，請放心。'));
     } catch (e: any) {
-      notify('延長失敗', e.message ?? '請稍後再試');
+      notify(t('延長失敗'), e.message ?? t('請稍後再試'));
     } finally {
       setExtending(false);
     }
@@ -134,7 +135,7 @@ const OrderStatusScreen: React.FC = () => {
 
   const handleCreateDispute = async () => {
     if (!disputeReason.trim()) {
-      notify(t('請輸入'), '請描述問題原因才能提交 dispute');
+      notify(t('請輸入'), t('請描述問題原因才能提交 dispute'));
       return;
     }
     setDisputing(true);
@@ -142,9 +143,9 @@ const OrderStatusScreen: React.FC = () => {
       await raiseDispute({ orderId, reason: disputeReason.trim() });
       setShowDisputeModal(false);
       setOrderStatus('disputed');
-      notify(t('Dispute 已提交'), '我們會在 24 小時內處理，請留意通知。');
+      notify(t('Dispute 已提交'), t('我們會在 24 小時內處理，請留意通知。'));
     } catch (e: any) {
-      notify('提交失敗', e?.message ?? '請稍後再試');
+      notify(t('提交失敗'), e?.message ?? t('請稍後再試'));
     } finally {
       setDisputing(false);
     }
@@ -157,7 +158,7 @@ const OrderStatusScreen: React.FC = () => {
         set: order.cardSet ?? '',
         imageUrl: order.cardImageUrl ?? '',
         price: order.amountHkd ?? 0,
-        counterparty: isSeller ? order.buyerName ?? '買家' : order.sellerName ?? '賣家',
+        counterparty: isSeller ? order.buyerName ?? t('買家') : order.sellerName ?? t('賣家'),
         deliveryMethod: order.deliveryMethod ?? 'sf',
         trackingNumber: order.trackingNumber ?? '',
       }
@@ -171,7 +172,7 @@ const OrderStatusScreen: React.FC = () => {
       await confirmFn({ orderId });
       // Real-time listener will update the UI
     } catch (e: any) {
-      notify('確認失敗', e?.message ?? '請稍後再試');
+      notify(t('確認失敗'), e?.message ?? t('請稍後再試'));
     }
   };
 
@@ -199,7 +200,7 @@ const OrderStatusScreen: React.FC = () => {
       // Successful release — Firestore listener will move us to 'released' step
     } catch (e: any) {
       console.error('[OrderStatus] release failed:', e);
-      notify('釋放失敗', e?.message ?? '請稍後再試');
+      notify(t('釋放失敗'), e?.message ?? t('請稍後再試'));
     } finally {
       setReleasing(false);
     }
@@ -265,12 +266,12 @@ const OrderStatusScreen: React.FC = () => {
         <Text style={styles.escrowBannerIcon}>🔐</Text>
         <View style={styles.escrowBannerText}>
           <Text style={styles.escrowBannerTitle}>
-            {currentStep < 3 ? '資金由平台託付中' : currentStep === 4 ? '資金已釋放俾賣家' : '資金已釋放'}
+            {currentStep < 3 ? t('資金由平台託付中') : currentStep === 4 ? t('資金已釋放俾賣家') : t('資金已釋放')}
           </Text>
           <Text style={styles.escrowBannerDesc}>
             {currentStep < 3
               ? `HK$ ${card.price.toLocaleString()} 擔保中，確認收卡後自動轉俾賣家`
-              : '交易完成，資金已轉俾賣家'}
+              : t('交易完成，資金已轉俾賣家')}
           </Text>
         </View>
         {currentStep < 3 && (
@@ -287,7 +288,7 @@ const OrderStatusScreen: React.FC = () => {
           <Text style={styles.cardName}>{card.name}</Text>
           <Text style={styles.cardSet}>{card.set}</Text>
           <View style={styles.roleTag}>
-            <Text style={styles.roleTagText}>{isSeller ? '你是賣家' : '你是買家'}</Text>
+            <Text style={styles.roleTagText}>{isSeller ? t('你是賣家') : t('你是買家')}</Text>
           </View>
         </View>
         <Text style={styles.cardPrice}>HK${card.price.toLocaleString()}</Text>
@@ -350,7 +351,7 @@ const OrderStatusScreen: React.FC = () => {
             <View style={styles.deliveryRow}>
               <Text style={styles.deliveryLabel}>{t('方式')}</Text>
               <Text style={styles.deliveryValue}>
-                {card.deliveryMethod === 'sf' ? '📦 順豐快遞' : '🤝 面交'}
+                {card.deliveryMethod === 'sf' ? t('📦 順豐快遞') : t('🤝 面交')}
               </Text>
             </View>
             {card.trackingNumber && (
@@ -398,9 +399,7 @@ const OrderStatusScreen: React.FC = () => {
         <View style={styles.actionArea}>
           <View style={styles.shippedAlert}>
             <Text style={styles.shippedAlertText}>{t('📦 賣家已發貨！')}</Text>
-            <Text style={styles.shippedAlertSub}>
-              收到卡後，請檢查卡牌狀態再確認。如有問題可提出爭議。
-            </Text>
+            <Text style={styles.shippedAlertSub}>{t('收到卡後，請檢查卡牌狀態再確認。如有問題可提出爭議。')}</Text>
           </View>
           <TouchableOpacity style={styles.confirmReceiptBtn} onPress={handleConfirmReceipt}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.confirmReceiptBtnText}>{t('確認收貨')}</Text></View>
@@ -431,9 +430,7 @@ const OrderStatusScreen: React.FC = () => {
         <View style={styles.actionArea}>
           <View style={styles.confirmingAlert}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.confirmingAlertText}>{t('已確認收貨')}</Text></View>
-            <Text style={styles.confirmingAlertSub}>
-              資金將自動釋放俾賣家，交易完成！
-            </Text>
+            <Text style={styles.confirmingAlertSub}>{t('資金將自動釋放俾賣家，交易完成！')}</Text>
           </View>
           <TouchableOpacity style={styles.releaseBtn} onPress={handleReleaseFund}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-open-outline" size={13} color={C.textTertiary} /><Text style={styles.releaseBtnText}>{t('立即釋放款項')}</Text></View>
@@ -468,9 +465,7 @@ const OrderStatusScreen: React.FC = () => {
           <Ionicons name="shield-checkmark-outline" size={15} color={C.textTertiary} />
           <View style={styles.disputeBannerText}>
             <Text style={styles.disputeBannerTitle}>{t('需要提出爭議？')}</Text>
-            <Text style={styles.disputeBannerDesc}>
-              如卡牌與描述不符、未能如期交收，平台將在 24 小時內審查
-            </Text>
+            <Text style={styles.disputeBannerDesc}>{t('如卡牌與描述不符、未能如期交收，平台將在 24 小時內審查')}</Text>
           </View>
           <Text style={styles.disputeArrow}>→</Text>
         </TouchableOpacity>
@@ -516,13 +511,11 @@ const OrderStatusScreen: React.FC = () => {
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
             <Text style={modalStyles.title}>{t('提出爭議')}</Text>
-            <Text style={modalStyles.subtitle}>
-              請詳細描述問題，並上傳卡牌相片作為證據
-            </Text>
+            <Text style={modalStyles.subtitle}>{t('請詳細描述問題，並上傳卡牌相片作為證據')}</Text>
 
             <Text style={modalStyles.fieldLabel}>{t('問題類型')}</Text>
             <View style={modalStyles.reasonOptions}>
-              {['卡牌與描述不符', '收到爛卡/假卡', '未能如期交收', '賣家無回應', '其他'].map(r => (
+              {[t('卡牌與描述不符'), t('收到爛卡/假卡'), t('未能如期交收'), t('賣家無回應'), t('其他')].map(r => (
                 <TouchableOpacity
                   key={r}
                   style={[
@@ -541,9 +534,7 @@ const OrderStatusScreen: React.FC = () => {
 
             <Text style={modalStyles.fieldLabel}>{t('詳細描述')}</Text>
             <View style={modalStyles.textArea}>
-              <Text style={modalStyles.textAreaPlaceholder}>
-                請描述你遇到的問題...
-              </Text>
+              <Text style={modalStyles.textAreaPlaceholder}>{t('請描述你遇到的問題...')}</Text>
             </View>
 
             <Text style={modalStyles.fieldLabel}>{t('上傳圖片（最多 3 張）')}</Text>

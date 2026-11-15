@@ -13,6 +13,7 @@
  *   - onAuthStateChanged uses ref-guard against re-entrancy
  */
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { t } from '../i18n';
 import {
   User, ConfirmationResult, browserLocalPersistence, inMemoryPersistence, setPersistence,
 } from 'firebase/auth';
@@ -308,7 +309,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // remains associated.
   const upgradeFromAnonymous = useCallback(async (email: string, password: string) => {
     if (!currentUser) {
-      return { kind: 'error', code: 'no-user', message: '未有當前用戶' } as UpgradeResult;
+      return { kind: 'error', code: 'no-user', message: t('未有當前用戶') } as UpgradeResult;
     }
     isUpgrading.current = true;
     try {
@@ -340,7 +341,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const signIn = await signInEmailOrPromptSignup(auth, e, password);
         if (signIn.kind === 'ok') return { kind: 'ok', user: signIn.user };
         if (signIn.kind === 'needs_signup') {
-          return { kind: 'error', code: 'auth/email-already-in-use', message: '呢個 Email 已經註冊咗，密碼唔啱' };
+          return { kind: 'error', code: 'auth/email-already-in-use', message: t('呢個 Email 已經註冊咗，密碼唔啱') };
         }
         return { kind: 'error', code: signIn.code, message: signIn.message };
       }
@@ -380,7 +381,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Cooldown: at least PIN_MIN_INTERVAL_MS between attempts
     const now = Date.now();
     if (now - pinVerifyState.lastAttempt < PIN_MIN_INTERVAL_MS) {
-      throw new Error('請稍候片刻再試');
+      throw new Error(t('請稍候片刻再試'));
     }
     pinVerifyState.lastAttempt = now;
 

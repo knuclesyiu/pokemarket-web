@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { t } from '../../i18n';
 import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
@@ -90,14 +91,14 @@ const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
         <View style={styles.threadContent}>
           <View style={styles.threadHeader}>
             <Text style={styles.threadName} numberOfLines={1}>
-              {item.listingId ? `📦 交易對話` : (item.otherPartyName ?? '私訊')}
+              {item.listingId ? `📦 交易對話` : (item.otherPartyName ?? t('私訊'))}
             </Text>
             {timeLabel && (
               <Text style={styles.threadTime}>{timeLabel}</Text>
             )}
           </View>
           <Text style={[styles.lastMessage, unread > 0 ? styles.lastMessageUnread : null]} numberOfLines={1}>
-            {item.lastMessage ?? '尚無訊息'}
+            {item.lastMessage ?? t('尚無訊息')}
           </Text>
         </View>
 

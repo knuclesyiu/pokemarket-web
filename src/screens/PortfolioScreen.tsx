@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, TextInput, ScrollView, StyleSheet, Image,
@@ -264,9 +265,9 @@ const PortfolioScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>{t('📜 成交記錄')}</Text>
       </View>
       {[
-        { type: 'buy', card: 'Charizard VMAX', price: 4100, date: '2 小時前' },
-        { type: 'sell', card: 'Gengar VMAX', price: 2950, date: '1 日前' },
-        { type: 'sell', card: 'Tyranitar VMAX', price: 1050, date: '3 日前' },
+        { type: 'buy', card: 'Charizard VMAX', price: 4100, date: t('2 小時前') },
+        { type: 'sell', card: 'Gengar VMAX', price: 2950, date: t('1 日前') },
+        { type: 'sell', card: 'Tyranitar VMAX', price: 1050, date: t('3 日前') },
       ].map((tx, i) => (
         <View key={i} style={styles.txRow}>
           <View style={[styles.txIcon, tx.type === 'buy' ? styles.txBuy : styles.txSell]}>
@@ -379,7 +380,7 @@ const PortfolioScreen: React.FC = () => {
               onPress={handleAddCard}
               disabled={!selectedCard || saving}
             >
-              <Text style={addModalStyles.confirmBtnText}>{saving ? '保存中...' : '確認添加'}</Text>
+              <Text style={addModalStyles.confirmBtnText}>{saving ? t('保存中...') : t('確認添加')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[addModalStyles.cancelBtn]} onPress={() => { setShowAddModal(false); setSearchQuery(''); setSearchResults([]); setSelectedCard(null); }}>
               <Text style={addModalStyles.cancelText}>{t('取消')}</Text>

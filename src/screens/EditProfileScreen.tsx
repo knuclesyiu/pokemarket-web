@@ -7,6 +7,7 @@
  * and the transaction PIN hash are server-managed.
  */
 import React, { useState } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
@@ -34,10 +35,10 @@ const EditProfileScreen: React.FC = () => {
 
   const handleSave = async () => {
     const name = displayName.trim();
-    if (!name) { notify(t('錯誤'), '請輸入暱稱'); return; }
-    if (name.length < 2) { notify(t('錯誤'), '暱稱至少 2 個字'); return; }
-    if (phone && !PHONE_REGEX.test(phone.trim())) { notify(t('錯誤'), '電話格式不正確'); return; }
-    if (email && !EMAIL_REGEX.test(email.trim())) { notify(t('錯誤'), 'Email 格式不正確'); return; }
+    if (!name) { notify(t('錯誤'), t('請輸入暱稱')); return; }
+    if (name.length < 2) { notify(t('錯誤'), t('暱稱至少 2 個字')); return; }
+    if (phone && !PHONE_REGEX.test(phone.trim())) { notify(t('錯誤'), t('電話格式不正確')); return; }
+    if (email && !EMAIL_REGEX.test(email.trim())) { notify(t('錯誤'), t('Email 格式不正確')); return; }
 
     setSaving(true);
     try {
@@ -46,11 +47,11 @@ const EditProfileScreen: React.FC = () => {
         phone: phone.trim(),
         email: email.trim().toLowerCase(),
       });
-      confirmAction(t('已儲存'), '個人資料已更新', [
-        { text: '完成', onPress: () => navigation.goBack() },
+      confirmAction(t('已儲存'), t('個人資料已更新'), [
+        { text: t('完成'), onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {
-      notify('儲存失敗', e?.message ?? '請稍後再試');
+      notify(t('儲存失敗'), e?.message ?? t('請稍後再試'));
     } finally {
       setSaving(false);
     }
@@ -71,9 +72,7 @@ const EditProfileScreen: React.FC = () => {
 
         <View style={styles.card}>
           <Text style={styles.title}>{t('個人資料')}</Text>
-          <Text style={styles.subtitle}>
-            呢啲資料會顯示俾其他用戶睇，同埋用嚟聯絡你
-          </Text>
+          <Text style={styles.subtitle}>{t('呢啲資料會顯示俾其他用戶睇，同埋用嚟聯絡你')}</Text>
 
           <Text style={styles.label}>{t('暱稱 *')}</Text>
           <TextInput

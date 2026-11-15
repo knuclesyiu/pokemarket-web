@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, Image,
@@ -97,7 +98,7 @@ const CardDetailScreen: React.FC = () => {
   const formatAge = (ts: number): string => {
     const diff = Date.now() - ts;
     const min = Math.floor(diff / 60000);
-    if (min < 1) return '剛剛';
+    if (min < 1) return t('剛剛');
     if (min < 60) return `${min} 分鐘`;
     const hr = Math.floor(min / 60);
     if (hr < 24) return `${hr} 小時`;
@@ -186,9 +187,9 @@ const CardDetailScreen: React.FC = () => {
           style={styles.contactBtn}
           onPress={async () => {
             if (!auth.currentUser) {
-              confirmAction(t('需要登入'), '請先登入再聯絡賣家', [
-                { text: '登入', onPress: () => navigation.navigate('Login') },
-                { text: '取消' },
+              confirmAction(t('需要登入'), t('請先登入再聯絡賣家'), [
+                { text: t('登入'), onPress: () => navigation.navigate('Login') },
+                { text: t('取消') },
               ]);
               return;
             }
@@ -213,14 +214,14 @@ const CardDetailScreen: React.FC = () => {
 
         {/* Tabs */}
         <View style={styles.tabRow}>
-          {(['listings', 'history'] as const).map(t => (
+          {(['listings', 'history'] as const).map((item) => (
             <TouchableOpacity
-              key={t}
-              style={[styles.tab, activeTab === t ? styles.tabActive : null]}
-              onPress={() => setActiveTab(t)}
+              key={item}
+              style={[styles.tab, activeTab === item ? styles.tabActive : null]}
+              onPress={() => setActiveTab(item)}
             >
-              <Text style={[styles.tabText, activeTab === t ? styles.tabTextActive : null]}>
-                {t === 'listings' ? '掛牌列表' : '歷史價格'}
+              <Text style={[styles.tabText, activeTab === item ? styles.tabTextActive : null]}>
+                {item === 'listings' ? t('掛牌列表') : t('歷史價格')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -233,14 +234,12 @@ const CardDetailScreen: React.FC = () => {
                 <ActivityIndicator color={C.action} />
               </View>
             ) : listings.length === 0 ? (
-              <Text style={styles.emptyListings}>
-                暫時未有掛牌，成為第一個放售呢張卡嘅人吧 🎴
-              </Text>
+              <Text style={styles.emptyListings}>{t('暫時未有掛牌，成為第一個放售呢張卡嘅人吧 🎴')}</Text>
             ) : (
               listings.map(listing => (
                 <View key={listing.id} style={styles.listingCard}>
                   <View style={styles.listingLeft}>
-                    <Text style={styles.listingSeller}>{listing.sellerName || '賣家'}</Text>
+                    <Text style={styles.listingSeller}>{listing.sellerName || t('賣家')}</Text>
                     <Text style={styles.listingCondition}>{listing.condition}</Text>
                   </View>
                   <View style={styles.listingRight}>
@@ -250,7 +249,7 @@ const CardDetailScreen: React.FC = () => {
                       onPress={() => navigation.navigate('MakeOffer', { listing })}
                     >
                       <Text style={styles.bidBtnText}>
-                        {listing.type === 'auction' ? '競投 →' : '出價 →'}
+                        {listing.type === 'auction' ? t('競投 →') : t('出價 →')}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -267,7 +266,7 @@ const CardDetailScreen: React.FC = () => {
               <Text style={styles.chartRange}>
                 {priceHistory.length > 0
                   ? `HK$ ${Math.min(...priceHistory.map(p => p.price)).toLocaleString()} → HK$ ${Math.max(...priceHistory.map(p => p.price)).toLocaleString()}`
-                  : '載入中…'}
+                  : t('載入中…')}
               </Text>
             </View>
             {historyLoading ? (
@@ -279,14 +278,11 @@ const CardDetailScreen: React.FC = () => {
               <>
                 <PriceChart data={priceHistory} />
                 {priceDoc && (priceDoc.avg7Eur > 0 || priceDoc.avg30Eur > 0) && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="stats-chart-outline" size={15} color={C.textTertiary} /><Text style={styles.chartNote}>數據源：TCGdex Cardmarket trend / 7日 / 30日均價 線性插值
-                  </Text></View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="stats-chart-outline" size={15} color={C.textTertiary} /><Text style={styles.chartNote}>{t('數據源：TCGdex Cardmarket trend / 7日 / 30日均價 線性插值')}</Text></View>
                 )}
               </>
             ) : (
-              <Text style={styles.chartNote}>
-                此卡暫無歷史價格資料
-              </Text>
+              <Text style={styles.chartNote}>{t('此卡暫無歷史價格資料')}</Text>
             )}
           </View>
         )}

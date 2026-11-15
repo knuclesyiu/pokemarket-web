@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
@@ -36,10 +37,10 @@ const COLORS = {
 };
 
 const MTR_LINES = [
-  { line: '觀塘線', stations: ['油麻地', '旺角', '太子', '九龍塘', '黃大仙', '彩虹', '鑽石山', 'Hob Art', '藍田', '觀塘'] },
-  { line: '港島線', stations: ['上環', '中環', '金鐘', '灣仔', '銅鑼灣', '天后', '炮台山', '北角', '鰂魚涌', '太古'] },
-  { line: '荃灣線', stations: ['中環', '金鐘', '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '荔枝角'] },
-  { line: '將軍澳線', stations: ['北角', '鰂魚涌', '油塘', '將軍澳', '坑口', '寶琳'] },
+  { line: t('觀塘線'), stations: ['油麻地', '旺角', '太子', '九龍塘', '黃大仙', '彩虹', '鑽石山', 'Hob Art', '藍田', '觀塘'] },
+  { line: t('港島線'), stations: ['上環', '中環', '金鐘', '灣仔', '銅鑼灣', '天后', '炮台山', '北角', '鰂魚涌', '太古'] },
+  { line: t('荃灣線'), stations: ['中環', '金鐘', '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '荔枝角'] },
+  { line: t('將軍澳線'), stations: ['北角', '鰂魚涌', '油塘', '將軍澳', '坑口', '寶琳'] },
 ];
 
 const CheckoutScreen: React.FC = () => {
@@ -74,7 +75,7 @@ const CheckoutScreen: React.FC = () => {
     if (!delivery || !payment) return;
     const uid = getAuth().currentUser?.uid;
     if (!uid) {
-      notify(t('需要登入'), '請先登入再下單');
+      notify(t('需要登入'), t('請先登入再下單'));
       return;
     }
     // Card payments require entering card details first
@@ -106,7 +107,7 @@ const CheckoutScreen: React.FC = () => {
         // entered (collected by Stripe's own element) into a
         // PaymentMethod. Stripe never lets raw card data touch our code.
         if (!getPaymentMethodId) {
-          throw new Error('請先填寫信用卡資料');
+          throw new Error(t('請先填寫信用卡資料'));
         }
         await confirmCardPayment(clientSecret, { getPaymentMethodId });
         // paymentIntent.id === paymentIntentId once confirmed
@@ -116,7 +117,7 @@ const CheckoutScreen: React.FC = () => {
       setOrderPlaced(true);
     } catch (e: any) {
       console.error('[Checkout] place order failed:', e);
-      notify('下單失敗', e?.message ?? '請稍後再試');
+      notify(t('下單失敗'), e?.message ?? t('請稍後再試'));
     } finally {
       setSubmitting(false);
     }
@@ -133,9 +134,7 @@ const CheckoutScreen: React.FC = () => {
           </Text>
           <View style={styles.escrowSummary}>
             <Text style={styles.escrowIcon}>🔐</Text>
-            <Text style={styles.escrowSummaryText}>
-              款項由 PokeMarket 托管，收卡確認後自動轉俾賣家
-            </Text>
+            <Text style={styles.escrowSummaryText}>{t('款項由 PokeMarket 托管，收卡確認後自動轉俾賣家')}</Text>
           </View>
           <TouchableOpacity
             style={styles.trackBtn}
@@ -168,9 +167,7 @@ const CheckoutScreen: React.FC = () => {
         <Text style={styles.escrowBannerIcon}>🔐</Text>
         <View style={styles.escrowBannerText}>
           <Text style={styles.escrowBannerTitle}>{t('資金託付安全保障')}</Text>
-          <Text style={styles.escrowBannerDesc}>
-            款項由平台代為保管，收卡確認後先轉俾賣家，如有问题可提出争议
-          </Text>
+          <Text style={styles.escrowBannerDesc}>{t('款項由平台代為保管，收卡確認後先轉俾賣家，如有问题可提出争议')}</Text>
         </View>
       </View>
 
@@ -196,22 +193,16 @@ const CheckoutScreen: React.FC = () => {
             onPress={() => { setDelivery('meetup'); setShowMeetupModal(true); }}
           >
             <Text style={styles.optionIcon}>🤝</Text>
-            <Text style={[styles.optionLabel, delivery === 'meetup' ? styles.optionLabelActive : null]}>
-              面交
-            </Text>
+            <Text style={[styles.optionLabel, delivery === 'meetup' ? styles.optionLabelActive : null]}>{t('面交')}</Text>
             <Text style={styles.optionDesc}>{t('地鐵站當面交收')}</Text>
-            <Text style={[styles.optionPrice, delivery === 'meetup' ? styles.optionPriceActive : null]}>
-              免費
-            </Text>
+            <Text style={[styles.optionPrice, delivery === 'meetup' ? styles.optionPriceActive : null]}>{t('免費')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.optionCard, delivery === 'sf' ? styles.optionCardActive : null]}
             onPress={() => { setDelivery('sf'); setShowAddressModal(true); }}
           >
             <Text style={styles.optionIcon}>📦</Text>
-            <Text style={[styles.optionLabel, delivery === 'sf' ? styles.optionLabelActive : null]}>
-              順豐快遞
-            </Text>
+            <Text style={[styles.optionLabel, delivery === 'sf' ? styles.optionLabelActive : null]}>{t('順豐快遞')}</Text>
             <Text style={styles.optionDesc}>{t('送貨上門')}</Text>
             <Text style={[styles.optionPrice, delivery === 'sf' ? styles.optionPriceActive : null]}>
               HK$ 35
@@ -253,9 +244,7 @@ const CheckoutScreen: React.FC = () => {
             <View style={styles.paymentLeft}>
               <Text style={styles.paymentIcon}>🏧</Text>
               <View>
-                <Text style={[styles.paymentLabel, payment === 'fps' ? styles.paymentLabelActive : null]}>
-                  FPS 轉數快
-                </Text>
+                <Text style={[styles.paymentLabel, payment === 'fps' ? styles.paymentLabelActive : null]}>{t('FPS 轉數快')}</Text>
                 <Text style={styles.paymentSub}>{t('即時轉帳')}</Text>
               </View>
             </View>
@@ -271,9 +260,7 @@ const CheckoutScreen: React.FC = () => {
             <View style={styles.paymentLeft}>
               <Text style={styles.paymentIcon}>💳</Text>
               <View>
-                <Text style={[styles.paymentLabel, payment === 'card' ? styles.paymentLabelActive : null]}>
-                  信用卡 / 扣帳卡
-                </Text>
+                <Text style={[styles.paymentLabel, payment === 'card' ? styles.paymentLabelActive : null]}>{t('信用卡 / 扣帳卡')}</Text>
                 <Text style={styles.paymentSub}>Visa / Mastercard</Text>
               </View>
             </View>
@@ -289,11 +276,11 @@ const CheckoutScreen: React.FC = () => {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="wallet-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>{t('金額明細')}</Text></View>
         <View style={styles.breakdown}>
           {[
-            ['商品金額', formatHkd(fee.cardPriceHkd)],
+            [t('商品金額'), formatHkd(fee.cardPriceHkd)],
             [`Stripe 處理費 (${Math.round(STRIPE_PERCENT_FEE * 100)}% + HK$2.35)`, formatHkd(fee.stripeFeeHkd)],
             [`平台服務費 (${Math.round(PLATFORM_FEE_PERCENT * 100)}%)`, formatHkd(fee.platformFeeHkd)],
-            ['總手續費', formatHkd(fee.totalFeeHkd)],
-            delivery === 'sf' ? ['運費（順豐到付）', `HK$ ${deliveryFee}`] : ['運費', '免費（面交）'],
+            [t('總手續費'), formatHkd(fee.totalFeeHkd)],
+            delivery === 'sf' ? [t('運費（順豐到付）'), `HK$ ${deliveryFee}`] : [t('運費'), t('免費（面交）')],
           ].map(([label, value]) => (
             <View key={label as string} style={styles.breakdownRow}>
               <Text style={styles.breakdownLabel}>{label}</Text>
@@ -310,8 +297,7 @@ const CheckoutScreen: React.FC = () => {
       {/* Confirm button */}
       <View style={styles.footer}>
         <View style={styles.escrowReminder}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-closed-outline" size={13} color={C.textTertiary} /><Text style={styles.escrowReminderText}>點擊確認即表示同意款項由 PokeMarket 托管，收卡確認後自動轉俾賣家
-          </Text></View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-closed-outline" size={13} color={C.textTertiary} /><Text style={styles.escrowReminderText}>{t('點擊確認即表示同意款項由 PokeMarket 托管，收卡確認後自動轉俾賣家')}</Text></View>
         </View>
         <TouchableOpacity
           style={[styles.confirmBtn, (!delivery || !payment || submitting) ? styles.confirmBtnDisabled : null]}
@@ -323,7 +309,7 @@ const CheckoutScreen: React.FC = () => {
           ) : (
             <Text style={styles.confirmBtnText}>
               {payment === 'card' && !showCardForm
-                ? '下一步：填寫信用卡資料'
+                ? t('下一步：填寫信用卡資料')
                 : `確認支付 HK$ ${total.toLocaleString()}`}
             </Text>
           )}
@@ -397,7 +383,7 @@ const CheckoutScreen: React.FC = () => {
                 style={modalStyles.confirmAddressBtn}
                 onPress={() => {
                   if (!address.trim()) {
-                    notify(t('請填地址'), '送貨地址不能空白');
+                    notify(t('請填地址'), t('送貨地址不能空白'));
                     return;
                   }
                   setShowAddressModal(false);
@@ -423,9 +409,7 @@ const CheckoutScreen: React.FC = () => {
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
             <Text style={modalStyles.title}>{t('💳 信用卡資料')}</Text>
-            <Text style={modalStyles.subtitle}>
-              透過 Stripe 加密處理。款項先由平台託管，收卡後釋放。
-            </Text>
+            <Text style={modalStyles.subtitle}>{t('透過 Stripe 加密處理。款項先由平台託管，收卡後釋放。')}</Text>
 
             <CardPaymentForm
               onPaymentMethodReady={setGetPaymentMethodId}

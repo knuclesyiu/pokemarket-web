@@ -69,7 +69,7 @@ const OfferRow: React.FC<{
       {/* Center: info */}
       <View style={styles.offerInfo}>
         <Text style={styles.offerTargetName} numberOfLines={1}>
-          {offer.targetCard?.name || '未知卡片'}
+          {offer.targetCard?.name || t('未知卡片')}
         </Text>
         <Text style={styles.offerMeta}>
           {isSeller ? `← ${offer.buyerName} 的 Offer` : `→ ${offer.targetCard?.name}`}
@@ -96,7 +96,7 @@ const OfferRow: React.FC<{
       <View style={styles.offerRight}>
         <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
           <Text style={[styles.statusBadgeText, { color: cfg.color }]}>
-            {cfg.label}
+            {t(cfg.label)}
           </Text>
         </View>
 
@@ -162,9 +162,9 @@ const MyOffersScreen: React.FC = () => {
       confirmAction(t('拒絕 Offer'),
         `確定要拒絕 ${offer.buyerName} 的這個 Offer 嗎？`,
         [
-          { text: '取消', style: 'cancel' },
+          { text: t('取消'), style: 'cancel' },
           {
-            text: '確認拒絕',
+            text: t('確認拒絕'),
             style: 'destructive',
             onPress: () => executeAction(offer.id, 'reject'),
           },
@@ -183,12 +183,12 @@ const MyOffersScreen: React.FC = () => {
       const result = await respond({ offerId, action });
       const data = result.data as { offerId: string; newStatus: OfferStatus; tradeId?: string };
       notify(
-        data.newStatus === 'accepted' ? '成交！' : '已回覆',
-        data.newStatus === 'accepted' ? '卡片已交換，查看記錄吧！' : 'Offer 已更新'
+        data.newStatus === 'accepted' ? t('成交！') : t('已回覆'),
+        data.newStatus === 'accepted' ? t('卡片已交換，查看記錄吧！') : t('Offer 已更新')
       );
       loadOffers();
     } catch (err: any) {
-      notify('操作失敗', err.message || '請稍後重試');
+      notify(t('操作失敗'), err.message || t('請稍後重試'));
     } finally {
       setActionLoading(null);
     }
@@ -209,12 +209,12 @@ const MyOffersScreen: React.FC = () => {
         {activeTab === 'sent' ? '📨' : '📥'}
       </Text>
       <Text style={styles.emptyTitle}>
-        {activeTab === 'sent' ? '你還沒有發出過 Offer' : '你還沒有收到過 Offer'}
+        {activeTab === 'sent' ? t('你還沒有發出過 Offer') : t('你還沒有收到過 Offer')}
       </Text>
       <Text style={styles.emptySub}>
         {activeTab === 'sent'
-          ? '去市場逛逛，發個 Offer 試試！'
-          : '在其他地方放卡，就會有人向你發 Offer 了'}
+          ? t('去市場逛逛，發個 Offer 試試！')
+          : t('在其他地方放卡，就會有人向你發 Offer 了')}
       </Text>
     </View>
   );
@@ -236,17 +236,13 @@ const MyOffersScreen: React.FC = () => {
           style={[styles.tab, activeTab === 'received' ? styles.tabActive : null]}
           onPress={() => setActiveTab('received')}
         >
-          <Text style={[styles.tabText, activeTab === 'received' ? styles.tabTextActive : null]}>
-            📥 收到的
-          </Text>
+          <Text style={[styles.tabText, activeTab === 'received' ? styles.tabTextActive : null]}>{t('📥 收到的')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'sent' ? styles.tabActive : null]}
           onPress={() => setActiveTab('sent')}
         >
-          <Text style={[styles.tabText, activeTab === 'sent' ? styles.tabTextActive : null]}>
-            📤 發出的
-          </Text>
+          <Text style={[styles.tabText, activeTab === 'sent' ? styles.tabTextActive : null]}>{t('📤 發出的')}</Text>
         </TouchableOpacity>
       </View>
 

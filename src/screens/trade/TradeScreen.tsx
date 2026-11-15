@@ -30,11 +30,11 @@ const CARD_W = (width - 48 - 12) / 2; // 2 columns + padding
 
 // ─── Filter Options ────────────────────────────────────────────────────────────
 
-const SERIES_OPTIONS = ['全部', 'Sword&Shield', 'Sun&Moon', 'XY', 'Black&White', 'Base'];
-const RARITY_OPTIONS = ['全部', 'Rare Holo', 'Rare Ultra', 'Rare Secret', 'Promo', 'Rare'];
-const CONDITION_OPTIONS = ['全部', 'Mint', 'Near Mint', 'Excellent', 'Good'];
+const SERIES_OPTIONS = [t('全部'), 'Sword&Shield', 'Sun&Moon', 'XY', 'Black&White', 'Base'];
+const RARITY_OPTIONS = [t('全部'), 'Rare Holo', 'Rare Ultra', 'Rare Secret', 'Promo', 'Rare'];
+const CONDITION_OPTIONS = [t('全部'), 'Mint', 'Near Mint', 'Excellent', 'Good'];
 const PRICE_OPTIONS = [
-  { label: '全部', min: 0, max: 999999 },
+  { label: t('全部'), min: 0, max: 999999 },
   { label: '~$200', min: 0, max: 200 },
   { label: '$200~500', min: 200, max: 500 },
   { label: '$500~1,000', min: 500, max: 1000 },
@@ -49,7 +49,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export const getStatusLabel = (status: string) =>
-  ({ active: '熱賣中', sold: '已售出', expired: '已過期', cancelled: '已取消' }[status] ?? status);
+  ({ active: t('熱賣中'), sold: t('已售出'), expired: t('已過期'), cancelled: t('已取消') }[status] ?? status);
 
 // ─── Single Card Tile ────────────────────────────────────────────────────────────
 
@@ -72,7 +72,7 @@ const ListingCard: React.FC<{
       </View>
     </View>
     <View style={styles.cardInfo}>
-      <Text style={styles.cardName} numberOfLines={1}>{item.card?.name || '未知卡片'}</Text>
+      <Text style={styles.cardName} numberOfLines={1}>{item.card?.name || t('未知卡片')}</Text>
       <Text style={styles.cardSet} numberOfLines={1}>{item.card?.set || ''}</Text>
       <View style={styles.cardPriceRow}>
         <Text style={styles.cardPrice}>HK${item.price.toLocaleString()}</Text>
@@ -111,9 +111,9 @@ const TradeScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Filters
-  const [seriesFilter, setSeriesFilter] = useState('全部');
-  const [rarityFilter, setRarityFilter] = useState('全部');
-  const [conditionFilter, setConditionFilter] = useState('全部');
+  const [seriesFilter, setSeriesFilter] = useState(t('全部'));
+  const [rarityFilter, setRarityFilter] = useState(t('全部'));
+  const [conditionFilter, setConditionFilter] = useState(t('全部'));
   const [priceIdx, setPriceIdx] = useState(0);
   const [searchText, setSearchText] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -126,9 +126,9 @@ const TradeScreen: React.FC = () => {
       const fns = getFunctions();
       const getListings = httpsCallable(fns, 'getMarketListings', { timeout: 20000 });
       const result = await getListings({
-        series: seriesFilter !== '全部' ? seriesFilter : undefined,
-        rarity: rarityFilter !== '全部' ? rarityFilter : undefined,
-        condition: conditionFilter !== '全部' ? conditionFilter : undefined,
+        series: seriesFilter !== t('全部') ? seriesFilter : undefined,
+        rarity: rarityFilter !== t('全部') ? rarityFilter : undefined,
+        condition: conditionFilter !== t('全部') ? conditionFilter : undefined,
         minPrice: PRICE_OPTIONS[priceIdx].min || undefined,
         maxPrice: PRICE_OPTIONS[priceIdx].max < 999999 ? PRICE_OPTIONS[priceIdx].max : undefined,
         type: 'buy_now',
@@ -138,7 +138,7 @@ const TradeScreen: React.FC = () => {
       setListings(data.listings || []);
     } catch (err: any) {
       console.error('loadListings error:', err);
-      setError('載入失敗，請稍後重試');
+      setError(t('載入失敗，請稍後重試'));
       // Fallback to mock cards (demo mode)
       setListings([]);
     } finally {
@@ -204,26 +204,26 @@ const TradeScreen: React.FC = () => {
         contentContainerStyle={{ paddingHorizontal: 16 }}
       >
         <TouchableOpacity
-          style={[styles.chip, seriesFilter !== '全部' ? styles.chipActive : null]}
-          onPress={() => setSeriesFilter('全部')}
+          style={[styles.chip, seriesFilter !== t('全部') ? styles.chipActive : null]}
+          onPress={() => setSeriesFilter(t('全部'))}
         >
-          <Text style={[styles.chipText, seriesFilter !== '全部' ? styles.chipTextActive : null]}>
+          <Text style={[styles.chipText, seriesFilter !== t('全部') ? styles.chipTextActive : null]}>
             {seriesFilter}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.chip, rarityFilter !== '全部' ? styles.chipActive : null]}
-          onPress={() => setRarityFilter('全部')}
+          style={[styles.chip, rarityFilter !== t('全部') ? styles.chipActive : null]}
+          onPress={() => setRarityFilter(t('全部'))}
         >
-          <Text style={[styles.chipText, rarityFilter !== '全部' ? styles.chipTextActive : null]}>
+          <Text style={[styles.chipText, rarityFilter !== t('全部') ? styles.chipTextActive : null]}>
             {rarityFilter}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.chip, conditionFilter !== '全部' ? styles.chipActive : null]}
-          onPress={() => setConditionFilter('全部')}
+          style={[styles.chip, conditionFilter !== t('全部') ? styles.chipActive : null]}
+          onPress={() => setConditionFilter(t('全部'))}
         >
-          <Text style={[styles.chipText, conditionFilter !== '全部' ? styles.chipTextActive : null]}>
+          <Text style={[styles.chipText, conditionFilter !== t('全部') ? styles.chipTextActive : null]}>
             {conditionFilter}
           </Text>
         </TouchableOpacity>

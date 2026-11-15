@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { t } from '../../i18n';
 import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, Image,
@@ -55,7 +56,7 @@ const SelectableCard: React.FC<{
     )}
     <View style={styles.selectableCardInfo}>
       <Text style={styles.selectableCardName} numberOfLines={1}>
-        {userCard.card?.name || '未知'}
+        {userCard.card?.name || t('未知')}
       </Text>
       <Text style={styles.selectableCardSet} numberOfLines={1}>
         {userCard.card?.set}
@@ -98,7 +99,7 @@ const MakeOfferScreen: React.FC = () => {
       setMyCards(data.cards || []);
     } catch (err) {
       console.error('loadMyCards error:', err);
-      notify(t('載入失敗'), '無法讀取你的收藏，請稍後重試');
+      notify(t('載入失敗'), t('無法讀取你的收藏，請稍後重試'));
     } finally {
       setLoading(false);
     }
@@ -132,7 +133,7 @@ const MakeOfferScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!isValid) {
-      notify(t('無法發送'), '請選擇至少一張卡或填寫現金補貼');
+      notify(t('無法發送'), t('請選擇至少一張卡或填寫現金補貼'));
       return;
     }
     if (listing.sellerId) {
@@ -157,12 +158,12 @@ const MakeOfferScreen: React.FC = () => {
       });
       const data = result.data as { offerId: string; status: string };
       confirmAction(t('Offer 已發出！'), `你的交換提議已發送給 ${listing.sellerName}`, [
-        { text: '查看我的 Offer', onPress: () => navigation.navigate('MyOffers') },
-        { text: '返回', onPress: () => navigation.goBack() },
+        { text: t('查看我的 Offer'), onPress: () => navigation.navigate('MyOffers') },
+        { text: t('返回'), onPress: () => navigation.goBack() },
       ]);
     } catch (err: any) {
       console.error('createOffer error:', err);
-      notify('發送失敗', err.message || '請稍後重試');
+      notify(t('發送失敗'), err.message || t('請稍後重試'));
     } finally {
       setSubmitting(false);
     }
@@ -240,9 +241,7 @@ const MakeOfferScreen: React.FC = () => {
         {/* ── Cash Add ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('💵 現金補貼（可選）')}</Text>
-          <Text style={styles.cashHint}>
-            若你的卡片市值不足目標卡，可補貼現金差額
-          </Text>
+          <Text style={styles.cashHint}>{t('若你的卡片市值不足目標卡，可補貼現金差額')}</Text>
           <View style={styles.cashQuickRow}>
             {CASH_QUICK_ADD.map(amt => (
               <TouchableOpacity
@@ -251,7 +250,7 @@ const MakeOfferScreen: React.FC = () => {
                 onPress={() => setCashAddHkd(amt === cashAddHkd ? 0 : amt)}
               >
                 <Text style={[styles.cashChipText, cashAddHkd === amt ? styles.cashChipTextActive : null]}>
-                  {amt === 0 ? '無' : `HK$${amt}`}
+                  {amt === 0 ? t('無') : `HK$${amt}`}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -302,9 +301,7 @@ const MakeOfferScreen: React.FC = () => {
           {submitting ? (
             <ActivityIndicator color={C.text} />
           ) : (
-            <Text style={styles.submitBtnText}>
-              發送 Offer 🚀
-            </Text>
+            <Text style={styles.submitBtnText}>{t('發送 Offer 🚀')}</Text>
           )}
         </TouchableOpacity>
       </View>

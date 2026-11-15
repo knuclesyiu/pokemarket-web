@@ -2,6 +2,7 @@
  * ProfileScreen — User profile, preferences, language, security settings
  */
 import React, { useState } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
@@ -17,8 +18,8 @@ import { C, themed, ThemeName } from '../theme';
 type Language = 'zh-HK' | 'zh-CN' | 'en';
 
 const LANGUAGES: { value: Language; label: string }[] = [
-  { value: 'zh-HK', label: '🇭🇰 繁體中文' },
-  { value: 'zh-CN', label: '🇨🇳 簡體中文' },
+  { value: 'zh-HK', label: t('🇭🇰 繁體中文') },
+  { value: 'zh-CN', label: t('🇨🇳 簡體中文') },
   { value: 'en', label: '🇺🇸 English' },
 ];
 
@@ -33,8 +34,8 @@ const THEMES: {
   label: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
 }[] = [
-  { value: 'dark', label: '深色', icon: 'moon-outline' },
-  { value: 'light', label: '淺色', icon: 'sunny-outline' },
+  { value: 'dark', label: t('深色'), icon: 'moon-outline' },
+  { value: 'light', label: t('淺色'), icon: 'sunny-outline' },
 ];
 
 const ProfileScreen: React.FC = () => {
@@ -73,21 +74,21 @@ const ProfileScreen: React.FC = () => {
 
   const handleSetPin = () => {
     Alert.prompt(
-      '🔐 設定交易密碼',
-      '請輸入 6 位數字交易密碼',
+      t('🔐 設定交易密碼'),
+      t('請輸入 6 位數字交易密碼'),
       [
-        { text: '取消', style: 'cancel' },
+        { text: t('取消'), style: 'cancel' },
         {
-          text: '確認',
+          text: t('確認'),
           onPress: async (pin?: string) => {
-            if (!pin || pin.length < 6) { notify(t('錯誤'), '密碼最少 6 位數字'); return; }
-            if (!/^\d+$/.test(pin)) { notify(t('錯誤'), '密碼只能包含數字'); return; }
+            if (!pin || pin.length < 6) { notify(t('錯誤'), t('密碼最少 6 位數字')); return; }
+            if (!/^\d+$/.test(pin)) { notify(t('錯誤'), t('密碼只能包含數字')); return; }
             setChangingPin(true);
             try {
               await setTransactionPin(pin);
-              notify(t('已設定'), '交易密碼已成功設定');
+              notify(t('已設定'), t('交易密碼已成功設定'));
             } catch (e: any) {
-              notify('設定失敗', e.message);
+              notify(t('設定失敗'), e.message);
             } finally {
               setChangingPin(false);
             }
@@ -100,40 +101,40 @@ const ProfileScreen: React.FC = () => {
 
   const handleUpgradeFromAnonymous = () => {
     Alert.prompt(
-      '升級訪客帳戶',
-      '輸入 Email 與密碼以升級帳戶，現有資料將會保留。',
+      t('升級訪客帳戶'),
+      t('輸入 Email 與密碼以升級帳戶，現有資料將會保留。'),
       [
-        { text: '取消', style: 'cancel' },
+        { text: t('取消'), style: 'cancel' },
         {
-          text: '升級',
+          text: t('升級'),
           onPress: async (email?: string) => {
             if (!email || !email.includes('@')) {
-              notify(t('錯誤'), '請輸入有效 Email');
+              notify(t('錯誤'), t('請輸入有效 Email'));
               return;
             }
             // Re-prompt for password (Alert.prompt is single-input)
             Alert.prompt(
-              '🔐 設定密碼',
-              '設定新密碼（最少 6 位）',
+              t('🔐 設定密碼'),
+              t('設定新密碼（最少 6 位）'),
               [
-                { text: '取消', style: 'cancel' },
+                { text: t('取消'), style: 'cancel' },
                 {
-                  text: '確認升級',
+                  text: t('確認升級'),
                   onPress: async (password?: string) => {
                     if (!password || password.length < 6) {
-                      notify(t('錯誤'), '密碼最少 6 位');
+                      notify(t('錯誤'), t('密碼最少 6 位'));
                       return;
                     }
                     setUpgrading(true);
                     try {
                       const r = await upgradeFromAnonymous(email.trim().toLowerCase(), password);
                       if (r.kind === 'ok') {
-                        notify(t('升級成功'), '帳戶已升級，現有資料保留');
+                        notify(t('升級成功'), t('帳戶已升級，現有資料保留'));
                       } else {
-                        notify('升級失敗', r.message);
+                        notify(t('升級失敗'), r.message);
                       }
                     } catch (e: any) {
-                      notify('升級失敗', e?.message ?? '請稍後再試');
+                      notify(t('升級失敗'), e?.message ?? t('請稍後再試'));
                     } finally {
                       setUpgrading(false);
                     }
@@ -152,17 +153,17 @@ const ProfileScreen: React.FC = () => {
   };
 
   const handleSignOut = () => {
-    confirmAction(t('登出'), '確定要登出嗎？', [
-      { text: '取消', style: 'cancel' },
+    confirmAction(t('登出'), t('確定要登出嗎？'), [
+      { text: t('取消'), style: 'cancel' },
       {
-        text: '登出', style: 'destructive',
+        text: t('登出'), style: 'destructive',
         onPress: async () => {
           try {
             await authSignOut();
             // Reset nav stack so back button can't go to MainTabs after logout
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
           } catch (e: any) {
-            notify('登出失敗', e?.message ?? '請稍後再試');
+            notify(t('登出失敗'), e?.message ?? t('請稍後再試'));
           }
         },
       },
@@ -177,7 +178,7 @@ const ProfileScreen: React.FC = () => {
       const data = result.data as any;
       const reviews = data?.reviews ?? [];
       if (reviews.length === 0) {
-        notify(t('評價'), '暫時未有評價');
+        notify(t('評價'), t('暫時未有評價'));
       } else {
         const summary = reviews.slice(0, 5).map((r: any) =>
           `${r.type === 'positive' ? '' : ''} ${r.comment || '(no comment)'}`
@@ -215,9 +216,7 @@ const ProfileScreen: React.FC = () => {
       {isAnonymous && (
         <View style={styles.anonBanner}>
           <Text style={styles.anonBannerTitle}>{t('👻 你正在以訪客身份瀏覽')}</Text>
-          <Text style={styles.anonBannerDesc}>
-            升級為正式帳戶以建立掛牌、完成交易、保留收藏資料。
-          </Text>
+          <Text style={styles.anonBannerDesc}>{t('升級為正式帳戶以建立掛牌、完成交易、保留收藏資料。')}</Text>
           <TouchableOpacity
             style={styles.anonBannerBtn}
             onPress={handleUpgradeFromAnonymous}
@@ -242,7 +241,7 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.memberSince}>
             {profile.memberSince
               ? `加入於 ${new Date(profile.memberSince).toLocaleDateString('zh-HK', { year: 'numeric', month: 'long', day: 'numeric' })}`
-              : '新會員'}
+              : t('新會員')}
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
             <Text style={styles.editProfile}>{t('編輯個人資料 →')}</Text>
@@ -255,11 +254,11 @@ const ProfileScreen: React.FC = () => {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="phone-portrait-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>{t('聯絡方式')}</Text></View>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>{t('電話')}</Text>
-          <Text style={styles.infoValue}>{profile.phone || '未設定'}</Text>
+          <Text style={styles.infoValue}>{profile.phone || t('未設定')}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Email</Text>
-          <Text style={styles.infoValue}>{profile.email || '未設定'}</Text>
+          <Text style={styles.infoValue}>{profile.email || t('未設定')}</Text>
         </View>
       </View>
 
@@ -308,9 +307,7 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.actionIcon}>💳</Text>
           <View style={styles.actionContent}>
             <Text style={styles.actionLabel}>{t('收款帳戶')}</Text>
-            <Text style={styles.actionSub}>
-              設定 Stripe 收款戶口，賣出嘅卡收到嘅錢會直接入你嘅銀行
-            </Text>
+            <Text style={styles.actionSub}>{t('設定 Stripe 收款戶口，賣出嘅卡收到嘅錢會直接入你嘅銀行')}</Text>
           </View>
           <Text style={styles.actionArrow}>→</Text>
         </TouchableOpacity>
@@ -346,7 +343,7 @@ const ProfileScreen: React.FC = () => {
         <View style={styles.prefRow}>
           <View style={styles.prefLabelRow}>
             <Ionicons name="contrast-outline" size={15} color={C.textSecondary} />
-            <Text style={styles.prefLabel}>主題</Text>
+            <Text style={styles.prefLabel}>{t('主題')}</Text>
           </View>
           <View style={styles.langOptions}>
             {THEMES.map(th => {
@@ -389,7 +386,7 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.actionIcon}>🔑</Text>
           <View style={styles.actionContent}>
             <Text style={styles.actionLabel}>
-              {profile.transactionPinHash ? '更改交易密碼' : '設定交易密碼'}
+              {profile.transactionPinHash ? t('更改交易密碼') : t('設定交易密碼')}
             </Text>
             <Text style={styles.actionSub}>{t('每筆交易都需要驗證')}</Text>
           </View>

@@ -70,8 +70,8 @@ const SellerOnboardingScreen: React.FC = () => {
       console.warn('[SellerOnboarding] status failed', e);
       setStatus('not-started');
       notify(
-        '查唔到狀態',
-        String(e?.message ?? '請稍後再試'),
+        t('查唔到狀態'),
+        String(e?.message ?? t('請稍後再試')),
       );
     }
   }, []);
@@ -105,8 +105,8 @@ const SellerOnboardingScreen: React.FC = () => {
     } catch (e: any) {
       console.warn('[SellerOnboarding] start failed', e);
       notify(
-        '開唔到 Stripe 設定頁',
-        String(e?.message ?? '請稍後再試'),
+        t('開唔到 Stripe 設定頁'),
+        String(e?.message ?? t('請稍後再試')),
       );
     } finally {
       setBusy(false);
@@ -126,7 +126,7 @@ const SellerOnboardingScreen: React.FC = () => {
 
       <View style={[styles.statusCard, { borderColor: info.tone }]}>
         <Text style={[styles.statusTitle, { color: info.tone }]}>{t(info.title)}</Text>
-        <Text style={styles.statusBody}>{info.body}</Text>
+        <Text style={styles.statusBody}>{t(info.body)}</Text>
 
         {accountId ? (
           <Text style={styles.accountId}>帳戶：{accountId}</Text>
@@ -136,9 +136,9 @@ const SellerOnboardingScreen: React.FC = () => {
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>{t('你需要準備')}</Text>
         {[
-          '香港身份證（用於 KYC）',
-          '本人名下的銀行戶口',
-          '手機（接收驗證短訊）',
+          t('香港身份證（用於 KYC）'),
+          t('本人名下的銀行戶口'),
+          t('手機（接收驗證短訊）'),
         ].map((line) => (
           <View key={line} style={styles.infoRow}>
             <Text style={styles.bullet}>•</Text>
@@ -165,7 +165,7 @@ const SellerOnboardingScreen: React.FC = () => {
               <ActivityIndicator color={C.void} />
             ) : (
               <Text style={styles.primaryBtnText}>
-                {status === 'pending' ? '繼續設定 →' : '開始設定收款帳戶 →'}
+                {status === 'pending' ? t('繼續設定 →') : t('開始設定收款帳戶 →')}
               </Text>
             )}
           </TouchableOpacity>
@@ -176,10 +176,7 @@ const SellerOnboardingScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.footnote}>
-        Stripe 係獨立嘅支付服務商，佢哋會按自己嘅政策審核你嘅資料。PokeMarket
-        唔會存你嘅銀行資料，亦唔會代你收款 —— 款項由 Stripe 直接轉入你嘅戶口。
-      </Text>
+      <Text style={styles.footnote}>{t('Stripe 係獨立嘅支付服務商，佢哋會按自己嘅政策審核你嘅資料。PokeMarket 唔會存你嘅銀行資料，亦唔會代你收款 —— 款項由 Stripe 直接轉入你嘅戶口。')}</Text>
     </ScrollView>
   );
 };

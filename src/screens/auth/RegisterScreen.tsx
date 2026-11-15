@@ -3,6 +3,7 @@
  * Called after first successful auth (phone OTP or email signup)
  */
 import React, { useState } from 'react';
+import { t } from '../../i18n';
 import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
@@ -42,14 +43,14 @@ const RegisterScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!displayName.trim()) { notify(t('錯誤'), '請輸入暱稱'); return; }
-    if (displayName.trim().length < 2) { notify(t('錯誤'), '暱稱至少 2 個字'); return; }
-    if (!email.trim()) { notify(t('錯誤'), '請輸入 Email'); return; }
-    if (!EMAIL_REGEX.test(email.trim())) { notify(t('錯誤'), 'Email 格式不正確'); return; }
-    if (!password) { notify(t('錯誤'), '請設定登入密碼'); return; }
-    if (password.length < 6) { notify(t('錯誤'), '密碼最少 6 位'); return; }
-    if (password !== confirmPassword) { notify(t('錯誤'), '兩次密碼不相同'); return; }
-    if (phone && !PHONE_REGEX.test(phone)) { notify(t('錯誤'), '電話格式不正確'); return; }
+    if (!displayName.trim()) { notify(t('錯誤'), t('請輸入暱稱')); return; }
+    if (displayName.trim().length < 2) { notify(t('錯誤'), t('暱稱至少 2 個字')); return; }
+    if (!email.trim()) { notify(t('錯誤'), t('請輸入 Email')); return; }
+    if (!EMAIL_REGEX.test(email.trim())) { notify(t('錯誤'), t('Email 格式不正確')); return; }
+    if (!password) { notify(t('錯誤'), t('請設定登入密碼')); return; }
+    if (password.length < 6) { notify(t('錯誤'), t('密碼最少 6 位')); return; }
+    if (password !== confirmPassword) { notify(t('錯誤'), t('兩次密碼不相同')); return; }
+    if (phone && !PHONE_REGEX.test(phone)) { notify(t('錯誤'), t('電話格式不正確')); return; }
 
     setLoading(true);
     try {
@@ -60,11 +61,11 @@ const RegisterScreen: React.FC = () => {
       const result = await registerWithEmail(email.trim().toLowerCase(), password);
       if (result.kind === 'error') {
         confirmAction(
-          result.code === 'auth/email-already-in-use' ? 'Email 已被註冊' : '註冊失敗',
+          result.code === 'auth/email-already-in-use' ? t('Email 已被註冊') : t('註冊失敗'),
           result.message,
           result.code === 'auth/email-already-in-use'
-            ? [{ text: '去登入', onPress: () => navigation.replace('Login') }, { text: '取消', style: 'cancel' }]
-            : [{ text: '好' }],
+            ? [{ text: t('去登入'), onPress: () => navigation.replace('Login') }, { text: t('取消'), style: 'cancel' }]
+            : [{ text: t('好') }],
         );
         return;
       }
@@ -79,7 +80,7 @@ const RegisterScreen: React.FC = () => {
       });
       setStep('pin');
     } catch (e: any) {
-      notify('註冊失敗', e.message ?? '請稍後再試');
+      notify(t('註冊失敗'), e.message ?? t('請稍後再試'));
     } finally {
       setLoading(false);
     }
@@ -91,15 +92,15 @@ const RegisterScreen: React.FC = () => {
       return;
     }
     if (pin !== pinConfirm) {
-      notify(t('錯誤'), '兩次輸入的密碼不相同');
+      notify(t('錯誤'), t('兩次輸入的密碼不相同'));
       return;
     }
     if (WEAK_PINS.has(pin)) {
-      notify(t('太弱的密碼'), '請勿使用 123456、111111 等常見密碼');
+      notify(t('太弱的密碼'), t('請勿使用 123456、111111 等常見密碼'));
       return;
     }
     if (!/^\d+$/.test(pin)) {
-      notify(t('格式錯誤'), '交易密碼只能包含數字');
+      notify(t('格式錯誤'), t('交易密碼只能包含數字'));
       return;
     }
     setLoading(true);
@@ -108,7 +109,7 @@ const RegisterScreen: React.FC = () => {
       await setTransactionPin(pin);
       setStep('done');
     } catch (e: any) {
-      notify('設定失敗', e.message ?? '請稍後再試');
+      notify(t('設定失敗'), e.message ?? t('請稍後再試'));
     } finally {
       setLoading(false);
     }
@@ -120,9 +121,7 @@ const RegisterScreen: React.FC = () => {
         <View style={styles.card}>
           <Text style={styles.logo}>🔐</Text>
           <Text style={styles.title}>{t('設定交易密碼')}</Text>
-          <Text style={styles.subtitle}>
-            每次交易釋放款項時都需要輸入呢個密碼
-          </Text>
+          <Text style={styles.subtitle}>{t('每次交易釋放款項時都需要輸入呢個密碼')}</Text>
           <TextInput
             style={styles.input}
             placeholder={`${MIN_PIN_LENGTH} 位數字交易密碼`}
@@ -166,8 +165,8 @@ const RegisterScreen: React.FC = () => {
         <Text style={styles.title}>{t('歡迎加入 PokeMarket！')}</Text>
         <Text style={styles.subtitle}>
           {currentUser?.isAnonymous
-            ? '你將以訪客身份繼續瀏覽。建立交易前需要完成註冊。'
-            : '你可以開始買賣 Pokemon 卡片了'}
+            ? t('你將以訪客身份繼續瀏覽。建立交易前需要完成註冊。')
+            : t('你可以開始買賣 Pokemon 卡片了')}
         </Text>
         <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.replace('Main')}>
           <Text style={styles.primaryBtnText}>{t('進入主頁 →')}</Text>
@@ -190,8 +189,8 @@ const RegisterScreen: React.FC = () => {
           <Text style={styles.title}>{t('完善個人資料')}</Text>
           <Text style={styles.subtitle}>
             {currentUser?.isAnonymous
-              ? '升級訪客帳戶，建立完整檔案以開始交易'
-              : '讓對方知道你是邊個'}
+              ? t('升級訪客帳戶，建立完整檔案以開始交易')
+              : t('讓對方知道你是邊個')}
           </Text>
 
           <Text style={styles.label}>{t('暱稱 *')}</Text>

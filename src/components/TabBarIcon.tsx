@@ -12,6 +12,7 @@
  * made real.
  */
 import React from 'react';
+import { t } from '../i18n';
 import { View, Text, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 

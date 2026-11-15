@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet,
@@ -26,7 +27,7 @@ import { PokemonCard } from '../types';
 type NavProp = NativeStackNavigationProp<any>;
 const { width } = Dimensions.get('window');
 
-const SERIES_FILTER = ['全部', 'Sword&Shield', 'Sun&Moon', 'XY', 'Black&White', 'Base'];
+const SERIES_FILTER = [t('全部'), 'Sword&Shield', 'Sun&Moon', 'XY', 'Black&White', 'Base'];
 
 // NEW: Obsidian Gallery design system — color constants
 const COLORS = {
@@ -72,7 +73,7 @@ const HomeScreen: React.FC = () => {
 
   const navigation = useNavigation<NavProp>();
   const [searchResults, setSearchResults] = useState<PokemonCard[] | null>(null);
-  const [activeFilter, setActiveFilter] = useState('全部');
+  const [activeFilter, setActiveFilter] = useState(t('全部'));
   const [marketMode, setMarketMode] = useState<'market' | 'swap'>('market');
   const [priceMap, setPriceMap] = useState<Record<string, {
     priceHkd: number; change24h: number; source: string; ageMs: number
@@ -146,7 +147,7 @@ const HomeScreen: React.FC = () => {
     return [];
   }, [searchResults, realCards]);
 
-  const filtered = activeFilter === '全部'
+  const filtered = activeFilter === t('全部')
     ? displayCards
     : displayCards.filter(c =>
         c.series?.toLowerCase().includes(activeFilter.toLowerCase()) ||
@@ -155,8 +156,8 @@ const HomeScreen: React.FC = () => {
 
   const now = new Date();
   const timeLabel = now.getMinutes() < 5
-    ? '剛剛'
-    : now.getHours() === 9 ? '港股開市' : `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+    ? t('剛剛')
+    : now.getHours() === 9 ? t('港股開市') : `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
 
   const formatVol = (v: number) =>
     v >= 1000000 ? `$${(v / 1000000).toFixed(1)}M` : `$${(v / 1000).toFixed(0)}K`;
@@ -204,7 +205,7 @@ const HomeScreen: React.FC = () => {
   const formatLastUpdated = () => {
     if (!lastUpdated) return null;
     const diff = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
-    if (diff < 60) return '剛剛';
+    if (diff < 60) return t('剛剛');
     if (diff < 3600) return `${Math.floor(diff / 60)} 分鐘前`;
     return `${Math.floor(diff / 3600)} 小時前`;
   };
@@ -299,7 +300,7 @@ const HomeScreen: React.FC = () => {
             {movers ? `+${movers.up.priceChange24h.toFixed(1)}%` : '--'}
           </Text>
           <Text style={styles.statSubLink} numberOfLines={1}>
-            {movers ? movers.up.name : '未有升跌數據'}
+            {movers ? movers.up.name : t('未有升跌數據')}
           </Text>
         </TouchableOpacity>
         <View style={styles.statDivider} />
@@ -315,7 +316,7 @@ const HomeScreen: React.FC = () => {
             {movers ? `${movers.down.priceChange24h.toFixed(1)}%` : '--'}
           </Text>
           <Text style={styles.statSubLink} numberOfLines={1}>
-            {movers ? movers.down.name : '未有升跌數據'}
+            {movers ? movers.down.name : t('未有升跌數據')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -365,7 +366,7 @@ const HomeScreen: React.FC = () => {
         <EmptyState
           icon="cloud-offline-outline"
           title={t('暫時攞唔到行情')}
-          body="價格服務未回應，或者未有卡喺呢個價位帶。向下拉可以重新整理。"
+          body={t('價格服務未回應，或者未有卡喺呢個價位帶。向下拉可以重新整理。')}
         />
       ) : (
         <FlatList
@@ -400,7 +401,7 @@ const HomeScreen: React.FC = () => {
         <EmptyState
           icon="card-outline"
           title={t('未有掛牌')}
-          body="市場暫時未有掛牌嘅卡。撳下面「全部」睇現貨價格，或者自己掛一張。"
+          body={t('市場暫時未有掛牌嘅卡。撳下面「全部」睇現貨價格，或者自己掛一張。')}
         />
       ) : (
         <View style={styles.cardList}>

@@ -10,6 +10,7 @@
  *   - Countdown resets on OTP error so the user can immediately retry
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { t } from '../../i18n';
 import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
@@ -67,7 +68,7 @@ const LoginScreen: React.FC = () => {
 
   const handleSendOTP = async () => {
     if (!PHONE_REGEX.test(phone)) {
-      notify(t('錯誤'), '請輸入有效電話號碼（例：+852****4567）');
+      notify(t('錯誤'), t('請輸入有效電話號碼（例：+852****4567）'));
       return;
     }
     setLoading(true);
@@ -79,11 +80,11 @@ const LoginScreen: React.FC = () => {
     } catch (e: any) {
       if (isPhoneProviderDisabled(e)) {
         confirmAction(t('電話登入未啟用'),
-          '此 App 尚未啟用電話登入，請改用 Email 登入，或聯絡管理員。',
-          [{ text: '改用 Email', onPress: () => setMode('email') }, { text: '取消' }],
+          t('此 App 尚未啟用電話登入，請改用 Email 登入，或聯絡管理員。'),
+          [{ text: t('改用 Email'), onPress: () => setMode('email') }, { text: t('取消') }],
         );
       } else {
-        notify('發送失敗', e?.message ?? '請稍後再試');
+        notify(t('發送失敗'), e?.message ?? t('請稍後再試'));
       }
       // Reset OTP state on any error
       setOtpSent(false);
@@ -95,7 +96,7 @@ const LoginScreen: React.FC = () => {
 
   const handleVerifyOTP = async () => {
     if (!confirmResult || otp.length < 6) {
-      notify(t('錯誤'), '請輸入 6 位驗證碼');
+      notify(t('錯誤'), t('請輸入 6 位驗證碼'));
       return;
     }
     setLoading(true);
@@ -103,7 +104,7 @@ const LoginScreen: React.FC = () => {
       await confirmResult.confirm(otp);
       // onAuthStateChanged will fire and the useEffect above will navigate
     } catch (e: any) {
-      notify('驗證失敗', e?.message ?? '驗證碼不正確');
+      notify(t('驗證失敗'), e?.message ?? t('驗證碼不正確'));
       // Reset countdown so user can immediately request a new code
       setCountdown(0);
     } finally {
@@ -113,7 +114,7 @@ const LoginScreen: React.FC = () => {
 
   const handleEmailLogin = async () => {
     if (!email || !password) {
-      notify(t('錯誤'), '請填寫 Email 及密碼');
+      notify(t('錯誤'), t('請填寫 Email 及密碼'));
       return;
     }
     setLoading(true);
@@ -124,19 +125,19 @@ const LoginScreen: React.FC = () => {
         confirmAction(t('帳戶未註冊'),
           `未有此 Email 帳戶。是否前往註冊？`,
           [
-            { text: '前往註冊', onPress: () => navigation.navigate('Register') },
-            { text: '取消', style: 'cancel' },
+            { text: t('前往註冊'), onPress: () => navigation.navigate('Register') },
+            { text: t('取消'), style: 'cancel' },
           ],
         );
         return;
       }
       if (result.kind === 'error') {
-        notify('登入失敗', result.message);
+        notify(t('登入失敗'), result.message);
         return;
       }
       // Success — onAuthStateChanged will navigate
     } catch (e: any) {
-      notify('登入失敗', e?.message ?? '請稍後再試');
+      notify(t('登入失敗'), e?.message ?? t('請稍後再試'));
     } finally {
       setLoading(false);
     }
@@ -168,7 +169,7 @@ const LoginScreen: React.FC = () => {
         <View style={styles.card}>
           <Text style={styles.title}>{t('登入')}</Text>
           <Text style={styles.subtitle}>
-            {isAnonymous ? '升級帳戶以開始交易' : '選擇登入方式'}
+            {isAnonymous ? t('升級帳戶以開始交易') : t('選擇登入方式')}
           </Text>
 
           {/* Mode toggle */}
@@ -317,7 +318,7 @@ const LoginScreen: React.FC = () => {
                   style={styles.eyeButton}
                   onPress={() => setShowPassword((v) => !v)}
                   accessibilityRole="button"
-                  accessibilityLabel={showPassword ? '隱藏密碼' : '顯示密碼'}
+                  accessibilityLabel={showPassword ? t('隱藏密碼') : t('顯示密碼')}
                 >
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
@@ -363,7 +364,7 @@ const LoginScreen: React.FC = () => {
                   onPress={async () => {
                     setLoading(true);
                     try { await signInWithGoogle(); }
-                    catch (e: any) { notify('Google 登入失敗', e?.message ?? '請稍後再試'); }
+                    catch (e: any) { notify(t('Google 登入失敗'), e?.message ?? t('請稍後再試')); }
                     finally { setLoading(false); }
                   }}
                   disabled={loading}
@@ -387,9 +388,7 @@ const LoginScreen: React.FC = () => {
           )}
         </View>
 
-        <Text style={styles.legal}>
-          登入即表示同意《用戶協議》及《隱私政策》
-        </Text>
+        <Text style={styles.legal}>{t('登入即表示同意《用戶協議》及《隱私政策》')}</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );

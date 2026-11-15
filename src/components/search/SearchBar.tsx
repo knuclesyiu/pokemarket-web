@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { t } from '../../i18n';
 import { useAppearance } from '../../contexts/AppearanceContext';
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
@@ -41,7 +42,7 @@ interface Props {
 const SearchBar: React.FC<Props> = ({
   onResults,
   onLoadingChange,
-  placeholder = '搜尋卡名、系列、稀有度…',
+  placeholder = t('搜尋卡名、系列、稀有度…'),
 }) => {
   const { t } = useAppearance();
 

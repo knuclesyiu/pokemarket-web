@@ -17,6 +17,7 @@
  * payment method in the app.
  */
 import React from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import { View, Text, StyleSheet } from 'react-native';
 import { C, themed } from '../theme';
@@ -40,8 +41,8 @@ const CardPaymentForm: React.FC<Props> = ({ onPaymentMethodReady }) => {
     onPaymentMethodReady?.(() =>
       Promise.reject(
         new Error(
-          '手機版暫時未支援信用卡付款。請改用「FPS 轉數快」付款，' +
-            '或者用網頁版完成呢筆交易。',
+          t('手機版暫時未支援信用卡付款。請改用「FPS 轉數快」付款，') +
+            t('或者用網頁版完成呢筆交易。'),
         ),
       ),
     );
@@ -51,9 +52,7 @@ const CardPaymentForm: React.FC<Props> = ({ onPaymentMethodReady }) => {
     <View style={styles.wrap}>
       <Text style={styles.icon}>💳</Text>
       <Text style={styles.title}>{t('信用卡付款暫時只支援網頁版')}</Text>
-      <Text style={styles.body}>
-        手機版請改用「FPS 轉數快」付款，即時轉帳一樣方便。
-      </Text>
+      <Text style={styles.body}>{t('手機版請改用「FPS 轉數快」付款，即時轉帳一樣方便。')}</Text>
     </View>
   );
 };

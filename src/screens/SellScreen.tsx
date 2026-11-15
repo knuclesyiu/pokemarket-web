@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, Image,
@@ -162,9 +163,9 @@ const SellScreen: React.FC = () => {
 
   const handleCardSelect = (card: PokemonCard) => {
     if (!auth.currentUser) {
-      confirmAction(t('需要登入'), '請先登入再放售卡牌', [
-        { text: '登入', onPress: () => navigation.navigate('Login') },
-        { text: '取消' },
+      confirmAction(t('需要登入'), t('請先登入再放售卡牌'), [
+        { text: t('登入'), onPress: () => navigation.navigate('Login') },
+        { text: t('取消') },
       ]);
       return;
     }
@@ -174,16 +175,16 @@ const SellScreen: React.FC = () => {
 
   const handleConfirmListing = async () => {
     if (!auth.currentUser) {
-      notify(t('需要登入'), '請先登入');
+      notify(t('需要登入'), t('請先登入'));
       return;
     }
     if (!selectedCard || !price) return;
     if (!canProceedFromGrade) {
       notify(
-        '資料未完整',
+        t('資料未完整'),
         isGraded && !certValid
-          ? 'PSA cert 格式不正確（需 7-10 位數字）；BGS 需 8-12 位英數'
-          : '請填寫 slab 認證編號',
+          ? t('PSA cert 格式不正確（需 7-10 位數字）；BGS 需 8-12 位英數')
+          : t('請填寫 slab 認證編號'),
       );
       return;
     }
@@ -204,11 +205,11 @@ const SellScreen: React.FC = () => {
         setListing({ reviewId: data.reviewId });
         setStep(isGraded ? 5 : 4);
       } else {
-        notify('掛牌成功！', `${selectedCard.name} 已成功上架。`);
+        notify(t('掛牌成功！'), `${selectedCard.name} 已成功上架。`);
         resetForm();
       }
     } catch (err) {
-      notify(t('掛牌失敗'), '請稍後再試。');
+      notify(t('掛牌失敗'), t('請稍後再試。'));
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -237,7 +238,7 @@ const SellScreen: React.FC = () => {
       {/* Progress — gold step indicators */}
       <View style={styles.progressSection}>
         <View style={styles.progressBar}>
-          {['揀卡', needsReview ? '品相審核' : '定價', '確認'].map((label, i) => {
+          {[t('揀卡'), needsReview ? t('品相審核') : t('定價'), t('確認')].map((label, i) => {
             const s = i + 1;
             return (
               <View key={s} style={styles.progressStep}>
@@ -286,9 +287,7 @@ const SellScreen: React.FC = () => {
           <Text style={styles.sectionLabel}>{t('或從列表選擇')}</Text>
           <View style={styles.quickGrid}>
             {portfolioCards.length === 0 ? (
-              <Text style={styles.quickEmpty}>
-                收藏空空如也 — 先去「我的收藏」加入卡牌，就可以喺度快速放售
-              </Text>
+              <Text style={styles.quickEmpty}>{t('收藏空空如也 — 先去「我的收藏」加入卡牌，就可以喺度快速放售')}</Text>
             ) : (
               portfolioCards.slice(0, 4).map(card => (
                 <TouchableOpacity
@@ -325,14 +324,14 @@ const SellScreen: React.FC = () => {
           </View>
 
           <View style={styles.typeToggle}>
-            {(['fixed', 'auction'] as const).map(t => (
+            {(['fixed', 'auction'] as const).map((item) => (
               <TouchableOpacity
-                key={t}
-                style={[styles.typeBtn, priceType === t ? styles.typeBtnActive : null]}
-                onPress={() => setPriceType(t)}
+                key={item}
+                style={[styles.typeBtn, priceType === item ? styles.typeBtnActive : null]}
+                onPress={() => setPriceType(item)}
               >
-                <Text style={[styles.typeBtnText, priceType === t ? styles.typeBtnTextActive : null]}>
-                  {t === 'fixed' ? '定價出售' : '拍賣'}
+                <Text style={[styles.typeBtnText, priceType === item ? styles.typeBtnTextActive : null]}>
+                  {item === 'fixed' ? t('定價出售') : t('拍賣')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -358,7 +357,7 @@ const SellScreen: React.FC = () => {
                   ? `📈 比市價高 ${(((Number(price) - selectedCard.price) / selectedCard.price) * 100).toFixed(0)}%`
                   : Number(price) < selectedCard.price
                   ? `📉 比市價低 ${(((selectedCard.price - Number(price)) / selectedCard.price) * 100).toFixed(0)}%`
-                  : '與市價相同'}
+                  : t('與市價相同')}
               </Text>
             </View>
           )}
@@ -443,7 +442,7 @@ const SellScreen: React.FC = () => {
           <View style={styles.confirmDetails}>
             <View style={styles.confirmRow}>
               <Text style={styles.confirmLabel}>{t('掛牌類型')}</Text>
-              <Text style={styles.confirmValue}>{priceType === 'fixed' ? '定價' : '拍賣'}</Text>
+              <Text style={styles.confirmValue}>{priceType === 'fixed' ? t('定價') : t('拍賣')}</Text>
             </View>
             <View style={styles.confirmRow}>
               <Text style={styles.confirmLabel}>{t('掛牌價')}</Text>
@@ -480,7 +479,7 @@ const SellScreen: React.FC = () => {
             disabled={submitting}
           >
             <Text style={styles.listBtnText}>
-              {submitting ? '處理中...' : needsReview ? '確認並提交品相審核' : '確認放售'}
+              {submitting ? t('處理中...') : needsReview ? t('確認並提交品相審核') : t('確認放售')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.backBtnCenter} onPress={() => setStep(2)}>
@@ -517,11 +516,11 @@ const SellScreen: React.FC = () => {
           <View style={styles.photoSlots}>
             {[0, 1, 2].map(i => (
               <TouchableOpacity key={i} style={styles.photoSlot} onPress={() => {
-                notify(t('📷 提示'), '請在真實設備上使用 react-native-image-picker 上傳相片');
+                notify(t('📷 提示'), t('請在真實設備上使用 react-native-image-picker 上傳相片'));
               }}>
                 <Text style={styles.photoSlotIcon}>+ 📷</Text>
                 <Text style={styles.photoSlotLabel}>
-                  {i === 0 ? '正面' : i === 1 ? '背面' : '細節圖'}
+                  {i === 0 ? t('正面') : i === 1 ? t('背面') : t('細節圖')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -544,8 +543,8 @@ const SellScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.continueBtn}
             onPress={() => {
-              confirmAction(t('品相審核已提交！'), '你的掛牌已成功上架，買家會看到「⏳ 評審中」標記。', [
-                { text: '完成', onPress: () => { setStep(1); setSelectedCard(null); setPrice(''); setListing(null); } }
+              confirmAction(t('品相審核已提交！'), t('你的掛牌已成功上架，買家會看到「⏳ 評審中」標記。'), [
+                { text: t('完成'), onPress: () => { setStep(1); setSelectedCard(null); setPrice(''); setListing(null); } }
               ]);
             }}
           >
@@ -578,7 +577,7 @@ const SellScreen: React.FC = () => {
                 </View>
               ) : pickerResults.length === 0 ? (
                 <Text style={modalStyles.emptyText}>
-                  {pickerQuery.trim().length < 2 ? '輸入至少 2 個字搜尋卡牌' : '搵唔到相符嘅卡牌'}
+                  {pickerQuery.trim().length < 2 ? t('輸入至少 2 個字搜尋卡牌') : t('搵唔到相符嘅卡牌')}
                 </Text>
               ) : (
                 pickerResults.map(card => (

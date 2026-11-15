@@ -8,6 +8,7 @@
  * write that records the payout, so a retry cannot pay twice.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity,
@@ -88,7 +89,7 @@ const WithdrawScreen: React.FC = () => {
 
   const reason = useMemo(() => {
     if (!amount) return null;
-    if (!Number.isFinite(parsed)) return '請輸入有效金額';
+    if (!Number.isFinite(parsed)) return t('請輸入有效金額');
     if (parsed < MIN_WITHDRAWAL_HKD)
       return `最少提現 HK$ ${MIN_WITHDRAWAL_HKD}`;
     if (parsed > available)
@@ -104,11 +105,11 @@ const WithdrawScreen: React.FC = () => {
       confirmAction(t('提現已提交'),
         `HK$ ${parsed.toFixed(2)} 已經交俾 Stripe 處理。\n` +
           `一般 1–3 個工作日到账。\n\n提現編號：${res.payoutId}`,
-        [{ text: '好', onPress: () => navigation.goBack() }],
+        [{ text: t('好'), onPress: () => navigation.goBack() }],
       );
     } catch (e: any) {
       console.warn('[Withdraw] failed', e);
-      notify('提現失敗', String(e?.message ?? '請稍後再試'));
+      notify(t('提現失敗'), String(e?.message ?? t('請稍後再試')));
     } finally {
       setBusy(false);
     }
@@ -129,9 +130,7 @@ const WithdrawScreen: React.FC = () => {
 
         <View style={styles.noticeCard}>
           <Text style={styles.noticeTitle}>{t('未設定收款帳戶')}</Text>
-          <Text style={styles.noticeBody}>
-            提現需要一個 Stripe 收款帳戶。設定好之後，賣卡收到嘅錢就可以直接轉去你嘅銀行戶口。
-          </Text>
+          <Text style={styles.noticeBody}>{t('提現需要一個 Stripe 收款帳戶。設定好之後，賣卡收到嘅錢就可以直接轉去你嘅銀行戶口。')}</Text>
         </View>
 
         <TouchableOpacity
@@ -209,10 +208,7 @@ const WithdrawScreen: React.FC = () => {
           )}
         </TouchableOpacity>
 
-        <Text style={styles.footnote}>
-          提現由 Stripe 處理，款項直接轉入你登記嘅銀行戶口（一般 1–3 個工作日）。
-          PokeMarket 唔會代收代付，平台只收固定服務費。
-        </Text>
+        <Text style={styles.footnote}>{t('提現由 Stripe 處理，款項直接轉入你登記嘅銀行戶口（一般 1–3 個工作日）。 PokeMarket 唔會代收代付，平台只收固定服務費。')}</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );

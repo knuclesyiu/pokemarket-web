@@ -14,6 +14,8 @@
  * into a PaymentMethod at the moment of payment.
  */
 import React, { useCallback, useMemo, useState } from 'react';
+import { t } from '../i18n';
+import { useAppearance } from '../contexts/AppearanceContext';
 import { View, Text, StyleSheet } from 'react-native';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -45,18 +47,18 @@ const CardFields: React.FC<{
 
   const getPaymentMethodId = useCallback(async () => {
     if (!stripe || !elements) {
-      throw new Error('Stripe 未準備好，請稍後再試');
+      throw new Error(t('Stripe 未準備好，請稍後再試'));
     }
     const card = elements.getElement(CardElement);
     if (!card) {
-      throw new Error('請先填寫信用卡資料');
+      throw new Error(t('請先填寫信用卡資料'));
     }
     const { error: createError, paymentMethod } = await stripe.createPaymentMethod({
       type: 'card',
       card,
     });
     if (createError) {
-      throw new Error(createError.message ?? '信用卡資料有問題');
+      throw new Error(createError.message ?? t('信用卡資料有問題'));
     }
     return paymentMethod?.id ?? null;
   }, [stripe, elements]);
@@ -89,6 +91,7 @@ const CardFields: React.FC<{
 };
 
 const CardPaymentForm: React.FC<Props> = ({ onPaymentMethodReady, submitting }) => {
+const { t } = useAppearance();
   const stripePromise = useMemo(
     () => (PUBLISHABLE_KEY ? loadStripe(PUBLISHABLE_KEY) : null),
     [],
@@ -97,9 +100,7 @@ const CardPaymentForm: React.FC<Props> = ({ onPaymentMethodReady, submitting }) 
   if (!PUBLISHABLE_KEY) {
     return (
       <View style={styles.missingKey}>
-        <Text style={styles.missingKeyText}>
-          未設定 Stripe publishable key，暫時無法用信用卡付款。請改用 FPS 轉數快。
-        </Text>
+        <Text style={styles.missingKeyText}>{t('未設定 Stripe publishable key，暫時無法用信用卡付款。請改用 FPS 轉數快。')}</Text>
       </View>
     );
   }

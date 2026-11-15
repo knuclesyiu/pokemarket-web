@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator,
@@ -58,7 +59,7 @@ const NotificationScreen: React.FC = () => {
       {!item.read && <View style={styles.unreadDot} />}
       <View style={styles.notifContent}>
         <Text style={[styles.notifTitle, !item.read ? styles.notifTitleUnread: null]}>
-          {item.title ?? '通知'}
+          {item.title ?? t('通知')}
         </Text>
         <Text style={styles.notifBody} numberOfLines={2}>
           {item.body ?? ''}

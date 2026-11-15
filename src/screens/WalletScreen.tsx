@@ -11,6 +11,7 @@
  *   - Re-subscribes when user changes
  */
 import React, { useState, useEffect } from 'react';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList,
@@ -34,9 +35,9 @@ type EscrowState = 'pending' | 'in_escrow' | 'released';
 interface EscrowTransaction extends WalletTransaction {}
 
 const STATE_LABELS: Record<EscrowState, { zh: string; color: string; bg: string }> = {
-  pending:   { zh: '待確認',  color: C.gold, bg: 'rgba(212,175,55,0.15)' },
-  in_escrow: { zh: '託付中',  color: C.warn, bg: 'rgba(255,107,53,0.15)' },
-  released:  { zh: '已完成',  color: C.up, bg: 'rgba(0,200,150,0.15)' },
+  pending:   { zh: t('待確認'),  color: C.gold, bg: 'rgba(212,175,55,0.15)' },
+  in_escrow: { zh: t('託付中'),  color: C.warn, bg: 'rgba(255,107,53,0.15)' },
+  released:  { zh: t('已完成'),  color: C.up, bg: 'rgba(0,200,150,0.15)' },
 };
 
 const WalletScreen: React.FC = () => {
@@ -90,10 +91,10 @@ const WalletScreen: React.FC = () => {
     : transactions.filter(t => toEscrowState(t.state) === activeTab);
 
   const tabs: { key: EscrowState | 'all'; label: string; count: number }[] = [
-    { key: 'all',       label: '全部',   count: transactions.length },
-    { key: 'pending',   label: '待確認', count: transactions.filter(t => toEscrowState(t.state) === 'pending').length },
-    { key: 'in_escrow', label: '託付中', count: transactions.filter(t => toEscrowState(t.state) === 'in_escrow').length },
-    { key: 'released',  label: '已完成', count: transactions.filter(t => toEscrowState(t.state) === 'released').length },
+    { key: 'all',       label: t('全部'),   count: transactions.length },
+    { key: 'pending',   label: t('待確認'), count: transactions.filter(t => toEscrowState(t.state) === 'pending').length },
+    { key: 'in_escrow', label: t('託付中'), count: transactions.filter(t => toEscrowState(t.state) === 'in_escrow').length },
+    { key: 'released',  label: t('已完成'), count: transactions.filter(t => toEscrowState(t.state) === 'released').length },
   ];
 
   const handleTopUp = () => {
@@ -105,7 +106,7 @@ const WalletScreen: React.FC = () => {
   const handleWithdraw = () => {
     if (available <= 0) {
       notify(t('暫時無法提現'),
-        '可用餘額為 HK$ 0。完成交易後賣出嘅卡入咗帳戶，就可以提現。',
+        t('可用餘額為 HK$ 0。完成交易後賣出嘅卡入咗帳戶，就可以提現。'),
       );
       return;
     }
@@ -164,8 +165,8 @@ const WalletScreen: React.FC = () => {
         >
           <Text style={styles.fpsBadgeText}>
             {walletData.onboardingComplete
-              ? '收款帳戶已設定 ✓ · 點擊查看'
-              : '設定收款帳戶先可以提現 →'}
+              ? t('收款帳戶已設定 ✓ · 點擊查看')
+              : t('設定收款帳戶先可以提現 →')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -175,9 +176,7 @@ const WalletScreen: React.FC = () => {
         <Text style={styles.escrowIcon}>🔐</Text>
         <View style={styles.escrowText}>
           <Text style={styles.escrowTitle}>{t('資金由平台託付')}</Text>
-          <Text style={styles.escrowDesc}>
-            買家確認收卡後，款項先由平台持有，交易完成後才轉俾賣家，保障雙方
-          </Text>
+          <Text style={styles.escrowDesc}>{t('買家確認收卡後，款項先由平台持有，交易完成後才轉俾賣家，保障雙方')}</Text>
         </View>
       </View>
 
@@ -187,9 +186,7 @@ const WalletScreen: React.FC = () => {
           <Ionicons name="warning-outline" size={16} color={C.textTertiary} />
           <View style={styles.warningText}>
             <Text style={styles.warningTitle}>{t('款項即將自動釋放')}</Text>
-            <Text style={styles.warningDesc}>
-              以下款項將於 5 日內自動釋放給賣家，如未收到卡請立即聯絡
-            </Text>
+            <Text style={styles.warningDesc}>{t('以下款項將於 5 日內自動釋放給賣家，如未收到卡請立即聯絡')}</Text>
           </View>
         </View>
       )}
@@ -227,9 +224,7 @@ const WalletScreen: React.FC = () => {
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>📭</Text>
             <Text style={styles.emptyText}>{t('暫時沒有記錄')}</Text>
-            <Text style={styles.emptyHint}>
-              買賣卡牌後，交易會顯示喺呢度
-            </Text>
+            <Text style={styles.emptyHint}>{t('買賣卡牌後，交易會顯示喺呢度')}</Text>
           </View>
         ) : (
           filtered.map(tx => {
@@ -247,7 +242,7 @@ const WalletScreen: React.FC = () => {
                 <View style={styles.txInfo}>
                   <Text style={styles.txCardName}>{tx.cardName}</Text>
                   <Text style={styles.txCounterparty}>
-                    {tx.type === 'sell' ? '賣俾 ' : '向 '}{tx.counterparty}
+                    {tx.type === 'sell' ? t('賣俾 ') : t('向 ')}{tx.counterparty}
                   </Text>
                   <Text style={styles.txDate}>
                     {tx.createdAt

@@ -38,6 +38,7 @@ import {
 } from 'react-native';
 
 import { C, R, SP, T, themed } from '../theme';
+import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -182,7 +183,7 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({
         buttons:
           buttons && buttons.length > 0
             ? buttons
-            : [{ text: '好', style: 'default' }],
+            : [{ text: t('好'), style: 'default' }],
       });
     },
     [],
