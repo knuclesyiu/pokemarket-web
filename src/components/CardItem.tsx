@@ -3,6 +3,7 @@ import {
   View, Text, Image, StyleSheet, TouchableOpacity, Animated,
 } from 'react-native';
 import { PokemonCard } from '../types';
+import { C, R, SP, T } from '../theme';
 
 // ─── Rarity Config ─────────────────────────────────────────────────────────────
 type RarityTier = 'standard' | 'holo' | 'ultra' | 'legendary';
@@ -18,10 +19,10 @@ const RARITY_TIER: Record<string, RarityTier> = {
 };
 
 const RARITY_BORDER: Record<RarityTier, string> = {
-  standard:   '#2A2A50',
-  holo:       '#D4AF37',
-  ultra:      '#D4AF37',
-  legendary:  '#D4AF37',
+  standard:   C.border,
+  holo:       C.gold,
+  ultra:      C.gold,
+  legendary:  C.gold,
 };
 
 const RARITY_GLOW: Record<RarityTier, string> = {
@@ -31,22 +32,51 @@ const RARITY_GLOW: Record<RarityTier, string> = {
   legendary:  'rgba(212,175,55,0.4)',
 };
 
-const RARITY_BADGE: Record<RarityTier, { emoji: string; label: string }> = {
-  standard:   { emoji: '⚪', label: '' },
-  holo:       { emoji: '✨', label: 'Holo' },
-  ultra:      { emoji: '⭐', label: 'Ultra' },
-  legendary:  { emoji: '👑', label: 'LEGEND' },
+/**
+ * The rarity tag.
+ *
+ * It used to be an emoji in a coloured circle — a crown, a star, a
+ * sparkle — which meant the meaning had to be guessed from the shape
+ * and the ring around it did not say anything. A written tag says
+ * what it is, and it survives being read by someone who has never
+ * seen the app.
+ */
+const RARITY_TAG: Record<RarityTier, { label: string; color: string }> = {
+  standard:   { label: '', color: C.textTertiary },
+  holo:       { label: 'HOLO', color: C.gold },
+  ultra:      { label: 'ULTRA', color: C.gold },
+  legendary:  { label: 'LEGEND', color: C.gold },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const formatPrice = (price: number): string => {
-  if (price >= 1000000) return `HK$ ${(price / 1000000).toFixed(1)}M`;
-  if (price >= 1000)    return `HK$ ${(price / 1000).toFixed(1)}K`;
-  return `HK$ ${price}`;
+
+/**
+ * The price, split so the currency does not compete with the number.
+ *
+ * A buyer scanning a list of cards reads the digits first; `HK$` in
+ * the same weight as `4,900` makes the line twice as wide and the
+ * number half as legible. The number also uses tabular figures, so a
+ * column of prices lines up on the decimal point.
+ */
+const formatPrice = (price: number): { currency: string; value: string } => {
+  const rounded = Math.round(price);
+  if (rounded >= 1000000) {
+    return { currency: 'HK$', value: `${(rounded / 1000000).toFixed(2)}M` };
+  }
+  if (rounded >= 10000) {
+    return { currency: 'HK$', value: `${(rounded / 1000).toFixed(1)}K` };
+  }
+  return {
+    currency: 'HK$',
+    value: rounded.toLocaleString('en-US', {
+      minimumFractionDigits: rounded < 100 ? 2 : 0,
+      maximumFractionDigits: 2,
+    }),
+  };
 };
 
 const ELEMENT_COLORS: Record<string, string> = {
-  fire: '#FF6B35', water: '#4A90D9', grass: '#52C41A',
+  fire: C.warn, water: '#4A90D9', grass: '#52C41A',
   lightning: '#FADB14', psychic: '#B371CF', dark: '#5A4FCF',
   dragon: '#FF4D4F', normal: '#8C8C8C',
 };
@@ -121,6 +151,9 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
   const elementColor = getElementColor(card.name);
   const isTopCard   = card.priceChange24h >= 8;
 
+  const price = formatPrice(card.price);
+  const tag  = RARITY_TAG[tier];
+
   // ── Compact layout ─────────────────────────────────────────────────────────
   if (compact) {
     const borderColor = RARITY_BORDER[tier];
@@ -139,11 +172,11 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
       >
         {isLegendary && <ShimmerBar tier={tier} color={borderColor} />}
 
-        {/* Shiny / Legendary crown badge */}
+        {/* Shiny / Legendary tag */}
         {(isLegendary || isShinyCard) && (
           <View style={styles.crownBadge}>
             <Text style={styles.crownBadgeText}>
-              {isLegendary ? '👑' : '✨'}
+              {isLegendary ? 'LEGEND' : 'SHINY'}
             </Text>
           </View>
         )}
@@ -152,9 +185,12 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
         <Text style={styles.compactName} numberOfLines={1}>
           {card.name.replace(' VMAX', '\nVMAX')}
         </Text>
-        <Text style={[styles.compactPrice, tier !== 'standard' ? styles.priceGold : null]}>
-          {formatPrice(card.price)}
-        </Text>
+        <View style={styles.compactPriceRow}>
+          <Text style={styles.compactCurrency}>{price.currency}</Text>
+          <Text style={[styles.compactPrice, tier !== 'standard' ? styles.priceGold : null]}>
+            {price.value}
+          </Text>
+        </View>
         <View style={[styles.badge, isGain ? styles.badgeGain : styles.badgeLoss]}>
           <Text style={[styles.badgeText, isGain ? styles.textGain : styles.textLoss]}>
             {isGain ? '▲' : '▼'} {Math.abs(card.priceChange24h).toFixed(1)}%
@@ -167,7 +203,6 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
   // ── Full card layout ──────────────────────────────────────────────────────
   const borderColor = RARITY_BORDER[tier];
   const glowColor   = RARITY_GLOW[tier];
-  const badge       = RARITY_BADGE[tier];
 
   return (
     <TouchableOpacity
@@ -196,10 +231,12 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
       <View style={styles.imageWrapper}>
         <Image source={{ uri: card.imageUrl }} style={styles.image} />
 
-        {/* Rarity crown badge (top-right of image) */}
-        {badge.label !== '' && (
-          <View style={[styles.rarityBadge, { backgroundColor: borderColor }]}>
-            <Text style={styles.rarityBadgeText}>{badge.emoji}</Text>
+        {/* Rarity tag (top-right of image) */}
+        {tag.label !== '' && (
+          <View style={styles.rarityBadge}>
+            <Text style={[styles.rarityBadgeText, { color: tag.color }]}>
+              {tag.label}
+            </Text>
           </View>
         )}
       </View>
@@ -208,17 +245,22 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
       <View style={styles.info}>
         <View style={styles.nameRow}>
           <Text style={styles.name} numberOfLines={1}>{card.name}</Text>
-          {(isLegendary || isShinyCard) && (
-            <Text style={styles.crownText}>{isLegendary ? '👑' : '✨'}</Text>
+          {isShinyCard && !isLegendary && (
+            <Text style={styles.shinyTag}>SHINY</Text>
           )}
         </View>
-        <Text style={styles.set}>{card.set} · {card.number}</Text>
+        <Text style={styles.set} numberOfLines={1}>{card.set} · {card.number}</Text>
 
         <View style={styles.priceRow}>
+          <Text style={styles.priceCurrency}>{price.currency}</Text>
           <Text style={[styles.price, tier !== 'standard' ? styles.priceGold : null]}>
-            {formatPrice(card.price)}
+            {price.value}
           </Text>
-          {isTopCard && <Text style={styles.trophyIcon}>🏆</Text>}
+          {isTopCard && (
+            <View style={styles.trophyTag}>
+              <Text style={styles.trophyTagText}>HOT</Text>
+            </View>
+          )}
           <View style={[styles.badge, isGain ? styles.badgeGain : styles.badgeLoss]}>
             <Text style={[styles.badgeText, isGain ? styles.textGain : styles.textLoss]}>
               {isGain ? '▲' : '▼'} {Math.abs(card.priceChange24h).toFixed(1)}%
@@ -226,7 +268,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
           </View>
         </View>
 
-        <Text style={styles.listings}>
+        <Text style={styles.listings} numberOfLines={1}>
           {card.listingCount} 個掛牌 · {card.rarity}
         </Text>
       </View>
@@ -238,13 +280,13 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
 const styles = StyleSheet.create({
   // Full card
   card: {
-    backgroundColor: '#14142A',
-    borderRadius: 16,
+    backgroundColor: C.card,
+    borderRadius: R.lg,
     overflow: 'hidden',
-    marginBottom: 12,
+    marginBottom: SP.md,
     flexDirection: 'row',
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
@@ -259,53 +301,86 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0, left: 0, right: 0,
     height: 2,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: R.lg,
+    borderTopRightRadius: R.lg,
     zIndex: 2,
   },
-  elementBar: { width: 3, borderTopLeftRadius: 16 },
+  elementBar: { width: 3, borderTopLeftRadius: R.lg },
   imageWrapper: { position: 'relative' },
   image: {
     width: 90, height: 125,
-    backgroundColor: '#1C1C38',
+    backgroundColor: C.elevated,
   },
   rarityBadge: {
     position: 'absolute',
     top: 6, right: 6,
-    width: 22, height: 22,
-    borderRadius: 11,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: R.sm,
+    backgroundColor: 'rgba(8,8,16,0.72)',
+    borderWidth: 1,
+    borderColor: C.goldEdge,
   },
-  rarityBadgeText: { fontSize: 12 },
+  rarityBadgeText: {
+    ...T.overline,
+    fontSize: 9,
+    letterSpacing: 0.8,
+  },
   info: {
-    flex: 1, padding: 12, justifyContent: 'space-between',
+    flex: 1, padding: SP.md, justifyContent: 'space-between',
   },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  name: { color: '#F0F0FF', fontSize: 15, fontWeight: '700', flex: 1 },
-  crownText: { fontSize: 12 },
-  set: { color: '#8888CC', fontSize: 11, marginTop: 2 },
-  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
-  price: { color: '#F0F0FF', fontSize: 18, fontWeight: '700' },
-  priceGold: { color: '#D4AF37' },
-  trophyIcon: { fontSize: 14 },
-  badge: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 },
-  badgeGain: { backgroundColor: 'rgba(0,200,150,0.15)' },
-  badgeLoss: { backgroundColor: 'rgba(255,64,96,0.15)' },
-  badgeText: { fontSize: 11, fontWeight: '700' },
-  textGain: { color: '#00C896' },
-  textLoss: { color: '#FF4060' },
-  listings: { color: '#4A4A70', fontSize: 11, marginTop: 4 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  name: { ...T.bodyStrong, color: C.text, flex: 1 },
+  shinyTag: {
+    ...T.overline,
+    fontSize: 9,
+    color: C.gold,
+    borderWidth: 1,
+    borderColor: C.goldEdge,
+    borderRadius: R.sm,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  set: { ...T.caption, color: C.textTertiary, marginTop: 2 },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+    marginTop: SP.sm,
+  },
+  priceCurrency: {
+    ...T.caption,
+    color: C.textTertiary,
+    marginRight: 1,
+  },
+  price: { ...T.price, color: C.text },
+  priceGold: { color: C.gold },
+  trophyTag: {
+    borderWidth: 1,
+    borderColor: C.action,
+    borderRadius: R.sm,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    alignSelf: 'flex-start',
+  },
+  trophyTagText: { ...T.overline, fontSize: 9, color: C.action },
+  badge: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: R.sm },
+  badgeGain: { backgroundColor: 'rgba(61,214,140,0.14)' },
+  badgeLoss: { backgroundColor: 'rgba(255,107,107,0.14)' },
+  badgeText: { ...T.caption, fontSize: 11 },
+  textGain: { color: C.up },
+  textLoss: { color: C.down },
+  listings: { ...T.caption, color: C.textDisabled, marginTop: SP.xs },
 
   // Compact card
   compactCard: {
-    width: 120,
-    backgroundColor: '#14142A',
-    borderRadius: 12,
+    width: 124,
+    backgroundColor: C.card,
+    borderRadius: R.md,
     overflow: 'hidden',
-    marginRight: 10,
+    marginRight: SP.md,
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -318,26 +393,36 @@ const styles = StyleSheet.create({
   },
   crownBadge: {
     position: 'absolute',
-    top: 4, right: 4,
+    top: 4, left: 4,
     zIndex: 3,
-    width: 20, height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: R.sm,
+    backgroundColor: 'rgba(8,8,16,0.75)',
+    borderWidth: 1,
+    borderColor: C.goldEdge,
   },
-  crownBadgeText: { fontSize: 12 },
+  crownBadgeText: { ...T.overline, fontSize: 8, color: C.gold, letterSpacing: 0.6 },
   compactImage: {
     width: '100%', height: 100,
-    backgroundColor: '#1C1C38',
+    backgroundColor: C.elevated,
   },
   compactName: {
-    color: '#F0F0FF', fontSize: 11, fontWeight: '600',
-    paddingHorizontal: 8, paddingTop: 6, minHeight: 28,
+    ...T.caption,
+    color: C.text,
+    paddingHorizontal: SP.sm,
+    paddingTop: 6,
+    minHeight: 28,
   },
-  compactPrice: {
-    color: '#F0F0FF', fontSize: 12, fontWeight: '700',
-    paddingHorizontal: 8, paddingTop: 4,
+  compactPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 2,
+    paddingHorizontal: SP.sm,
+    paddingTop: 4,
   },
+  compactCurrency: { ...T.overline, fontSize: 9, color: C.textTertiary },
+  compactPrice: { ...T.price, fontSize: 13, color: C.text },
 });
 
 export default CardItem;

@@ -10,6 +10,8 @@ import {
 import { db } from '../../services/firebase';
 import { ChatMessage } from '../../types/chat';
 import { useAuth } from '../../contexts/AuthContext';
+import { C } from '../../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface Props {
   route: {
@@ -163,9 +165,8 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
     >
       {/* Other party header */}
       <View style={styles.chatHeader}>
-        <Text style={styles.chatHeaderName}>
-          💬 {otherPartyName}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.chatHeaderName}>{otherPartyName}
+        </Text></View>
       </View>
 
       <FlatList
@@ -177,7 +178,7 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
         onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
         ListEmptyComponent={
           <View style={styles.emptyList}>
-            <Text style={styles.emptyIcon}>💬</Text>
+            <Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} />
             <Text style={styles.emptyText}>開始新對話吧！</Text>
             <Text style={styles.emptySub}>你可以在卡牌詳情頁主動聯絡賣家</Text>
           </View>
@@ -189,7 +190,7 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
         <TextInput
           style={styles.input}
           placeholder="輸入訊息..."
-          placeholderTextColor="#6666AA"
+          placeholderTextColor={C.textTertiary}
           value={inputText}
           onChangeText={setInputText}
           multiline
@@ -209,69 +210,69 @@ const ChatDetailScreen: React.FC<Props> = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121F' },
+  container: { flex: 1, backgroundColor: C.surface },
   chatHeader: {
     paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
-    borderBottomWidth: 1, borderBottomColor: '#1E1E2E',
+    borderBottomWidth: 1, borderBottomColor: C.elevated,
     backgroundColor: '#1A1A2E',
   },
-  chatHeaderName: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  chatHeaderName: { color: C.text, fontSize: 16, fontWeight: '700' },
   msgRow: { marginBottom: 10, maxWidth: '78%' },
   msgRowMe: { alignSelf: 'flex-end' },
   msgRowOther: { alignSelf: 'flex-start' },
-  senderName: { color: '#6666AA', fontSize: 10, marginBottom: 3, marginLeft: 4 },
+  senderName: { color: C.textTertiary, fontSize: 10, marginBottom: 3, marginLeft: 4 },
   msgBubble: {
     paddingHorizontal: 14, paddingVertical: 10,
     borderRadius: 18,
   },
   msgBubbleMe: {
-    backgroundColor: '#FF3C3C',
+    backgroundColor: C.action,
     borderBottomRightRadius: 4,
   },
   msgBubbleOther: {
-    backgroundColor: '#1E1E2E',
+    backgroundColor: C.elevated,
     borderBottomLeftRadius: 4,
   },
   msgText: { fontSize: 14, lineHeight: 20 },
-  msgTextMe: { color: '#FFFFFF' },
-  msgTextOther: { color: '#FFFFFF' },
+  msgTextMe: { color: C.text },
+  msgTextOther: { color: C.text },
   msgTime: { fontSize: 10, marginTop: 4, alignSelf: 'flex-end' },
   msgTimeMe: { color: 'rgba(255,255,255,0.6)' },
-  msgTimeOther: { color: '#6666AA' },
+  msgTimeOther: { color: C.textTertiary },
   systemMsg: {
     alignItems: 'center', marginVertical: 8,
   },
   systemText: {
-    color: '#6666AA', fontSize: 11, fontStyle: 'italic',
-    backgroundColor: '#1E1E2E', paddingHorizontal: 12, paddingVertical: 4,
+    color: C.textTertiary, fontSize: 11, fontStyle: 'italic',
+    backgroundColor: C.elevated, paddingHorizontal: 12, paddingVertical: 4,
     borderRadius: 12,
   },
   emptyList: { flex: 1, alignItems: 'center', paddingTop: 80 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  emptySub: { color: '#6666AA', fontSize: 12, marginTop: 6 },
+  emptyText: { color: C.text, fontSize: 16, fontWeight: '600' },
+  emptySub: { color: C.textTertiary, fontSize: 12, marginTop: 6 },
   inputRow: {
     flexDirection: 'row', alignItems: 'flex-end',
     padding: 12, paddingBottom: 16,
-    borderTopWidth: 1, borderTopColor: '#1E1E2E',
+    borderTopWidth: 1, borderTopColor: C.elevated,
     backgroundColor: '#1A1A2E',
     gap: 10,
   },
   input: {
     flex: 1,
-    backgroundColor: '#2A2A3E',
+    backgroundColor: C.border,
     borderRadius: 20,
     paddingHorizontal: 16, paddingVertical: 10,
-    color: '#FFFFFF', fontSize: 14,
+    color: C.text, fontSize: 14,
     maxHeight: 100,
   },
   sendBtn: {
     width: 46, height: 46, borderRadius: 23,
-    backgroundColor: '#FF3C3C',
+    backgroundColor: C.action,
     alignItems: 'center', justifyContent: 'center',
   },
   sendBtnDisabled: { backgroundColor: '#3A3A4E' },
-  sendBtnText: { color: '#FFFFFF', fontSize: 20 },
+  sendBtnText: { color: C.text, fontSize: 20 },
 });
 
 export default ChatDetailScreen;

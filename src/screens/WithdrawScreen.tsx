@@ -21,6 +21,8 @@ import {
   checkSellerOnboarding,
   createWithdrawal,
 } from '../services/stripeService';
+import { confirmAction, notify } from '../components/Feedback';
+import { C } from '../theme';
 
 type NavProp = NativeStackNavigationProp<any>;
 
@@ -96,7 +98,7 @@ const WithdrawScreen: React.FC = () => {
     setBusy(true);
     try {
       const res = await createWithdrawal(parsed, accountId);
-      Alert.alert(
+      confirmAction(
         '提現已提交',
         `HK$ ${parsed.toFixed(2)} 已經交俾 Stripe 處理。\n` +
           `一般 1–3 個工作日到账。\n\n提現編號：${res.payoutId}`,
@@ -104,7 +106,7 @@ const WithdrawScreen: React.FC = () => {
       );
     } catch (e: any) {
       console.warn('[Withdraw] failed', e);
-      Alert.alert('提現失敗', String(e?.message ?? '請稍後再試'));
+      notify('提現失敗', String(e?.message ?? '請稍後再試'));
     } finally {
       setBusy(false);
     }
@@ -179,7 +181,7 @@ const WithdrawScreen: React.FC = () => {
               onChangeText={setAmount}
               keyboardType="decimal-pad"
               placeholder="0.00"
-              placeholderTextColor="#4A4A70"
+              placeholderTextColor={C.textDisabled}
             />
             <TouchableOpacity
               style={styles.maxBtn}
@@ -197,7 +199,7 @@ const WithdrawScreen: React.FC = () => {
           disabled={!valid || busy}
         >
           {busy ? (
-            <ActivityIndicator color="#080810" />
+            <ActivityIndicator color={C.void} />
           ) : (
             <Text style={styles.primaryBtnText}>
               確認提現{parsed > 0 ? ` HK$ ${parsed.toFixed(2)}` : ''}
@@ -215,7 +217,7 @@ const WithdrawScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080810' },
+  container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -224,51 +226,51 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   backBtn: { paddingVertical: 6, paddingRight: 12 },
-  backText: { color: '#8888CC', fontSize: 16 },
-  headerTitle: { color: '#F0F0FF', fontSize: 22, fontWeight: '700' },
+  backText: { color: C.textSecondary, fontSize: 16 },
+  headerTitle: { color: C.text, fontSize: 22, fontWeight: '700' },
   noticeCard: {
     margin: 20,
     padding: 20,
     borderRadius: 16,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderWidth: 1,
-    borderColor: '#FF6B35',
+    borderColor: C.warn,
   },
-  noticeTitle: { color: '#FF6B35', fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  noticeBody: { color: '#F0F0FF', fontSize: 14, lineHeight: 21 },
+  noticeTitle: { color: C.warn, fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  noticeBody: { color: C.text, fontSize: 14, lineHeight: 21 },
   balanceCard: {
     marginHorizontal: 20,
     marginBottom: 12,
     padding: 20,
     borderRadius: 16,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
   },
-  balanceLabel: { color: '#8888CC', fontSize: 13 },
+  balanceLabel: { color: C.textSecondary, fontSize: 13 },
   balanceValue: {
-    color: '#D4AF37',
+    color: C.gold,
     fontSize: 32,
     fontWeight: '800',
     marginTop: 4,
   },
-  balanceHint: { color: '#4A4A70', fontSize: 12, marginTop: 6 },
+  balanceHint: { color: C.textDisabled, fontSize: 12, marginTop: 6 },
   formCard: {
     marginHorizontal: 20,
     marginBottom: 12,
     padding: 18,
     borderRadius: 16,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
   },
-  inputLabel: { color: '#8888CC', fontSize: 13, marginBottom: 10 },
+  inputLabel: { color: C.textSecondary, fontSize: 13, marginBottom: 10 },
   inputRow: { flexDirection: 'row', alignItems: 'center' },
-  currency: { color: '#8888CC', fontSize: 18, marginRight: 8 },
+  currency: { color: C.textSecondary, fontSize: 18, marginRight: 8 },
   input: {
     flex: 1,
-    color: '#F0F0FF',
+    color: C.text,
     fontSize: 24,
     fontWeight: '700',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A50',
+    borderBottomColor: C.border,
   },
   maxBtn: {
     paddingHorizontal: 14,
@@ -276,19 +278,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: 'rgba(212,175,55,0.15)',
   },
-  maxBtnText: { color: '#D4AF37', fontSize: 13, fontWeight: '700' },
-  errorText: { color: '#FF6B35', fontSize: 12, marginTop: 8 },
+  maxBtnText: { color: C.gold, fontSize: 13, fontWeight: '700' },
+  errorText: { color: C.warn, fontSize: 12, marginTop: 8 },
   primaryBtn: {
     marginHorizontal: 20,
-    backgroundColor: '#D4AF37',
+    backgroundColor: C.gold,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
   },
   primaryBtnDisabled: { opacity: 0.4 },
-  primaryBtnText: { color: '#080810', fontSize: 16, fontWeight: '700' },
+  primaryBtnText: { color: C.void, fontSize: 16, fontWeight: '700' },
   footnote: {
-    color: '#4A4A70',
+    color: C.textDisabled,
     fontSize: 11,
     lineHeight: 17,
     marginHorizontal: 20,

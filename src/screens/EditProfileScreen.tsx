@@ -13,6 +13,9 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
+import { confirmAction, notify } from '../components/Feedback';
+import { C } from '../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{7,15}$/;
@@ -28,10 +31,10 @@ const EditProfileScreen: React.FC = () => {
 
   const handleSave = async () => {
     const name = displayName.trim();
-    if (!name) { Alert.alert('錯誤', '請輸入暱稱'); return; }
-    if (name.length < 2) { Alert.alert('錯誤', '暱稱至少 2 個字'); return; }
-    if (phone && !PHONE_REGEX.test(phone.trim())) { Alert.alert('錯誤', '電話格式不正確'); return; }
-    if (email && !EMAIL_REGEX.test(email.trim())) { Alert.alert('錯誤', 'Email 格式不正確'); return; }
+    if (!name) { notify('錯誤', '請輸入暱稱'); return; }
+    if (name.length < 2) { notify('錯誤', '暱稱至少 2 個字'); return; }
+    if (phone && !PHONE_REGEX.test(phone.trim())) { notify('錯誤', '電話格式不正確'); return; }
+    if (email && !EMAIL_REGEX.test(email.trim())) { notify('錯誤', 'Email 格式不正確'); return; }
 
     setSaving(true);
     try {
@@ -40,11 +43,11 @@ const EditProfileScreen: React.FC = () => {
         phone: phone.trim(),
         email: email.trim().toLowerCase(),
       });
-      Alert.alert('✅ 已儲存', '個人資料已更新', [
+      confirmAction('已儲存', '個人資料已更新', [
         { text: '完成', onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {
-      Alert.alert('儲存失敗', e?.message ?? '請稍後再試');
+      notify('儲存失敗', e?.message ?? '請稍後再試');
     } finally {
       setSaving(false);
     }
@@ -73,7 +76,7 @@ const EditProfileScreen: React.FC = () => {
           <TextInput
             style={styles.input}
             placeholder="顯示名稱"
-            placeholderTextColor="#6666AA"
+            placeholderTextColor={C.textTertiary}
             value={displayName}
             onChangeText={setDisplayName}
             maxLength={30}
@@ -83,7 +86,7 @@ const EditProfileScreen: React.FC = () => {
           <TextInput
             style={styles.input}
             placeholder="+852 6123 4567"
-            placeholderTextColor="#6666AA"
+            placeholderTextColor={C.textTertiary}
             keyboardType="phone-pad"
             value={phone}
             onChangeText={setPhone}
@@ -94,7 +97,7 @@ const EditProfileScreen: React.FC = () => {
           <TextInput
             style={styles.input}
             placeholder="your@email.com"
-            placeholderTextColor="#6666AA"
+            placeholderTextColor={C.textTertiary}
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -118,21 +121,21 @@ const EditProfileScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121F' },
+  container: { flex: 1, backgroundColor: C.surface },
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 40 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  back: { color: '#FF3C3C', fontSize: 15, fontWeight: '600' },
-  stepLabel: { color: '#6666AA', fontSize: 13 },
-  card: { backgroundColor: '#1E1E2E', borderRadius: 24, padding: 28, borderWidth: 1, borderColor: '#2A2A3E' },
-  title: { color: '#FFFFFF', fontSize: 24, fontWeight: '800', marginBottom: 6 },
-  subtitle: { color: '#8888AA', fontSize: 13, marginBottom: 24, lineHeight: 20 },
-  label: { color: '#8888AA', fontSize: 12, fontWeight: '600', marginBottom: 6, marginTop: 4 },
+  back: { color: C.action, fontSize: 15, fontWeight: '600' },
+  stepLabel: { color: C.textTertiary, fontSize: 13 },
+  card: { backgroundColor: C.elevated, borderRadius: 24, padding: 28, borderWidth: 1, borderColor: C.border },
+  title: { color: C.text, fontSize: 24, fontWeight: '800', marginBottom: 6 },
+  subtitle: { color: C.textSecondary, fontSize: 13, marginBottom: 24, lineHeight: 20 },
+  label: { color: C.textSecondary, fontSize: 12, fontWeight: '600', marginBottom: 6, marginTop: 4 },
   input: {
-    backgroundColor: '#12121F', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
-    color: '#FFF', fontSize: 15, marginBottom: 16, borderWidth: 1, borderColor: '#2A2A3E',
+    backgroundColor: C.surface, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
+    color: '#FFF', fontSize: 15, marginBottom: 16, borderWidth: 1, borderColor: C.border,
   },
   primaryBtn: {
-    backgroundColor: '#FF3C3C', borderRadius: 14, paddingVertical: 16,
+    backgroundColor: C.action, borderRadius: 14, paddingVertical: 16,
     alignItems: 'center', marginTop: 8,
   },
   primaryBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },

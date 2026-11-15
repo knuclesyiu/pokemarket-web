@@ -8,6 +8,7 @@
  */
 
 import { CardGrade, GradingInfo } from '../types';
+import { C } from '../theme';
 
 // ── Human-readable label per grade ──────────────────────────────────────────
 export const GRADE_LABEL: Record<CardGrade, string> = {
@@ -25,16 +26,16 @@ export const GRADE_LABEL: Record<CardGrade, string> = {
 
 // ── Chip colors per grade (background + text) ───────────────────────────────
 export const GRADE_CHIP: Record<CardGrade, { bg: string; text: string; border: string }> = {
-  raw:         { bg: 'rgba(136,136,204,0.15)', text: '#8888CC', border: '#3D3D70' },
-  psa10:       { bg: 'rgba(255,60,60,0.18)',   text: '#FF6B7A', border: '#FF3C3C' },
-  psa9:        { bg: 'rgba(212,175,55,0.18)',  text: '#D4AF37', border: '#D4AF37' },
-  psa8:        { bg: 'rgba(0,200,150,0.15)',   text: '#00C896', border: '#00C896' },
-  psa7:        { bg: 'rgba(136,136,204,0.15)', text: '#8888CC', border: '#8888CC' },
-  bgs95:       { bg: 'rgba(255,60,60,0.18)',   text: '#FF6B7A', border: '#FF3C3C' },
-  bgs10:       { bg: 'rgba(139,92,246,0.20)',  text: '#A78BFA', border: '#8B5CF6' }, // Black Label — special violet
-  bgs9:        { bg: 'rgba(212,175,55,0.18)',  text: '#D4AF37', border: '#D4AF37' },
-  cgc10:       { bg: 'rgba(255,107,53,0.18)',  text: '#FF8A5C', border: '#FF6B35' },
-  other_graded:{ bg: 'rgba(136,136,204,0.15)', text: '#8888CC', border: '#8888CC' },
+  raw:         { bg: 'rgba(136,136,204,0.15)', text: C.textSecondary, border: C.borderActive },
+  psa10:       { bg: 'rgba(255,60,60,0.18)',   text: '#FF6B7A', border: C.action },
+  psa9:        { bg: 'rgba(212,175,55,0.18)',  text: C.gold, border: C.gold },
+  psa8:        { bg: 'rgba(0,200,150,0.15)',   text: C.up, border: C.up },
+  psa7:        { bg: 'rgba(136,136,204,0.15)', text: C.textSecondary, border: C.textSecondary },
+  bgs95:       { bg: 'rgba(255,60,60,0.18)',   text: '#FF6B7A', border: C.action },
+  bgs10:       { bg: 'rgba(139,92,246,0.20)',  text: '#A78BFA', border: C.violet }, // Black Label — special violet
+  bgs9:        { bg: 'rgba(212,175,55,0.18)',  text: C.gold, border: C.gold },
+  cgc10:       { bg: 'rgba(255,107,53,0.18)',  text: '#FF8A5C', border: C.warn },
+  other_graded:{ bg: 'rgba(136,136,204,0.15)', text: C.textSecondary, border: C.textSecondary },
 };
 
 // ── Default grade for a new listing ──────────────────────────────────────────

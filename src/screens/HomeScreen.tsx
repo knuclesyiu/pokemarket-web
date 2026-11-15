@@ -15,8 +15,10 @@ import {
   HOME_FEED_LIMIT,
 } from '../config/platform';
 import { getCardPrice, getCardPrices, priceDataToCard, CardPriceData } from '../services/cardPriceService';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import CardItem from '../components/CardItem';
 import SearchBar from '../components/search/SearchBar';
+import { C, R, SP, T } from '../theme';
 
 import { PokemonCard } from '../types';
 
@@ -27,21 +29,42 @@ const SERIES_FILTER = ['全部', 'Sword&Shield', 'Sun&Moon', 'XY', 'Black&White'
 
 // NEW: Obsidian Gallery design system — color constants
 const COLORS = {
-  bgVoid: '#080810',
-  bgSurface: '#0E0E1A',
-  bgCard: '#14142A',
-  bgElevated: '#1C1C38',
-  borderSubtle: '#2A2A50',
-  borderActive: '#3D3D70',
-  textPrimary: '#F0F0FF',
-  textSecondary: '#8888CC',
-  textTertiary: '#4A4A70',
-  accentRed: '#FF3C3C',
-  accentEmber: '#FF6B35',
-  accentJade: '#00C896',
-  accentRuby: '#FF4060',
-  accentViolet: '#8B5CF6',
+  bgVoid: C.void,
+  bgSurface: C.surface,
+  bgCard: C.card,
+  bgElevated: C.elevated,
+  borderSubtle: C.border,
+  borderActive: C.borderActive,
+  textPrimary: C.text,
+  textSecondary: C.textSecondary,
+  textTertiary: C.textDisabled,
+  accentRed: C.action,
+  accentEmber: C.warn,
+  accentJade: C.up,
+  accentRuby: C.ruby,
+  accentViolet: C.violet,
 };
+
+/**
+ * The empty state.
+ *
+ * A section heading with nothing under it reads as a broken screen.
+ * Saying what is missing and what to do about it is the difference
+ * between "empty" and "broken".
+ */
+const EmptyState: React.FC<{
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  body: string;
+}> = ({ icon, title, body }) => (
+  <View style={styles.emptyState}>
+    <View style={styles.emptyIcon}>
+      <Ionicons name={icon} size={22} color={C.textTertiary} />
+    </View>
+    <Text style={styles.emptyTitle}>{title}</Text>
+    <Text style={styles.emptyBody}>{body}</Text>
+  </View>
+);
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
@@ -197,6 +220,27 @@ const HomeScreen: React.FC = () => {
   const enrichedFiltered = filtered.map(enrichCard);
   const enrichedTrending = (displayCards.length > 0 ? displayCards.slice(0, 20) : []).map(enrichCard);
 
+  /**
+   * The biggest mover in each direction.
+   *
+   * The stats bar used to show a hard-coded `--` and had an empty
+   * press handler, so three tiles said nothing and did nothing. The
+   * 24-hour change is already loaded for every card on the feed, so
+   * the tile can show the card that actually moved — and tapping it
+   * can open that card.
+   */
+  const movers = useMemo(() => {
+    const withChange = enrichedFiltered.filter(
+      (c) => typeof c.priceChange24h === 'number' && c.priceChange24h !== 0,
+    );
+    if (withChange.length < 2) return null;
+    const sorted = [...withChange].sort((a, b) => b.priceChange24h - a.priceChange24h);
+    return { up: sorted[0], down: sorted[sorted.length - 1] };
+  }, [enrichedFiltered]);
+
+  /** How many of the loaded cards carry a live quote. */
+  const quotedCount = Object.keys(priceMap).length;
+
   return (
     <ScrollView
       style={styles.container}
@@ -213,51 +257,70 @@ const HomeScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>訓練員，你好 👋</Text>
+          <Text style={styles.greeting}>訓練員，你好</Text>
           <Text style={styles.headerTitle}>PokéMarket</Text>
         </View>
-        <TouchableOpacity style={styles.bellBtn}>
-          <Text style={styles.bellIcon}>🔔</Text>
+        <TouchableOpacity
+          style={styles.bellBtn}
+          onPress={() => navigation.navigate('Notifications')}
+          accessibilityRole="button"
+          accessibilityLabel="通知"
+        >
+          <Ionicons name="notifications-outline" size={20} color={C.text} />
           {priceMap[Object.keys(priceMap)[0]]?.source === 'tcgdex' && (
             <View style={styles.liveDot} />
           )}
         </TouchableOpacity>
         {syncing && (
-          <Text style={styles.syncBadge}>🔄 同步行情中...</Text>
+          <Text style={styles.syncBadge}>同步行情中…</Text>
         )}
       </View>
 
-      {/* Market Stats Bar — elevated card, jade/ruby stats, gold volume */}
+      {/* Market stats — real numbers, and tapping one opens the card */}
       <View style={styles.statsBar}>
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>24h 成交量</Text>
-          <Text style={styles.statValueGold}>--</Text>
-          <Text style={styles.statSub}>上次更新：{timeLabel}</Text>
+          <Text style={styles.statLabel}>實時報價</Text>
+          <Text style={styles.statValueGold}>{quotedCount}</Text>
+          <Text style={styles.statSub} numberOfLines={1}>上次更新：{timeLabel}</Text>
         </View>
         <View style={styles.statDivider} />
         <TouchableOpacity
           style={[styles.statItem, styles.statItemClickable]}
-          onPress={() => {}}
+          onPress={() =>
+            movers?.up && navigation.navigate('CardDetail', { card: movers.up })
+          }
+          disabled={!movers}
         >
-          <Text style={styles.statLabel}>🚀 今日升幅</Text>
-          <Text style={styles.statValueJade}>--</Text>
-          <Text style={styles.statSubLink} numberOfLines={1}>-</Text>
+          <Text style={styles.statLabel}>今日升幅</Text>
+          <Text style={styles.statValueJade}>
+            {movers ? `+${movers.up.priceChange24h.toFixed(1)}%` : '--'}
+          </Text>
+          <Text style={styles.statSubLink} numberOfLines={1}>
+            {movers ? movers.up.name : '未有升跌數據'}
+          </Text>
         </TouchableOpacity>
         <View style={styles.statDivider} />
         <TouchableOpacity
           style={[styles.statItem, styles.statItemClickable]}
-          onPress={() => {}}
+          onPress={() =>
+            movers?.down && navigation.navigate('CardDetail', { card: movers.down })
+          }
+          disabled={!movers}
         >
-          <Text style={styles.statLabel}>📉 今日跌幅</Text>
-          <Text style={styles.statValueRuby}>--</Text>
-          <Text style={styles.statSubLink} numberOfLines={1}>-</Text>
+          <Text style={styles.statLabel}>今日跌幅</Text>
+          <Text style={styles.statValueRuby}>
+            {movers ? `${movers.down.priceChange24h.toFixed(1)}%` : '--'}
+          </Text>
+          <Text style={styles.statSubLink} numberOfLines={1}>
+            {movers ? movers.down.name : '未有升跌數據'}
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* Search + Version Filter */}
       <SearchBar
         onResults={setSearchResults}
-        placeholder="搜尋卡名、Series、Rarity..."
+        placeholder="搜尋卡名、系列、稀有度…"
       />
 
       {/* Series Filter — gold active state */}
@@ -287,86 +350,125 @@ const HomeScreen: React.FC = () => {
 
       {/* Trending Cards */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>🔥 熱門卡</Text>
+        <View style={styles.sectionTitleRow}>
+          <Ionicons name="flame" size={16} color={C.action} />
+          <Text style={styles.sectionTitle}>熱門卡</Text>
+        </View>
         <TouchableOpacity onPress={() => navigation.navigate('Main')}>
           <Text style={styles.seeAll}>查看全部 →</Text>
         </TouchableOpacity>
       </View>
-      <FlatList
-        horizontal
-        data={enrichedTrending}
-        keyExtractor={item => item.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingLeft: 16, paddingRight: 8 }}
-        renderItem={({ item }) => (
-          <CardItem
-            card={item}
-            compact
-            onPress={() => navigation.navigate('CardDetail', { card: item })}
-          />
-        )}
-      />
+      {enrichedTrending.length === 0 ? (
+        <EmptyState
+          icon="cloud-offline-outline"
+          title="暫時攞唔到行情"
+          body="價格服務未回應，或者未有卡喺呢個價位帶。向下拉可以重新整理。"
+        />
+      ) : (
+        <FlatList
+          horizontal
+          data={enrichedTrending}
+          keyExtractor={item => item.id}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingLeft: SP.lg, paddingRight: SP.sm }}
+          renderItem={({ item }) => (
+            <CardItem
+              card={item}
+              compact
+              onPress={() => navigation.navigate('CardDetail', { card: item })}
+            />
+          )}
+        />
+      )}
 
       {/* Market Listings */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>📊 市場掛牌</Text>
+        <View style={styles.sectionTitleRow}>
+          <Ionicons name="stats-chart" size={16} color={C.gold} />
+          <Text style={styles.sectionTitle}>市場掛牌</Text>
+        </View>
         <TouchableOpacity>
           <Text style={styles.seeAll}>
             全部 {enrichedFiltered.length} 張 →
           </Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.cardList}>
-        {enrichedFiltered.slice(0, 6).map(card => (
-          <CardItem
-            key={card.id}
-            card={card}
-            onPress={() => navigation.navigate('CardDetail', { card })}
-          />
-        ))}
-      </View>
+      {enrichedFiltered.length === 0 ? (
+        <EmptyState
+          icon="card-outline"
+          title="未有掛牌"
+          body="市場暫時未有掛牌嘅卡。撳下面「全部」睇現貨價格，或者自己掛一張。"
+        />
+      ) : (
+        <View style={styles.cardList}>
+          {enrichedFiltered.slice(0, 6).map(card => (
+            <CardItem
+              key={card.id}
+              card={card}
+              onPress={() => navigation.navigate('CardDetail', { card })}
+            />
+          ))}
+        </View>
+      )}
 
       <View style={{ height: 100 }} />
     </ScrollView>
   );
 };
 
-// NEW: Obsidian Gallery design system
+// ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080810' },
+  container: { flex: 1, backgroundColor: C.void },
+
+  // ─── Header ───────────────────────────────────────────────────────────────
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SP.lg,
+    paddingTop: 56,
+    paddingBottom: SP.md,
   },
-  greeting: { color: '#8888CC', fontSize: 12 },
-  headerTitle: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
-  syncBadge: { color: '#8888CC', fontSize: 10, marginLeft: 8 },
+  greeting: { ...T.caption, color: C.textSecondary },
+  headerTitle: { ...T.title, color: C.text, marginTop: 2 },
+  syncBadge: { ...T.caption, color: C.textTertiary, marginLeft: SP.sm },
   bellBtn: {
-    width: 44, height: 44, borderRadius: 14, backgroundColor: '#14142A',
-    alignItems: 'center', justifyContent: 'center', position: 'relative',
-    borderWidth: 1, borderColor: '#2A2A50',
+    width: 44,
+    height: 44,
+    borderRadius: R.md,
+    backgroundColor: C.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: C.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
-  bellIcon: { fontSize: 20 },
   liveDot: {
-    position: 'absolute', top: 10, right: 10, width: 8, height: 8,
-    borderRadius: 4, backgroundColor: '#00C896',
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: C.up,
   },
-  // NEW: elevated card with gold volume, jade/ruby stat colors
+
+  // ─── Stats ────────────────────────────────────────────────────────────────
   statsBar: {
     flexDirection: 'row',
-    backgroundColor: '#14142A',   // elevated card surface
-    marginHorizontal: 16,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 16,
+    backgroundColor: C.card,
+    marginHorizontal: SP.lg,
+    borderRadius: R.lg,
+    padding: SP.md,
+    marginBottom: SP.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -375,47 +477,96 @@ const styles = StyleSheet.create({
   },
   statItem: { flex: 1, alignItems: 'center' },
   statItemClickable: { paddingVertical: 4 },
-  statDivider: { width: 1, height: 40, backgroundColor: '#2A2A50' },
-  statLabel: { color: '#8888CC', fontSize: 10, marginBottom: 4 },
-  statValueGold: { color: '#FF3C3C', fontSize: 14, fontWeight: '800' },   // NEW: gold volume
-  statValueJade: { color: '#00C896', fontSize: 14, fontWeight: '700' },   // NEW: jade gain
-  statValueRuby: { color: '#FF4060', fontSize: 14, fontWeight: '700' },   // NEW: ruby loss
-  statSub: { color: '#8888CC', fontSize: 9, marginTop: 2 },
-  statSubLink: { color: '#FF3C3C', fontSize: 9, marginTop: 2, textDecorationLine: 'underline' },
-  // NEW: gold active filter chips
-  filterRow: { paddingLeft: 16, marginBottom: 12, maxHeight: 36 },
+  statDivider: { width: 1, height: 40, backgroundColor: C.border },
+  statLabel: { ...T.overline, color: C.textTertiary, marginBottom: 4 },
+  statValueGold: { ...T.price, fontSize: 16, color: C.gold },
+  statValueJade: { ...T.price, fontSize: 16, color: C.up },
+  statValueRuby: { ...T.price, fontSize: 16, color: C.down },
+  statSub: { ...T.caption, fontSize: 9, color: C.textTertiary, marginTop: 2 },
+  statSubLink: {
+    ...T.caption,
+    fontSize: 9,
+    marginTop: 2,
+    color: C.textSecondary,
+    textDecorationLine: 'underline',
+  },
+
+  // ─── Filters ──────────────────────────────────────────────────────────────
+  filterRow: { paddingLeft: SP.lg, marginBottom: SP.md, maxHeight: 38 },
   filterChip: {
-    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
-    backgroundColor: '#14142A', marginRight: 8,
-    borderWidth: 1, borderColor: '#2A2A50',
+    paddingHorizontal: SP.md,
+    paddingVertical: 7,
+    borderRadius: R.pill,
+    backgroundColor: C.card,
+    marginRight: SP.sm,
+    borderWidth: 1,
+    borderColor: C.border,
   },
   filterChipActive: {
-    backgroundColor: '#FF3C3C',
-    borderColor: '#FF3C3C',
-    // subtle gold glow
-    shadowColor: '#FF3C3C',
+    backgroundColor: C.action,
+    borderColor: C.action,
+    shadowColor: C.action,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
     elevation: 4,
   },
-  filterText: { color: '#8888CC', fontSize: 12, fontWeight: '600' },
-  filterTextActive: { color: '#080810', fontWeight: '700' },
+  filterText: { ...T.caption, color: C.textSecondary },
+  filterTextActive: { color: C.void, fontWeight: '700' },
+
+  // ─── Live indicator ───────────────────────────────────────────────────────
   priceIndicator: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 16, marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: SP.lg,
+    marginBottom: SP.sm,
   },
-  livePulse: {
-    width: 8, height: 8, borderRadius: 4, backgroundColor: '#00C896',
-  },
-  priceIndicatorText: { color: '#00C896', fontSize: 10, fontWeight: '600' },
+  livePulse: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.up },
+  priceIndicatorText: { ...T.caption, color: C.up, fontSize: 10 },
+
+  // ─── Sections ─────────────────────────────────────────────────────────────
   sectionHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, marginTop: 20, marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SP.lg,
+    marginTop: SP.xl,
+    marginBottom: SP.md,
   },
-  sectionTitle: { color: '#F0F0FF', fontSize: 16, fontWeight: '700' },
-  seeAll: { color: '#FF3C3C', fontSize: 12, fontWeight: '600' },   // NEW: gold link
-  cardList: { paddingHorizontal: 16 },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  sectionTitle: { ...T.heading, color: C.text },
+  seeAll: { ...T.caption, color: C.action },
+  cardList: { paddingHorizontal: SP.lg },
+
+  // ─── Empty state ──────────────────────────────────────────────────────────
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: SP.xxl,
+    paddingHorizontal: SP.xl,
+    marginHorizontal: SP.lg,
+    borderRadius: R.lg,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderStyle: 'dashed',
+    backgroundColor: C.surface,
+  },
+  emptyIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: C.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SP.md,
+  },
+  emptyTitle: { ...T.bodyStrong, color: C.text, marginBottom: 4 },
+  emptyBody: {
+    ...T.small,
+    color: C.textTertiary,
+    textAlign: 'center',
+    lineHeight: 19,
+  },
 });
 
 export default HomeScreen;

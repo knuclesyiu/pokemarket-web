@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { C } from '../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -27,7 +28,7 @@ const PriceChart: React.FC<PriceChartProps> = ({ data }) => {
                   chartStyles.bar,
                   {
                     height,
-                    backgroundColor: isUp ? '#00C864' : '#FF3C3C',
+                    backgroundColor: isUp ? C.up : C.action,
                     opacity: 0.5 + (i / data.length) * 0.5,
                   },
                 ]}
@@ -70,7 +71,7 @@ const chartStyles = StyleSheet.create({
     marginTop: 6,
   },
   label: {
-    color: '#6666AA',
+    color: C.textTertiary,
     fontSize: 10,
   },
 });

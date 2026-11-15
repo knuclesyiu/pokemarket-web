@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { C } from '../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -32,7 +34,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
-          <Text style={styles.icon}>⚠️</Text>
+          <Ionicons name="warning-outline" size={16} color={C.textTertiary} />
           <Text style={styles.title}>Oops! Something went wrong</Text>
           <Text style={styles.message}>{this.state.errorMessage}</Text>
           <Text style={styles.hint}>Please try restarting the app. If the problem persists, contact support.</Text>
@@ -50,21 +52,21 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#080810',
+    backgroundColor: C.void,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
   icon: { fontSize: 48, marginBottom: 16 },
   title: {
-    color: '#F0F0FF',
+    color: C.text,
     fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: 12,
   },
   message: {
-    color: '#FF4060',
+    color: C.ruby,
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
@@ -75,20 +77,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   hint: {
-    color: '#8888CC',
+    color: C.textSecondary,
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 24,
   },
   resetBtn: {
-    backgroundColor: '#FF4060',
+    backgroundColor: C.ruby,
     paddingHorizontal: 28,
     paddingVertical: 12,
     borderRadius: 12,
   },
   resetBtnText: {
-    color: '#F0F0FF',
+    color: C.text,
     fontSize: 15,
     fontWeight: '700',
   },

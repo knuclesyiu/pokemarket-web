@@ -6,6 +6,10 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import initFirebase from "./src/services/firebase";
 import ErrorBoundary from "./src/components/ErrorBoundary";
+import { FeedbackProvider } from "./src/components/Feedback";
+import TabBarIcon from "./src/components/TabBarIcon";
+import { useAppFonts } from "./src/hooks/useAppFonts";
+import { C, FONT, R, SP, T } from "./src/theme";
 import HomeScreen from "./src/screens/HomeScreen";
 import CardDetailScreen from "./src/screens/CardDetailScreen";
 import PortfolioScreen from "./src/screens/PortfolioScreen";
@@ -34,57 +38,25 @@ const Tab = createBottomTabNavigator();
 
 initFirebase();
 
-// NEW: Obsidian Gallery — tab bar with gold active state
-const TabIcon: React.FC<{ icon: string; focused: boolean; label: string; badge?: number }> = ({
-  icon, focused, label, badge,
-}) => (
-  <View style={{ alignItems: "center", justifyContent: "center" }}>
-    <Text style={{ 
-      fontSize: 22, 
-      opacity: focused ? 1 : 0.4,
-      // NEW: subtle scale on active
-      transform: focused ? [{ scale: 1.05 }] : [],
-    }}>
-      {icon}
-    </Text>
-    {badge ? (
-      <View style={{
-        position: "absolute", top: -4, right: -8,
-        backgroundColor: "#FF4060", borderRadius: 8,
-        minWidth: 16, height: 16, alignItems: "center", justifyContent: "center",
-        paddingHorizontal: 3,
-        // NEW: ruby badge instead of red
-      }}>
-        <Text style={{ color: "#FFF", fontSize: 9, fontWeight: "700" }}>
-          {badge > 99 ? "99+" : badge}
-        </Text>
-      </View>
-    ) : null}
-    <Text
-      style={{
-        fontSize: 9, fontWeight: "700",
-        // NEW: gold active, tertiary inactive
-        color: focused ? "#D4AF37" : "#4A4A70",
-        marginTop: 2,
-      }}
-    >
-      {label}
-    </Text>
-  </View>
-);
-
+/**
+ * The tab bar.
+ *
+ * The icons used to be emoji, which draw differently on every
+ * platform and read as placeholders. `TabBarIcon` draws the same
+ * vector on all of them, and carries the gold active state and the
+ * ruby badge that were designed in the first version but never used.
+ */
 const HomeTabs = () => (
   <Tab.Navigator
     screenOptions={{
       headerShown: false,
-      // NEW: Obsidian Gallery tab bar
       tabBarStyle: {
-        backgroundColor: "#0E0E1A",  // surface background
+        backgroundColor: C.surface,
         borderTopWidth: 1,
-        borderTopColor: "#2A2A50",   // subtle border
-        height: 80,
-        paddingTop: 10,
-        paddingBottom: 20,
+        borderTopColor: C.border,
+        height: 74,
+        paddingTop: SP.sm,
+        paddingBottom: SP.lg,
       },
       tabBarShowLabel: false,
     }}
@@ -93,35 +65,45 @@ const HomeTabs = () => (
       name="MarketTab"
       component={HomeScreen}
       options={{
-        tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>🏠</Text>,
+        tabBarIcon: ({ focused }) => (
+          <TabBarIcon name="market" focused={focused} label="市場" />
+        ),
       }}
     />
     <Tab.Screen
       name="ChatTab"
       component={ChatListScreen}
       options={{
-        tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>💬</Text>,
+        tabBarIcon: ({ focused }) => (
+          <TabBarIcon name="chat" focused={focused} label="訊息" />
+        ),
       }}
     />
     <Tab.Screen
       name="WalletTab"
       component={WalletScreen}
       options={{
-        tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>💰</Text>,
+        tabBarIcon: ({ focused }) => (
+          <TabBarIcon name="wallet" focused={focused} label="錢包" />
+        ),
       }}
     />
     <Tab.Screen
       name="PortfolioTab"
       component={PortfolioScreen}
       options={{
-        tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>💼</Text>,
+        tabBarIcon: ({ focused }) => (
+          <TabBarIcon name="portfolio" focused={focused} label="收藏" />
+        ),
       }}
     />
     <Tab.Screen
       name="ProfileTab"
       component={ProfileScreen}
       options={{
-        tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>👤</Text>,
+        tabBarIcon: ({ focused }) => (
+          <TabBarIcon name="profile" focused={focused} label="我的" />
+        ),
       }}
     />
   </Tab.Navigator>
@@ -135,19 +117,31 @@ const LoadingScreen = () => (
 );
 
 export default function App() {
+  const fontsReady = useAppFonts();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setReady(true);
   }, []);
 
-  if (!ready) return <LoadingScreen />;
+  // The fonts have to be in place before the first screen paints, or
+  // the user sees the platform default for a moment and then the
+  // real face — a visible jump on every cold start.
+  if (!ready || !fontsReady) return <LoadingScreen />;
 
+  // The feedback provider sits outside the navigator so its toast
+  // layer is painted above every screen — React Navigation renders
+  // each screen in its own layer, and anything inside it would be
+  // covered by the next screen.
   return (
     <AuthProvider>
-      <ErrorBoundary>
-        <RootNavigator />
-      </ErrorBoundary>
+      <FeedbackProvider>
+        <ErrorBoundary>
+          <View style={styles.root}>
+            <RootNavigator />
+          </View>
+        </ErrorBoundary>
+      </FeedbackProvider>
     </AuthProvider>
   );
 }
@@ -233,12 +227,20 @@ function RootNavigator() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: C.void,
+    fontFamily: FONT.regular,
+  },
   loading: {
-    flex: 1, backgroundColor: "#080810",  // NEW: void background
-    alignItems: "center", justifyContent: "center",
+    flex: 1,
+    backgroundColor: C.void,
+    alignItems: "center",
+    justifyContent: "center",
   },
   loadingText: {
-    color: "#F0F0FF", fontSize: 24, fontWeight: "800",
-    marginTop: 16, letterSpacing: -0.5,
+    ...T.title,
+    color: C.text,
+    marginTop: SP.lg,
   },
 });

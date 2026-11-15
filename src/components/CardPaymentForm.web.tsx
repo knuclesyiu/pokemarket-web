@@ -18,6 +18,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import type { CardDetails } from '../types/stripe';
+import { C } from '../theme';
 
 const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
 
@@ -71,12 +72,12 @@ const CardFields: React.FC<{
           options={{
             style: {
               base: {
-                color: '#F0F0FF',
+                color: C.text,
                 fontFamily: 'System',
                 fontSize: '16px',
-                '::placeholder': { color: '#4A4A70' },
+                '::placeholder': { color: C.textDisabled },
               },
-              invalid: { color: '#FF3C3C' },
+              invalid: { color: C.action },
             },
           }}
           onChange={(e) => setError(e.error?.message ?? null)}
@@ -115,14 +116,14 @@ const CardPaymentForm: React.FC<Props> = ({ onPaymentMethodReady, submitting }) 
 
 const styles = StyleSheet.create({
   cardElementWrap: {
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
   },
-  error: { color: '#FF3C3C', fontSize: 12, marginTop: 8 },
+  error: { color: C.action, fontSize: 12, marginTop: 8 },
   missingKey: {
     backgroundColor: 'rgba(255,107,53,0.08)',
     borderRadius: 12,
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,107,53,0.3)',
   },
-  missingKeyText: { color: '#FF6B35', fontSize: 13, lineHeight: 20 },
+  missingKeyText: { color: C.warn, fontSize: 13, lineHeight: 20 },
 });
 
 export default CardPaymentForm;

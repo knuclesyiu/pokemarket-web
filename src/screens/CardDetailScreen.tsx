@@ -14,6 +14,9 @@ import PriceChart from '../components/PriceChart';
 import { PokemonCard } from '../types';
 import { getCardPrice, buildPriceHistory, CardPriceData } from '../services/cardPriceService';
 import type { MarketListing } from '../types/trade';
+import { confirmAction } from '../components/Feedback';
+import { C } from '../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard } }, 'params'>;
 const { width } = Dimensions.get('window');
@@ -129,7 +132,7 @@ const CardDetailScreen: React.FC = () => {
             <Text style={styles.cardRarity}>{card.rarity}</Text>
             <View style={styles.priceSection}>
               {priceLoading ? (
-                <ActivityIndicator size="small" color="#FF3C3C" />
+                <ActivityIndicator size="small" color={C.action} />
               ) : (
                 <>
                   <Text style={styles.currentPrice}>
@@ -139,7 +142,7 @@ const CardDetailScreen: React.FC = () => {
                     <View style={styles.priceSourceBadge}>
                       <View style={[
                         styles.sourceDot,
-                        { backgroundColor: priceDoc.source === 'tcgdex' || priceDoc.source === 'tcgdex+seed' ? '#00C896' : '#8888AA' }
+                        { backgroundColor: priceDoc.source === 'tcgdex' || priceDoc.source === 'tcgdex+seed' ? C.up : C.textSecondary }
                       ]} />
                       <Text style={styles.priceSourceText}>
                         {priceDoc.source === 'tcgdex' || priceDoc.source === 'tcgdex+seed' ? 'Live · TCGdex' : priceDoc.source}
@@ -180,7 +183,7 @@ const CardDetailScreen: React.FC = () => {
           style={styles.contactBtn}
           onPress={async () => {
             if (!auth.currentUser) {
-              Alert.alert('需要登入', '請先登入再聯絡賣家', [
+              confirmAction('需要登入', '請先登入再聯絡賣家', [
                 { text: '登入', onPress: () => navigation.navigate('Login') },
                 { text: '取消' },
               ]);
@@ -202,7 +205,7 @@ const CardDetailScreen: React.FC = () => {
             }
           }}
         >
-          <Text style={styles.contactBtnText}>💬 聯絡賣家</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.contactBtnText}>聯絡賣家</Text></View>
         </TouchableOpacity>
 
         {/* Tabs */}
@@ -214,7 +217,7 @@ const CardDetailScreen: React.FC = () => {
               onPress={() => setActiveTab(t)}
             >
               <Text style={[styles.tabText, activeTab === t ? styles.tabTextActive : null]}>
-                {t === 'listings' ? '📋 掛牌列表' : '📈 歷史價格'}
+                {t === 'listings' ? '掛牌列表' : '歷史價格'}
               </Text>
             </TouchableOpacity>
           ))}
@@ -224,7 +227,7 @@ const CardDetailScreen: React.FC = () => {
           <View style={styles.listingsSection}>
             {listingsLoading ? (
               <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                <ActivityIndicator color="#FF3C3C" />
+                <ActivityIndicator color={C.action} />
               </View>
             ) : listings.length === 0 ? (
               <Text style={styles.emptyListings}>
@@ -266,16 +269,15 @@ const CardDetailScreen: React.FC = () => {
             </View>
             {historyLoading ? (
               <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-                <ActivityIndicator color="#D4AF37" />
-                <Text style={{ color: '#8888CC', fontSize: 12, marginTop: 8 }}>由 TCGdex 載入即時行情…</Text>
+                <ActivityIndicator color={C.gold} />
+                <Text style={{ color: C.textSecondary, fontSize: 12, marginTop: 8 }}>由 TCGdex 載入即時行情…</Text>
               </View>
             ) : priceHistory.length > 0 ? (
               <>
                 <PriceChart data={priceHistory} />
                 {priceDoc && (priceDoc.avg7Eur > 0 || priceDoc.avg30Eur > 0) && (
-                  <Text style={styles.chartNote}>
-                    📊 數據源：TCGdex Cardmarket trend / 7日 / 30日均價 線性插值
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="stats-chart-outline" size={15} color={C.textTertiary} /><Text style={styles.chartNote}>數據源：TCGdex Cardmarket trend / 7日 / 30日均價 線性插值
+                  </Text></View>
                 )}
               </>
             ) : (
@@ -325,7 +327,7 @@ const CardDetailScreen: React.FC = () => {
                 });
               }}
             >
-              <Text style={modalStyles.optionTitle}>💰 定價出售</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="wallet-outline" size={15} color={C.textTertiary} /><Text style={modalStyles.optionTitle}>定價出售</Text></View>
               <Text style={modalStyles.optionDesc}>設定固定價格，買家即時購買</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -339,7 +341,7 @@ const CardDetailScreen: React.FC = () => {
                 });
               }}
             >
-              <Text style={modalStyles.optionTitle}>🏷️ 拍賣</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="pricetag-outline" size={14} color={C.textTertiary} /><Text style={modalStyles.optionTitle}>拍賣</Text></View>
               <Text style={modalStyles.optionDesc}>設定底價，讓買家競標</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -356,27 +358,27 @@ const CardDetailScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080810' },
+  container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 56,
     paddingBottom: 12,
-    backgroundColor: '#080810',
+    backgroundColor: C.void,
   },
   backBtn: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backText: { color: '#F0F0FF', fontSize: 20, fontWeight: '700' },
+  backText: { color: C.text, fontSize: 20, fontWeight: '700' },
   headerTitle: {
     flex: 1,
-    color: '#F0F0FF',
+    color: C.text,
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
@@ -386,7 +388,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: 16,
@@ -394,7 +396,7 @@ const styles = StyleSheet.create({
   cardHero: {
     flexDirection: 'row',
     padding: 16,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     marginHorizontal: 16,
     borderRadius: 20,
     marginBottom: 12,
@@ -407,7 +409,7 @@ const styles = StyleSheet.create({
     width: 130,
     height: 182,
     borderRadius: 12,
-    backgroundColor: '#2A2A50',
+    backgroundColor: C.border,
   },
   rareBadge: {
     position: 'absolute',
@@ -417,7 +419,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rareBadgeText: {
-    color: '#FF3C3C',
+    color: C.action,
     fontSize: 8,
     fontWeight: '800',
     backgroundColor: 'rgba(0,0,0,0.7)',
@@ -427,10 +429,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardMeta: { flex: 1, justifyContent: 'space-between' },
-  cardName: { color: '#F0F0FF', fontSize: 16, fontWeight: '800', lineHeight: 20 },
-  cardSet: { color: '#8888CC', fontSize: 11, marginTop: 4 },
+  cardName: { color: C.text, fontSize: 16, fontWeight: '800', lineHeight: 20 },
+  cardSet: { color: C.textSecondary, fontSize: 11, marginTop: 4 },
   cardRarity: {
-    color: '#FF3C3C',
+    color: C.action,
     fontSize: 11,
     fontWeight: '600',
     marginTop: 2,
@@ -438,46 +440,46 @@ const styles = StyleSheet.create({
   priceSection: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   priceSourceBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   sourceDot: { width: 6, height: 6, borderRadius: 3 },
-  priceSourceText: { color: '#4A4A70', fontSize: 10 },
+  priceSourceText: { color: C.textDisabled, fontSize: 10 },
   gradeTable: {
-    backgroundColor: '#14142A', borderRadius: 14, padding: 14, marginTop: 12,
+    backgroundColor: C.card, borderRadius: 14, padding: 14, marginTop: 12,
   },
-  gradeTableTitle: { color: '#F0F0FF', fontSize: 13, fontWeight: '700', marginBottom: 10 },
+  gradeTableTitle: { color: C.text, fontSize: 13, fontWeight: '700', marginBottom: 10 },
   gradeRow: {
     flexDirection: 'row', justifyContent: 'space-between',
-    paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#2A2A50',
+    paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.border,
   },
-  gradeLabel: { color: '#8888CC', fontSize: 12 },
-  gradeValue: { color: '#F0F0FF', fontSize: 12, fontWeight: '700' },
-  gradePremium: { color: '#00C896', fontSize: 12 },
+  gradeLabel: { color: C.textSecondary, fontSize: 12 },
+  gradeValue: { color: C.text, fontSize: 12, fontWeight: '700' },
+  gradePremium: { color: C.up, fontSize: 12 },
   sourceBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#14142A', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4,
   },
-  sourceBadgeText: { color: '#4A4A70', fontSize: 10 },
+  sourceBadgeText: { color: C.textDisabled, fontSize: 10 },
   disclaimer: {
     backgroundColor: 'rgba(136,136,170,0.1)',
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginTop: 10,
   },
-  disclaimerText: { color: '#4A4A70', fontSize: 10, lineHeight: 16 },
-  currentPrice: { color: '#F0F0FF', fontSize: 22, fontWeight: '800' },
+  disclaimerText: { color: C.textDisabled, fontSize: 10, lineHeight: 16 },
+  currentPrice: { color: C.text, fontSize: 22, fontWeight: '800' },
   badge: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 },
   badgeGain: { backgroundColor: 'rgba(0,200,150,0.15)' },
   badgeLoss: { backgroundColor: 'rgba(255,64,96,0.15)' },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  textGain: { color: '#00C896' },
-  textLoss: { color: '#FF4060' },
-  listingCount: { color: '#4A4A70', fontSize: 11, marginTop: 6 },
+  textGain: { color: C.up },
+  textLoss: { color: C.ruby },
+  listingCount: { color: C.textDisabled, fontSize: 11, marginTop: 6 },
   contactBtn: {
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 10,
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
   },
-  contactBtnText: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
+  contactBtnText: { color: C.text, fontSize: 14, fontWeight: '700' },
   actionRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -490,14 +492,14 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
   },
-  buyBtn: { backgroundColor: '#FF3C3C' },
+  buyBtn: { backgroundColor: C.action },
   sellBtn: {
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderWidth: 1.5,
-    borderColor: '#FF3C3C',
+    borderColor: C.action,
   },
-  actionBtnText: { color: '#F0F0FF', fontSize: 15, fontWeight: '700' },
-  sellBtnText: { color: '#FF3C3C', fontSize: 15, fontWeight: '700' },
+  actionBtnText: { color: C.text, fontSize: 15, fontWeight: '700' },
+  sellBtnText: { color: C.action, fontSize: 15, fontWeight: '700' },
   tabRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -508,56 +510,56 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     alignItems: 'center',
   },
-  tabActive: { backgroundColor: '#FF3C3C' },
-  tabText: { color: '#8888CC', fontSize: 12, fontWeight: '600' },
-  tabTextActive: { color: '#F0F0FF' },
+  tabActive: { backgroundColor: C.action },
+  tabText: { color: C.textSecondary, fontSize: 12, fontWeight: '600' },
+  tabTextActive: { color: C.text },
   listingsSection: { paddingHorizontal: 16, gap: 10, display: 'flex' },
-  emptyListings: { color: '#6666AA', fontSize: 12, textAlign: 'center', paddingVertical: 16, lineHeight: 18 },
+  emptyListings: { color: C.textTertiary, fontSize: 12, textAlign: 'center', paddingVertical: 16, lineHeight: 18 },
   listingCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 14,
     padding: 14,
   },
   listingLeft: {},
-  listingSeller: { color: '#F0F0FF', fontSize: 14, fontWeight: '600' },
-  listingCondition: { color: '#8888CC', fontSize: 11, marginTop: 2 },
+  listingSeller: { color: C.text, fontSize: 14, fontWeight: '600' },
+  listingCondition: { color: C.textSecondary, fontSize: 11, marginTop: 2 },
   listingRight: { alignItems: 'flex-end' },
-  listingPrice: { color: '#F0F0FF', fontSize: 16, fontWeight: '700' },
+  listingPrice: { color: C.text, fontSize: 16, fontWeight: '700' },
   bidBtn: { marginTop: 6 },
-  bidBtnText: { color: '#FF3C3C', fontSize: 12, fontWeight: '600' },
+  bidBtnText: { color: C.action, fontSize: 12, fontWeight: '600' },
   chartSection: {
     marginHorizontal: 16,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
   },
   chartHeader: { marginBottom: 8 },
-  chartTitle: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
-  chartRange: { color: '#8888CC', fontSize: 11, marginTop: 2 },
-  chartNote: { color: '#6666AA', fontSize: 10, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
+  chartTitle: { color: C.text, fontSize: 14, fontWeight: '700' },
+  chartRange: { color: C.textSecondary, fontSize: 11, marginTop: 2 },
+  chartNote: { color: C.textTertiary, fontSize: 10, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
   detailSection: {
     marginHorizontal: 16,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 16,
     padding: 16,
   },
-  detailTitle: { color: '#F0F0FF', fontSize: 14, fontWeight: '700', marginBottom: 12 },
+  detailTitle: { color: C.text, fontSize: 14, fontWeight: '700', marginBottom: 12 },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A50',
+    borderBottomColor: C.border,
   },
-  detailLabel: { color: '#8888CC', fontSize: 12 },
-  detailValue: { color: '#F0F0FF', fontSize: 12, fontWeight: '600' },
+  detailLabel: { color: C.textSecondary, fontSize: 12 },
+  detailValue: { color: C.text, fontSize: 12, fontWeight: '600' },
 });
 
 const modalStyles = StyleSheet.create({
@@ -567,7 +569,7 @@ const modalStyles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
@@ -581,28 +583,28 @@ const modalStyles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 16,
   },
-  title: { color: '#F0F0FF', fontSize: 18, fontWeight: '800', marginBottom: 4 },
-  subtitle: { color: '#8888CC', fontSize: 13, marginBottom: 20 },
+  title: { color: C.text, fontSize: 18, fontWeight: '800', marginBottom: 4 },
+  subtitle: { color: C.textSecondary, fontSize: 13, marginBottom: 20 },
   option: {
-    backgroundColor: '#2A2A50',
+    backgroundColor: C.border,
     borderRadius: 14,
     padding: 16,
     marginBottom: 10,
   },
-  optionTitle: { color: '#F0F0FF', fontSize: 15, fontWeight: '700', marginBottom: 4 },
-  optionDesc: { color: '#8888CC', fontSize: 12 },
+  optionTitle: { color: C.text, fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  optionDesc: { color: C.textSecondary, fontSize: 12 },
   cancelBtn: { alignItems: 'center', backgroundColor: 'transparent', borderWidth: 1, borderColor: '#3A3A4E' },
-  cancelText: { color: '#8888CC', fontSize: 14, fontWeight: '600' },
+  cancelText: { color: C.textSecondary, fontSize: 14, fontWeight: '600' },
   contactBtn: {
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 10,
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
   },
-  contactBtnText: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
+  contactBtnText: { color: C.text, fontSize: 14, fontWeight: '700' },
 });
 
 export default CardDetailScreen;

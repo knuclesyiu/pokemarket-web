@@ -11,24 +11,27 @@ import { PokemonCard } from '../types';
 import { calculateFee, formatHkd, PLATFORM_FEE_PERCENT, STRIPE_PERCENT_FEE } from '../utils/feeCalculator';
 import { createEscrowPayment, confirmCardPayment } from '../services/stripeService';
 import CardPaymentForm from '../components/CardPaymentForm';
+import { notify } from '../components/Feedback';
+import { C } from '../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type RouteProps = RouteProp<{ params: { card: PokemonCard; seller?: string } }, 'params'>;
 type NavProp = NativeStackNavigationProp<any>;
 
 // NEW: Obsidian Gallery constants
 const COLORS = {
-  bgVoid: '#080810',
-  bgSurface: '#0E0E1A',
-  bgCard: '#14142A',
-  bgElevated: '#1C1C38',
-  borderSubtle: '#2A2A50',
-  borderActive: '#3D3D70',
-  textPrimary: '#F0F0FF',
-  textSecondary: '#8888CC',
-  accentGold: '#D4AF37',
-  accentEmber: '#FF6B35',
-  accentJade: '#00C896',
-  accentRuby: '#FF4060',
+  bgVoid: C.void,
+  bgSurface: C.surface,
+  bgCard: C.card,
+  bgElevated: C.elevated,
+  borderSubtle: C.border,
+  borderActive: C.borderActive,
+  textPrimary: C.text,
+  textSecondary: C.textSecondary,
+  accentGold: C.gold,
+  accentEmber: C.warn,
+  accentJade: C.up,
+  accentRuby: C.ruby,
 };
 
 const MTR_LINES = [
@@ -68,7 +71,7 @@ const CheckoutScreen: React.FC = () => {
     if (!delivery || !payment) return;
     const uid = getAuth().currentUser?.uid;
     if (!uid) {
-      Alert.alert('需要登入', '請先登入再下單');
+      notify('需要登入', '請先登入再下單');
       return;
     }
     // Card payments require entering card details first
@@ -110,7 +113,7 @@ const CheckoutScreen: React.FC = () => {
       setOrderPlaced(true);
     } catch (e: any) {
       console.error('[Checkout] place order failed:', e);
-      Alert.alert('下單失敗', e?.message ?? '請稍後再試');
+      notify('下單失敗', e?.message ?? '請稍後再試');
     } finally {
       setSubmitting(false);
     }
@@ -120,7 +123,7 @@ const CheckoutScreen: React.FC = () => {
     return (
       <View style={styles.confirmContainer}>
         <View style={styles.confirmContent}>
-          <Text style={styles.confirmEmoji}>✅</Text>
+          <Ionicons name="checkmark-circle" size={14} color={C.textTertiary} />
           <Text style={styles.confirmTitle}>訂單已確認！</Text>
           <Text style={styles.confirmSub}>
             款項 HK$ {total.toLocaleString()} 已由平台托管
@@ -227,7 +230,7 @@ const CheckoutScreen: React.FC = () => {
 
         {delivery === 'sf' && address.length > 0 && (
           <View style={styles.selectedDetail}>
-            <Text style={styles.selectedDetailLabel}>🏠 送貨地址</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="home-outline" size={14} color={C.textTertiary} /><Text style={styles.selectedDetailLabel}>送貨地址</Text></View>
             <Text style={styles.selectedDetailValue} numberOfLines={2}>{address}</Text>
             <TouchableOpacity onPress={() => setShowAddressModal(true)}>
               <Text style={styles.changeLink}>更改 →</Text>
@@ -280,7 +283,7 @@ const CheckoutScreen: React.FC = () => {
 
       {/* Price breakdown */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💰 金額明細</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="wallet-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>金額明細</Text></View>
         <View style={styles.breakdown}>
           {[
             ['商品金額', formatHkd(fee.cardPriceHkd)],
@@ -304,9 +307,8 @@ const CheckoutScreen: React.FC = () => {
       {/* Confirm button */}
       <View style={styles.footer}>
         <View style={styles.escrowReminder}>
-          <Text style={styles.escrowReminderText}>
-            🔒 點擊確認即表示同意款項由 PokeMarket 托管，收卡確認後自動轉俾賣家
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-closed-outline" size={13} color={C.textTertiary} /><Text style={styles.escrowReminderText}>點擊確認即表示同意款項由 PokeMarket 托管，收卡確認後自動轉俾賣家
+          </Text></View>
         </View>
         <TouchableOpacity
           style={[styles.confirmBtn, (!delivery || !payment || submitting) ? styles.confirmBtnDisabled : null]}
@@ -314,7 +316,7 @@ const CheckoutScreen: React.FC = () => {
           disabled={!delivery || !payment || submitting}
         >
           {submitting ? (
-            <ActivityIndicator color="#080810" />
+            <ActivityIndicator color={C.void} />
           ) : (
             <Text style={styles.confirmBtnText}>
               {payment === 'card' && !showCardForm
@@ -383,7 +385,7 @@ const CheckoutScreen: React.FC = () => {
               <TextInput
                 style={modalStyles.addressInputField}
                 placeholder="例：九龍觀塘偉業街 163 號 10 樓"
-                placeholderTextColor="#4A4A70"
+                placeholderTextColor={C.textDisabled}
                 value={address}
                 onChangeText={setAddress}
                 multiline
@@ -392,7 +394,7 @@ const CheckoutScreen: React.FC = () => {
                 style={modalStyles.confirmAddressBtn}
                 onPress={() => {
                   if (!address.trim()) {
-                    Alert.alert('請填地址', '送貨地址不能空白');
+                    notify('請填地址', '送貨地址不能空白');
                     return;
                   }
                   setShowAddressModal(false);
@@ -433,7 +435,7 @@ const CheckoutScreen: React.FC = () => {
               disabled={submitting || !getPaymentMethodId}
             >
               {submitting ? (
-                <ActivityIndicator color="#080810" />
+                <ActivityIndicator color={C.void} />
               ) : (
                 <Text style={modalStyles.confirmAddressBtnText}>
                   立即支付 HK$ {total.toLocaleString()}
@@ -455,7 +457,7 @@ const CheckoutScreen: React.FC = () => {
 
 // NEW: Obsidian Gallery design system
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080810' },
+  container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -467,14 +469,14 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 36, height: 36,
     borderRadius: 12,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
   },
-  backBtnText: { color: '#F0F0FF', fontSize: 20, fontWeight: '700' },
-  headerTitle: { color: '#F0F0FF', fontSize: 17, fontWeight: '700' },
+  backBtnText: { color: C.text, fontSize: 20, fontWeight: '700' },
+  headerTitle: { color: C.text, fontSize: 17, fontWeight: '700' },
   // NEW: gold tint escrow banner
   escrowBanner: {
     flexDirection: 'row',
@@ -490,38 +492,38 @@ const styles = StyleSheet.create({
   },
   escrowBannerIcon: { fontSize: 24 },
   escrowBannerText: { flex: 1 },
-  escrowBannerTitle: { color: '#D4AF37', fontSize: 13, fontWeight: '700', marginBottom: 4 },
-  escrowBannerDesc: { color: '#8888CC', fontSize: 11, lineHeight: 16 },
+  escrowBannerTitle: { color: C.gold, fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  escrowBannerDesc: { color: C.textSecondary, fontSize: 11, lineHeight: 16 },
   // Elevated card summary with gold price
   cardSummary: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     marginHorizontal: 16,
     borderRadius: 16,
     padding: 14,
     gap: 12,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 5,
   },
-  cardThumb: { width: 60, height: 84, borderRadius: 8, backgroundColor: '#1C1C38' },
+  cardThumb: { width: 60, height: 84, borderRadius: 8, backgroundColor: C.elevated },
   cardSummaryInfo: { flex: 1 },
-  cardSummaryName: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
-  cardSummarySet: { color: '#8888CC', fontSize: 11, marginTop: 2 },
-  cardSummarySeller: { color: '#8888CC', fontSize: 11, marginTop: 4 },
-  cardSummaryPriceGold: { color: '#D4AF37', fontSize: 16, fontWeight: '800' },
+  cardSummaryName: { color: C.text, fontSize: 14, fontWeight: '700' },
+  cardSummarySet: { color: C.textSecondary, fontSize: 11, marginTop: 2 },
+  cardSummarySeller: { color: C.textSecondary, fontSize: 11, marginTop: 4 },
+  cardSummaryPriceGold: { color: C.gold, fontSize: 16, fontWeight: '800' },
   section: { paddingHorizontal: 16, marginBottom: 24 },
-  sectionTitle: { color: '#F0F0FF', fontSize: 15, fontWeight: '700', marginBottom: 12 },
+  sectionTitle: { color: C.text, fontSize: 15, fontWeight: '700', marginBottom: 12 },
   optionGrid: { flexDirection: 'row', gap: 10 },
   optionCard: {
     flex: 1,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
@@ -529,15 +531,15 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   // NEW: gold active state
-  optionCardActive: { borderColor: '#D4AF37', backgroundColor: 'rgba(212,175,55,0.08)' },
+  optionCardActive: { borderColor: C.gold, backgroundColor: 'rgba(212,175,55,0.08)' },
   optionIcon: { fontSize: 28, marginBottom: 8 },
-  optionLabel: { color: '#F0F0FF', fontSize: 13, fontWeight: '700', marginBottom: 2 },
-  optionLabelActive: { color: '#D4AF37' },
-  optionDesc: { color: '#8888CC', fontSize: 10, marginBottom: 4 },
-  optionPrice: { color: '#8888CC', fontSize: 12, fontWeight: '600' },
-  optionPriceActive: { color: '#D4AF37' },
+  optionLabel: { color: C.text, fontSize: 13, fontWeight: '700', marginBottom: 2 },
+  optionLabelActive: { color: C.gold },
+  optionDesc: { color: C.textSecondary, fontSize: 10, marginBottom: 4 },
+  optionPrice: { color: C.textSecondary, fontSize: 12, fontWeight: '600' },
+  optionPriceActive: { color: C.gold },
   selectedDetail: {
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 12,
     padding: 12,
     marginTop: 10,
@@ -545,48 +547,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
   },
-  selectedDetailLabel: { color: '#8888CC', fontSize: 11 },
-  selectedDetailValue: { color: '#F0F0FF', fontSize: 12, fontWeight: '600', flex: 1 },
-  changeLink: { color: '#D4AF37', fontSize: 12, fontWeight: '600' },
+  selectedDetailLabel: { color: C.textSecondary, fontSize: 11 },
+  selectedDetailValue: { color: C.text, fontSize: 12, fontWeight: '600', flex: 1 },
+  changeLink: { color: C.gold, fontSize: 12, fontWeight: '600' },
   paymentOptions: { gap: 10 },
   paymentCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 14,
     padding: 14,
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  paymentCardActive: { borderColor: '#D4AF37', backgroundColor: 'rgba(212,175,55,0.08)' },
+  paymentCardActive: { borderColor: C.gold, backgroundColor: 'rgba(212,175,55,0.08)' },
   paymentLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   paymentIcon: { fontSize: 24 },
-  paymentLabel: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
-  paymentLabelActive: { color: '#D4AF37' },
-  paymentSub: { color: '#8888CC', fontSize: 11 },
+  paymentLabel: { color: C.text, fontSize: 14, fontWeight: '700' },
+  paymentLabelActive: { color: C.gold },
+  paymentSub: { color: C.textSecondary, fontSize: 11 },
   paymentRadio: {
     width: 22, height: 22, borderRadius: 11,
-    borderWidth: 2, borderColor: '#2A2A50', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: C.border, alignItems: 'center', justifyContent: 'center',
   },
-  paymentRadioActive: { borderColor: '#D4AF37' },
-  paymentRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#D4AF37' },
+  paymentRadioActive: { borderColor: C.gold },
+  paymentRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: C.gold },
   // Elevated breakdown with gold total
   breakdown: {
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
   },
   breakdownRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  breakdownLabel: { color: '#8888CC', fontSize: 13 },
-  breakdownValue: { color: '#F0F0FF', fontSize: 13 },
-  breakdownTotal: { borderTopWidth: 1, borderTopColor: '#2A2A50', paddingTop: 10, marginTop: 4, marginBottom: 0 },
-  totalLabel: { color: '#F0F0FF', fontSize: 15, fontWeight: '700' },
-  totalValueGold: { color: '#D4AF37', fontSize: 18, fontWeight: '800' },
+  breakdownLabel: { color: C.textSecondary, fontSize: 13 },
+  breakdownValue: { color: C.text, fontSize: 13 },
+  breakdownTotal: { borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10, marginTop: 4, marginBottom: 0 },
+  totalLabel: { color: C.text, fontSize: 15, fontWeight: '700' },
+  totalValueGold: { color: C.gold, fontSize: 18, fontWeight: '800' },
   footer: { paddingHorizontal: 16 },
   escrowReminder: {
     backgroundColor: 'rgba(212,175,55,0.08)',
@@ -596,61 +598,61 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(212,175,55,0.15)',
   },
-  escrowReminderText: { color: '#8888CC', fontSize: 11, lineHeight: 16 },
+  escrowReminderText: { color: C.textSecondary, fontSize: 11, lineHeight: 16 },
   // NEW: gold CTA confirm button
   confirmBtn: {
-    backgroundColor: '#D4AF37',
+    backgroundColor: C.gold,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
   },
-  confirmBtnDisabled: { backgroundColor: '#2A2A50' },
-  confirmBtnText: { color: '#080810', fontSize: 16, fontWeight: '800' },
+  confirmBtnDisabled: { backgroundColor: C.border },
+  confirmBtnText: { color: C.void, fontSize: 16, fontWeight: '800' },
   // Order success
-  confirmContainer: { flex: 1, backgroundColor: '#080810', alignItems: 'center', justifyContent: 'center' },
+  confirmContainer: { flex: 1, backgroundColor: C.void, alignItems: 'center', justifyContent: 'center' },
   confirmContent: { alignItems: 'center', paddingHorizontal: 24 },
   confirmEmoji: { fontSize: 64, marginBottom: 16 },
-  confirmTitle: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', marginBottom: 8 },
-  confirmSub: { color: '#8888CC', fontSize: 14, marginBottom: 20 },
-  escrowSummary: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#14142A', borderRadius: 12, padding: 14, gap: 10, marginBottom: 24, borderWidth: 1, borderColor: '#2A2A50' },
+  confirmTitle: { color: C.text, fontSize: 24, fontWeight: '800', marginBottom: 8 },
+  confirmSub: { color: C.textSecondary, fontSize: 14, marginBottom: 20 },
+  escrowSummary: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 12, padding: 14, gap: 10, marginBottom: 24, borderWidth: 1, borderColor: C.border },
   escrowIcon: { fontSize: 24 },
-  escrowSummaryText: { color: '#8888CC', fontSize: 12, flex: 1 },
-  trackBtn: { backgroundColor: '#D4AF37', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 40, marginBottom: 12 },
-  trackBtnText: { color: '#080810', fontSize: 15, fontWeight: '700' },
-  backHome: { color: '#8888CC', fontSize: 14 },
+  escrowSummaryText: { color: C.textSecondary, fontSize: 12, flex: 1 },
+  trackBtn: { backgroundColor: C.gold, borderRadius: 14, paddingVertical: 16, paddingHorizontal: 40, marginBottom: 12 },
+  trackBtnText: { color: C.void, fontSize: 15, fontWeight: '700' },
+  backHome: { color: C.textSecondary, fontSize: 14 },
 });
 
 const modalStyles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#1C1C38', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, borderWidth: 1, borderColor: '#2A2A50' },
-  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#3D3D70', alignSelf: 'center', marginBottom: 16 },
-  title: { color: '#F0F0FF', fontSize: 18, fontWeight: '800', marginBottom: 20 },
+  sheet: { backgroundColor: C.elevated, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, borderWidth: 1, borderColor: C.border },
+  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: C.borderActive, alignSelf: 'center', marginBottom: 16 },
+  title: { color: C.text, fontSize: 18, fontWeight: '800', marginBottom: 20 },
   lineGroup: { marginBottom: 16 },
-  lineName: { color: '#D4AF37', fontSize: 13, fontWeight: '700', marginBottom: 10 },
+  lineName: { color: C.gold, fontSize: 13, fontWeight: '700', marginBottom: 10 },
   stationGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  stationChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#14142A', borderWidth: 1, borderColor: '#2A2A50' },
-  stationChipActive: { backgroundColor: '#D4AF37', borderColor: '#D4AF37' },
-  stationText: { color: '#8888CC', fontSize: 12 },
-  stationTextActive: { color: '#080810', fontWeight: '600' },
+  stationChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: C.card, borderWidth: 1, borderColor: C.border },
+  stationChipActive: { backgroundColor: C.gold, borderColor: C.gold },
+  stationText: { color: C.textSecondary, fontSize: 12 },
+  stationTextActive: { color: C.void, fontWeight: '600' },
   closeBtn: { alignItems: 'center', marginTop: 16 },
-  closeText: { color: '#8888CC', fontSize: 14, fontWeight: '600' },
+  closeText: { color: C.textSecondary, fontSize: 14, fontWeight: '600' },
   addressForm: { marginBottom: 16 },
-  fieldLabel: { color: '#8888CC', fontSize: 12, marginBottom: 8, marginTop: 8 },
-  addressInput: { backgroundColor: '#14142A', borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#2A2A50' },
+  fieldLabel: { color: C.textSecondary, fontSize: 12, marginBottom: 8, marginTop: 8 },
+  addressInput: { backgroundColor: C.card, borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: C.border },
   addressInputField: {
-    backgroundColor: '#14142A', color: '#F0F0FF', fontSize: 14,
+    backgroundColor: C.card, color: C.text, fontSize: 14,
     borderRadius: 12, padding: 14, marginBottom: 12,
-    borderWidth: 1, borderColor: '#2A2A50', minHeight: 60,
+    borderWidth: 1, borderColor: C.border, minHeight: 60,
   },
   cardField: {
-    backgroundColor: '#14142A', color: '#F0F0FF', fontSize: 16,
+    backgroundColor: C.card, color: C.text, fontSize: 16,
     borderRadius: 12, padding: 14, marginBottom: 12,
-    borderWidth: 1, borderColor: '#2A2A50',
+    borderWidth: 1, borderColor: C.border,
   },
-  subtitle: { color: '#8888CC', fontSize: 12, marginBottom: 16, lineHeight: 18 },
-  addressPlaceholder: { color: '#4A4A70', fontSize: 14 },
-  confirmAddressBtn: { backgroundColor: '#D4AF37', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
-  confirmAddressBtnText: { color: '#080810', fontSize: 14, fontWeight: '700' },
+  subtitle: { color: C.textSecondary, fontSize: 12, marginBottom: 16, lineHeight: 18 },
+  addressPlaceholder: { color: C.textDisabled, fontSize: 14 },
+  confirmAddressBtn: { backgroundColor: C.gold, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
+  confirmAddressBtnText: { color: C.void, fontSize: 14, fontWeight: '700' },
 });
 
 export default CheckoutScreen;

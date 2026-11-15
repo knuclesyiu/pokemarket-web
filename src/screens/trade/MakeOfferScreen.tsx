@@ -20,6 +20,9 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { MarketListing, TradeCard, UserCard, OfferCard } from '../../types/trade';
+import { confirmAction, notify } from '../../components/Feedback';
+import { C } from '../../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type NavProp = NativeStackNavigationProp<any>;
 const { width } = Dimensions.get('window');
@@ -46,7 +49,7 @@ const SelectableCard: React.FC<{
       />
     ) : (
       <View style={[styles.selectableCardImg, styles.selectableCardImgPlaceholder]}>
-        <Text style={{ fontSize: 30, opacity: 0.3 }}>🎴</Text>
+        <Ionicons name="card-outline" size={30} color={C.textTertiary} />
       </View>
     )}
     <View style={styles.selectableCardInfo}>
@@ -92,7 +95,7 @@ const MakeOfferScreen: React.FC = () => {
       setMyCards(data.cards || []);
     } catch (err) {
       console.error('loadMyCards error:', err);
-      Alert.alert('載入失敗', '無法讀取你的收藏，請稍後重試');
+      notify('載入失敗', '無法讀取你的收藏，請稍後重試');
     } finally {
       setLoading(false);
     }
@@ -126,7 +129,7 @@ const MakeOfferScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!isValid) {
-      Alert.alert('無法發送', '請選擇至少一張卡或填寫現金補貼');
+      notify('無法發送', '請選擇至少一張卡或填寫現金補貼');
       return;
     }
     if (listing.sellerId) {
@@ -150,13 +153,13 @@ const MakeOfferScreen: React.FC = () => {
         message: message.trim(),
       });
       const data = result.data as { offerId: string; status: string };
-      Alert.alert('✅ Offer 已發出！', `你的交換提議已發送給 ${listing.sellerName}`, [
+      confirmAction('Offer 已發出！', `你的交換提議已發送給 ${listing.sellerName}`, [
         { text: '查看我的 Offer', onPress: () => navigation.navigate('MyOffers') },
         { text: '返回', onPress: () => navigation.goBack() },
       ]);
     } catch (err: any) {
       console.error('createOffer error:', err);
-      Alert.alert('發送失敗', err.message || '請稍後重試');
+      notify('發送失敗', err.message || '請稍後重試');
     } finally {
       setSubmitting(false);
     }
@@ -176,7 +179,7 @@ const MakeOfferScreen: React.FC = () => {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── Target Card ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🎯 目標卡片</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="albums-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>目標卡片</Text></View>
           <View style={styles.targetCard}>
             {listing.card?.imageUrl ? (
               <Image
@@ -186,7 +189,7 @@ const MakeOfferScreen: React.FC = () => {
               />
             ) : (
               <View style={[styles.targetCardImg, styles.targetCardImgPlaceholder]}>
-                <Text style={{ fontSize: 50, opacity: 0.3 }}>🎴</Text>
+                <Ionicons name="card-outline" size={50} color={C.textTertiary} />
               </View>
             )}
             <View style={styles.targetCardInfo}>
@@ -211,7 +214,7 @@ const MakeOfferScreen: React.FC = () => {
           </View>
 
           {loading ? (
-            <ActivityIndicator color="#FF3C3C" style={{ marginTop: 20 }} />
+            <ActivityIndicator color={C.action} style={{ marginTop: 20 }} />
           ) : myCards.length === 0 ? (
             <View style={styles.emptyCards}>
               <Text style={styles.emptyCardsText}>你的收藏是空的</Text>
@@ -260,7 +263,7 @@ const MakeOfferScreen: React.FC = () => {
             <TextInput
               style={styles.cashInput}
               placeholder="輸入金額（HKD）"
-              placeholderTextColor="#6666AA"
+              placeholderTextColor={C.textTertiary}
               keyboardType="numeric"
               value={cashAddHkd > 0 && !CASH_QUICK_ADD.includes(cashAddHkd) ? String(cashAddHkd) : ''}
               onChangeText={v => setCashAddHkd(Number(v.replace(/[^0-9]/g, '')))}
@@ -270,11 +273,11 @@ const MakeOfferScreen: React.FC = () => {
 
         {/* ── Message ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💬 留言（可選）</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>留言（可選）</Text></View>
           <TextInput
             style={styles.messageInput}
             placeholder="給賣家留個言...（例：熱交，prefer面交）"
-            placeholderTextColor="#6666AA"
+            placeholderTextColor={C.textTertiary}
             multiline
             maxLength={200}
             value={message}
@@ -294,7 +297,7 @@ const MakeOfferScreen: React.FC = () => {
           onPress={handleSubmit}
         >
           {submitting ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={C.text} />
           ) : (
             <Text style={styles.submitBtnText}>
               發送 Offer 🚀
@@ -311,103 +314,103 @@ const MakeOfferScreen: React.FC = () => {
 const CARD_H = 88;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121F' },
+  container: { flex: 1, backgroundColor: C.surface },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
-    borderBottomWidth: 1, borderBottomColor: '#1E1E2E',
+    borderBottomWidth: 1, borderBottomColor: C.elevated,
   },
   backBtn: { width: 60 },
-  backBtnText: { color: '#FF3C3C', fontSize: 15, fontWeight: '600' },
-  headerTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
+  backBtnText: { color: C.action, fontSize: 15, fontWeight: '600' },
+  headerTitle: { color: C.text, fontSize: 18, fontWeight: '800' },
   scroll: { flex: 1 },
   section: { paddingHorizontal: 16, paddingTop: 20 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', marginBottom: 12 },
-  selectedCount: { color: '#FF3C3C', fontSize: 11, fontWeight: '600', marginBottom: 12 },
+  sectionTitle: { color: C.text, fontSize: 15, fontWeight: '700', marginBottom: 12 },
+  selectedCount: { color: C.action, fontSize: 11, fontWeight: '600', marginBottom: 12 },
 
   // Target Card
   targetCard: {
-    backgroundColor: '#1E1E2E', borderRadius: 16, overflow: 'hidden',
-    borderWidth: 2, borderColor: '#FF3C3C',
+    backgroundColor: C.elevated, borderRadius: 16, overflow: 'hidden',
+    borderWidth: 2, borderColor: C.action,
   },
   targetCardImg: {
     width: '100%', height: 180, backgroundColor: '#16213E',
   },
   targetCardImgPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   targetCardInfo: { padding: 16 },
-  targetCardName: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
-  targetCardSet: { color: '#8888AA', fontSize: 13, marginTop: 2 },
+  targetCardName: { color: C.text, fontSize: 18, fontWeight: '800' },
+  targetCardSet: { color: C.textSecondary, fontSize: 13, marginTop: 2 },
   targetCardMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  targetCardPrice: { color: '#FF3C3C', fontSize: 20, fontWeight: '800' },
+  targetCardPrice: { color: C.action, fontSize: 20, fontWeight: '800' },
   targetCardCondition: {
-    color: '#8888AA', fontSize: 12, marginLeft: 12,
-    backgroundColor: '#12121F', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8,
+    color: C.textSecondary, fontSize: 12, marginLeft: 12,
+    backgroundColor: C.surface, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8,
   },
-  sellerLabel: { color: '#6666AA', fontSize: 12, marginTop: 8 },
+  sellerLabel: { color: C.textTertiary, fontSize: 12, marginTop: 8 },
 
   // Selectable Cards
   cardsList: { gap: 10 },
   selectableCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#1E1E2E', borderRadius: 14, padding: 10,
-    borderWidth: 1.5, borderColor: '#2A2A3E',
+    backgroundColor: C.elevated, borderRadius: 14, padding: 10,
+    borderWidth: 1.5, borderColor: C.border,
     height: CARD_H,
   },
-  selectableCardActive: { borderColor: '#FF3C3C', backgroundColor: '#1E0A0A' },
+  selectableCardActive: { borderColor: C.action, backgroundColor: '#1E0A0A' },
   selectableCardImg: {
     width: 56, height: CARD_H - 20, backgroundColor: '#16213E', borderRadius: 10,
   },
   selectableCardImgPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   selectableCardInfo: { flex: 1, marginLeft: 12 },
-  selectableCardName: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  selectableCardSet: { color: '#8888AA', fontSize: 11, marginTop: 2 },
+  selectableCardName: { color: C.text, fontSize: 13, fontWeight: '700' },
+  selectableCardSet: { color: C.textSecondary, fontSize: 11, marginTop: 2 },
   checkbox: {
     width: 24, height: 24, borderRadius: 12,
-    borderWidth: 2, borderColor: '#2A2A3E', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: C.border, alignItems: 'center', justifyContent: 'center',
   },
-  checkboxActive: { backgroundColor: '#FF3C3C', borderColor: '#FF3C3C' },
-  checkmark: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  checkboxActive: { backgroundColor: C.action, borderColor: C.action },
+  checkmark: { color: C.text, fontSize: 14, fontWeight: '800' },
 
   emptyCards: { alignItems: 'center', paddingVertical: 30 },
-  emptyCardsText: { color: '#8888AA', fontSize: 14 },
-  emptyCardsSub: { color: '#6666AA', fontSize: 12, marginTop: 4 },
+  emptyCardsText: { color: C.textSecondary, fontSize: 14 },
+  emptyCardsSub: { color: C.textTertiary, fontSize: 12, marginTop: 4 },
 
   // Cash
-  cashHint: { color: '#6666AA', fontSize: 12, marginBottom: 12 },
+  cashHint: { color: C.textTertiary, fontSize: 12, marginBottom: 12 },
   cashQuickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   cashChip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
-    backgroundColor: '#1E1E2E', borderWidth: 1, borderColor: '#2A2A3E',
+    backgroundColor: C.elevated, borderWidth: 1, borderColor: C.border,
   },
-  cashChipActive: { backgroundColor: '#FF3C3C', borderColor: '#FF3C3C' },
-  cashChipText: { color: '#8888AA', fontSize: 13, fontWeight: '600' },
-  cashChipTextActive: { color: '#FFFFFF' },
+  cashChipActive: { backgroundColor: C.action, borderColor: C.action },
+  cashChipText: { color: C.textSecondary, fontSize: 13, fontWeight: '600' },
+  cashChipTextActive: { color: C.text },
   cashInput: {
-    backgroundColor: '#1E1E2E', borderRadius: 12, paddingHorizontal: 14,
-    paddingVertical: 12, color: '#FFFFFF', fontSize: 14, marginTop: 10,
-    borderWidth: 1, borderColor: '#2A2A3E',
+    backgroundColor: C.elevated, borderRadius: 12, paddingHorizontal: 14,
+    paddingVertical: 12, color: C.text, fontSize: 14, marginTop: 10,
+    borderWidth: 1, borderColor: C.border,
   },
 
   // Message
   messageInput: {
-    backgroundColor: '#1E1E2E', borderRadius: 12, paddingHorizontal: 14,
-    paddingVertical: 12, color: '#FFFFFF', fontSize: 14, minHeight: 80,
-    textAlignVertical: 'top', borderWidth: 1, borderColor: '#2A2A3E',
+    backgroundColor: C.elevated, borderRadius: 12, paddingHorizontal: 14,
+    paddingVertical: 12, color: C.text, fontSize: 14, minHeight: 80,
+    textAlignVertical: 'top', borderWidth: 1, borderColor: C.border,
   },
-  charCount: { color: '#6666AA', fontSize: 10, textAlign: 'right', marginTop: 4 },
+  charCount: { color: C.textTertiary, fontSize: 10, textAlign: 'right', marginTop: 4 },
 
   // Bottom Bar
   bottomBar: {
-    backgroundColor: '#12121F', borderTopWidth: 1, borderTopColor: '#1E1E2E',
+    backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.elevated,
     paddingHorizontal: 16, paddingVertical: 16, paddingBottom: 30,
   },
   submitBtn: {
-    backgroundColor: '#FF3C3C', borderRadius: 14, paddingVertical: 16,
+    backgroundColor: C.action, borderRadius: 14, paddingVertical: 16,
     alignItems: 'center',
   },
   submitBtnDisabled: { opacity: 0.4 },
-  submitBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
+  submitBtnText: { color: C.text, fontSize: 17, fontWeight: '800' },
 });
 
 export default MakeOfferScreen;

@@ -3,9 +3,11 @@ import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
   StyleSheet, ActivityIndicator,
 } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { PokemonCard } from '../../types';
 import { searchCardsByName, priceDataToCard } from '../../services/cardPriceService';
+import { C, R, SP, T } from '../../theme';
 
 type VersionFilter = '全部' | '日版' | '中文版' | '英文版';
 
@@ -16,11 +18,17 @@ const VERSION_MAP: Record<VersionFilter, string | null> = {
   '英文版': 'English',
 };
 
-const VERSION_EMOJI: Record<VersionFilter, string> = {
-  '全部': '🌐',
-  '日版': '🇯🇵',
-  '中文版': '🇭🇰',
-  '英文版': '🇺🇸',
+/**
+ * The chips used flag emoji. A flag is a country, not a language, and
+ * the same emoji renders at a different size on every platform — the
+ * chip row was uneven. A globe for "every language" and plain labels
+ * for the rest say what they mean and line up.
+ */
+const VERSION_ICON: Record<VersionFilter, keyof typeof Ionicons.glyphMap | null> = {
+  '全部': 'globe-outline',
+  '日版': null,
+  '中文版': null,
+  '英文版': null,
 };
 
 interface Props {
@@ -32,7 +40,7 @@ interface Props {
 const SearchBar: React.FC<Props> = ({
   onResults,
   onLoadingChange,
-  placeholder = '搜尋卡名、Series、Rarity...',
+  placeholder = '搜尋卡名、系列、稀有度…',
 }) => {
   const [query, setQuery] = useState('');
   const [activeVersion, setActiveVersion] = useState<VersionFilter>('全部');
@@ -99,11 +107,11 @@ const SearchBar: React.FC<Props> = ({
       {/* Search Input Row */}
       <View style={styles.searchRow}>
         <View style={styles.searchWrap}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search" size={16} color={C.textTertiary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder={placeholder}
-            placeholderTextColor="#6666AA"
+            placeholderTextColor={C.textTertiary}
             value={query}
             onChangeText={setQuery}
             returnKeyType="search"
@@ -111,13 +119,15 @@ const SearchBar: React.FC<Props> = ({
             autoCapitalize="none"
           />
           {loading ? (
-            <ActivityIndicator size="small" color="#FF3C3C" style={{ marginRight: 8 }} />
+            <ActivityIndicator size="small" color={C.action} style={styles.searchAction} />
           ) : query.length > 0 ? (
             <TouchableOpacity
               onPress={() => setQuery('')}
-              style={{ marginRight: 8, padding: 4 }}
+              style={styles.searchAction}
+              accessibilityRole="button"
+              accessibilityLabel="清除搜尋"
             >
-              <Text style={{ color: '#8888AA', fontSize: 16 }}>✕</Text>
+              <Ionicons name="close-circle" size={18} color={C.textTertiary} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -139,7 +149,13 @@ const SearchBar: React.FC<Props> = ({
             onPress={() => setActiveVersion(v)}
             activeOpacity={0.7}
           >
-            <Text style={styles.versionEmoji}>{VERSION_EMOJI[v]}</Text>
+            {VERSION_ICON[v] ? (
+              <Ionicons
+                name={VERSION_ICON[v] as keyof typeof Ionicons.glyphMap}
+                size={13}
+                color={activeVersion === v ? C.void : C.textTertiary}
+              />
+            ) : null}
             <Text style={[
               styles.versionText,
               activeVersion === v ? styles.versionTextActive : null,
@@ -155,50 +171,48 @@ const SearchBar: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    marginBottom: 14,
+    paddingHorizontal: SP.lg,
+    marginBottom: SP.md,
   },
-  searchRow: {
-    marginBottom: 10,
-  },
+  searchRow: { marginBottom: SP.sm },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1E2E',
-    borderRadius: 14,
-    paddingHorizontal: 14,
+    backgroundColor: C.card,
+    borderRadius: R.md,
+    paddingHorizontal: SP.md,
     borderWidth: 1,
-    borderColor: '#2A2A3E',
+    borderColor: C.border,
   },
-  searchIcon: { fontSize: 16, marginRight: 8 },
+  searchIcon: { marginRight: SP.sm },
+  searchAction: { marginLeft: SP.sm, padding: 2 },
   searchInput: {
     flex: 1,
-    color: '#FFFFFF',
+    color: C.text,
     fontSize: 14,
     paddingVertical: 13,
   },
   versionRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: SP.sm,
   },
   versionChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
+    gap: 5,
+    paddingHorizontal: SP.md,
     paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: '#1E1E2E',
+    borderRadius: R.pill,
+    backgroundColor: C.card,
     borderWidth: 1,
-    borderColor: '#2A2A3E',
+    borderColor: C.border,
   },
   versionChipActive: {
-    backgroundColor: '#FFD700',
-    borderColor: '#FFD700',
+    backgroundColor: C.gold,
+    borderColor: C.gold,
   },
-  versionEmoji: { fontSize: 12 },
-  versionText: { color: '#8888AA', fontSize: 12, fontWeight: '600' },
-  versionTextActive: { color: '#12121F', fontWeight: '700' },
+  versionText: { ...T.caption, color: C.textSecondary },
+  versionTextActive: { color: C.void, fontWeight: '700' },
 });
 
 export default SearchBar;

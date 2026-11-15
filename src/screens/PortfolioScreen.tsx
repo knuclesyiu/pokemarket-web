@@ -9,6 +9,8 @@ import { collection, doc, getDocs, getDoc, query, where, setDoc } from 'firebase
 import { auth, db } from '../services/firebase';
 
 import { PortfolioItem } from '../types';
+import { C } from '../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type NavProp = NativeStackNavigationProp<any>;
 
@@ -210,7 +212,7 @@ const PortfolioScreen: React.FC = () => {
 
       {/* Holdings */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>💼 持有卡牌</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="briefcase-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>持有卡牌</Text></View>
         <Text style={styles.count}>{portfolioItems.length} 張</Text>
       </View>
 
@@ -238,7 +240,7 @@ const PortfolioScreen: React.FC = () => {
                 <Text style={styles.holdingLabel}>現值</Text>
                 <Text style={styles.holdingValue}>HK${item.currentValue.toLocaleString()}</Text>
                 {item.pnlPercent >= 50 && (
-                  <Text style={styles.holdingTrophy}>🏆</Text>
+                  <Ionicons name="trophy-outline" size={14} color={C.textTertiary} />
                 )}
               </View>
             </View>
@@ -298,11 +300,11 @@ const PortfolioScreen: React.FC = () => {
 
             {/* Search Bar */}
             <View style={addModalStyles.searchWrap}>
-              <Text style={{ fontSize: 16, marginRight: 8 }}>🔍</Text>
+              <Ionicons name="search-outline" size={16} color={C.textTertiary} />
               <TextInput
                 style={addModalStyles.searchInput}
                 placeholder="搜尋卡名..."
-                placeholderTextColor="#4A4A70"
+                placeholderTextColor={C.textDisabled}
                 value={searchQuery}
                 onChangeText={handleSearchChange}
                 autoFocus
@@ -338,7 +340,7 @@ const PortfolioScreen: React.FC = () => {
                   <Text style={addModalStyles.selectedSet}>{selectedCard.set} · HK${selectedCard.price.toLocaleString()}</Text>
                 </View>
                 <TouchableOpacity onPress={() => { setSelectedCard(null); setSearchQuery(''); }}>
-                  <Text style={{ color: '#FF4060', fontSize: 13 }}>✕</Text>
+                  <Text style={{ color: C.ruby, fontSize: 13 }}>✕</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -348,7 +350,7 @@ const PortfolioScreen: React.FC = () => {
               <Text style={addModalStyles.label}>數量</Text>
               <View style={addModalStyles.qtyRow}>
                 <TouchableOpacity style={addModalStyles.qtyBtn} onPress={() => setAddQty(v => String(Math.max(1, parseInt(v) - 1)))}>
-                  <Text style={{ color: '#F0F0FF', fontSize: 18 }}>−</Text>
+                  <Text style={{ color: C.text, fontSize: 18 }}>−</Text>
                 </TouchableOpacity>
                 <TextInput
                   style={addModalStyles.qtyInput}
@@ -358,7 +360,7 @@ const PortfolioScreen: React.FC = () => {
                   textAlign="center"
                 />
                 <TouchableOpacity style={addModalStyles.qtyBtn} onPress={() => setAddQty(v => String(parseInt(v || '1') + 1))}>
-                  <Text style={{ color: '#F0F0FF', fontSize: 18 }}>+</Text>
+                  <Text style={{ color: C.text, fontSize: 18 }}>+</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -390,7 +392,7 @@ const PortfolioScreen: React.FC = () => {
 
 // NEW: Obsidian Gallery design system
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080810' },
+  container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -399,24 +401,24 @@ const styles = StyleSheet.create({
     paddingTop: 56,
     paddingBottom: 12,
   },
-  headerTitle: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
+  headerTitle: { color: C.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
   addBtn: {
-    backgroundColor: '#FF3C3C',   // NEW: gold primary CTA
+    backgroundColor: C.action,   // NEW: gold primary CTA
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
   },
-  addBtnText: { color: '#080810', fontSize: 13, fontWeight: '700' },
+  addBtnText: { color: C.void, fontSize: 13, fontWeight: '700' },
   summaryCard: {
-    backgroundColor: '#14142A',   // NEW: elevated card surface
+    backgroundColor: C.card,   // NEW: elevated card surface
     marginHorizontal: 16,
     borderRadius: 24,
     padding: 24,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#2A2A50',        // NEW: subtle border
+    borderColor: C.border,        // NEW: subtle border
     // NEW: premium elevation shadow with warm gold tint
-    shadowColor: '#FF3C3C',
+    shadowColor: C.action,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 20,
@@ -428,23 +430,23 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  summaryLabel: { color: '#8888CC', fontSize: 12 },
-  summaryValue: { color: '#F0F0FF', fontSize: 28, fontWeight: '800', marginTop: 4, letterSpacing: -1 },
+  summaryLabel: { color: C.textSecondary, fontSize: 12 },
+  summaryValue: { color: C.text, fontSize: 28, fontWeight: '800', marginTop: 4, letterSpacing: -1 },
   pnlBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   pnlGain: { backgroundColor: 'rgba(0,200,150,0.15)' },   // NEW: jade tint
   pnlLoss: { backgroundColor: 'rgba(255,64,96,0.15)' },   // NEW: ruby tint
   pnlBadgeText: { fontSize: 12, fontWeight: '700' },
-  pnlGainText: { color: '#00C896' },   // NEW: jade accent
-  pnlLossText: { color: '#FF4060' },    // NEW: ruby accent
+  pnlGainText: { color: C.up },   // NEW: jade accent
+  pnlLossText: { color: C.ruby },    // NEW: ruby accent
   summaryBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: '#2A2A50',
+    borderTopColor: C.border,
     paddingTop: 14,
   },
-  summarySub: { color: '#8888CC', fontSize: 10 },
-  summarySubValue: { color: '#F0F0FF', fontSize: 14, fontWeight: '700', marginTop: 2 },
+  summarySub: { color: C.textSecondary, fontSize: 10 },
+  summarySubValue: { color: C.text, fontSize: 14, fontWeight: '700', marginTop: 2 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -453,18 +455,18 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 12,
   },
-  sectionTitle: { color: '#F0F0FF', fontSize: 16, fontWeight: '700' },
-  count: { color: '#8888CC', fontSize: 12 },
+  sectionTitle: { color: C.text, fontSize: 16, fontWeight: '700' },
+  count: { color: C.textSecondary, fontSize: 12 },
   holdingCard: {
     flexDirection: 'row',
-    backgroundColor: '#14142A',     // NEW: elevated card
+    backgroundColor: C.card,     // NEW: elevated card
     marginHorizontal: 16,
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
     // NEW: card elevation
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -475,20 +477,20 @@ const styles = StyleSheet.create({
   holdingImage: {
     width: 80,
     height: 112,
-    backgroundColor: '#1C1C38',
+    backgroundColor: C.elevated,
   },
   holdingInfo: { flex: 1, padding: 12 },
-  holdingName: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
-  holdingSet: { color: '#8888CC', fontSize: 10, marginTop: 2 },
+  holdingName: { color: C.text, fontSize: 14, fontWeight: '700' },
+  holdingSet: { color: C.textSecondary, fontSize: 10, marginTop: 2 },
   holdingBottom: {
     flexDirection: 'row',
     gap: 12,
     marginTop: 8,
   },
-  holdingLabel: { color: '#8888CC', fontSize: 9 },
-  holdingQty: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
-  holdingAvg: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
-  holdingValue: { color: '#FF3C3C', fontSize: 13, fontWeight: '700' },   // NEW: gold price
+  holdingLabel: { color: C.textSecondary, fontSize: 9 },
+  holdingQty: { color: C.text, fontSize: 13, fontWeight: '600' },
+  holdingAvg: { color: C.text, fontSize: 13, fontWeight: '600' },
+  holdingValue: { color: C.action, fontSize: 13, fontWeight: '700' },   // NEW: gold price
   holdingTrophy: { fontSize: 14, marginLeft: 4 },
   pnlSection: {
     paddingRight: 14,
@@ -502,7 +504,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1C1C38',
+    borderBottomColor: C.elevated,
   },
   txIcon: {
     width: 36,
@@ -514,21 +516,21 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute', bottom: 90, right: 16, left: 16,
-    backgroundColor: '#FF3C3C', borderRadius: 14, paddingVertical: 16,   // NEW: gold CTA
+    backgroundColor: C.action, borderRadius: 14, paddingVertical: 16,   // NEW: gold CTA
     alignItems: 'center',
-    shadowColor: '#FF3C3C',
+    shadowColor: C.action,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
   },
-  fabText: { color: '#080810', fontSize: 15, fontWeight: '800' },
+  fabText: { color: C.void, fontSize: 15, fontWeight: '800' },
   txBuy: { backgroundColor: 'rgba(255,64,96,0.15)' },   // NEW: ruby tint
   txSell: { backgroundColor: 'rgba(0,200,150,0.15)' },  // NEW: jade tint
   txIconText: { fontSize: 16 },
   txInfo: { flex: 1 },
-  txCard: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
-  txDate: { color: '#8888CC', fontSize: 10, marginTop: 2 },
+  txCard: { color: C.text, fontSize: 13, fontWeight: '600' },
+  txDate: { color: C.textSecondary, fontSize: 10, marginTop: 2 },
   txPrice: { fontSize: 14, fontWeight: '700' },
 });
 
@@ -540,86 +542,86 @@ const addModalStyles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#1C1C38',    // NEW: elevated surface
+    backgroundColor: C.elevated,    // NEW: elevated surface
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
     paddingBottom: 40,
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
   },
   handle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#3D3D70',
+    backgroundColor: C.borderActive,
     alignSelf: 'center',
     marginBottom: 16,
   },
-  title: { color: '#F0F0FF', fontSize: 18, fontWeight: '800', marginBottom: 20 },
+  title: { color: C.text, fontSize: 18, fontWeight: '800', marginBottom: 20 },
   field: { marginBottom: 16 },
-  label: { color: '#8888CC', fontSize: 12, marginBottom: 6 },
+  label: { color: C.textSecondary, fontSize: 12, marginBottom: 6 },
   input: {
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
   },
-  inputText: { color: '#F0F0FF', fontSize: 14 },
-  hint: { color: '#8888CC', fontSize: 11, marginBottom: 20, lineHeight: 16 },
+  inputText: { color: C.text, fontSize: 14 },
+  hint: { color: C.textSecondary, fontSize: 11, marginBottom: 20, lineHeight: 16 },
   confirmBtn: {
-    backgroundColor: '#FF3C3C',    // NEW: gold CTA
+    backgroundColor: C.action,    // NEW: gold CTA
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     marginBottom: 10,
   },
-  confirmBtnText: { color: '#080810', fontSize: 15, fontWeight: '700' },
+  confirmBtnText: { color: C.void, fontSize: 15, fontWeight: '700' },
   cancelBtn: {
     alignItems: 'center',
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#FF3C3C',
+    borderColor: C.action,
     borderRadius: 14,
     paddingVertical: 14,
   },
-  cancelText: { color: '#FF3C3C', fontSize: 14, fontWeight: '600' },
+  cancelText: { color: C.action, fontSize: 14, fontWeight: '600' },
   confirmBtnDisabled: { opacity: 0.4 },
   searchWrap: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#14142A', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
-    borderWidth: 1, borderColor: '#2A2A50', marginBottom: 12,
+    backgroundColor: C.card, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
+    borderWidth: 1, borderColor: C.border, marginBottom: 12,
   },
-  searchInput: { flex: 1, color: '#F0F0FF', fontSize: 14 },
+  searchInput: { flex: 1, color: C.text, fontSize: 14 },
   resultsList: { maxHeight: 220, marginBottom: 12 },
   resultItem: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: 8,
-    borderBottomWidth: 1, borderBottomColor: '#1C1C38',
+    borderBottomWidth: 1, borderBottomColor: C.elevated,
   },
-  resultThumb: { width: 40, height: 56, borderRadius: 6, backgroundColor: '#14142A', marginRight: 10 },
-  resultName: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
-  resultSet: { color: '#8888CC', fontSize: 10, marginTop: 1 },
-  resultPrice: { color: '#FF3C3C', fontSize: 12, fontWeight: '700' },
+  resultThumb: { width: 40, height: 56, borderRadius: 6, backgroundColor: C.card, marginRight: 10 },
+  resultName: { color: C.text, fontSize: 13, fontWeight: '600' },
+  resultSet: { color: C.textSecondary, fontSize: 10, marginTop: 1 },
+  resultPrice: { color: C.action, fontSize: 12, fontWeight: '700' },
   selectedCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#14142A',
-    borderRadius: 12, padding: 10, marginBottom: 16, borderWidth: 1, borderColor: '#FF3C3C',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: C.card,
+    borderRadius: 12, padding: 10, marginBottom: 16, borderWidth: 1, borderColor: C.action,
   },
-  selectedThumb: { width: 50, height: 70, borderRadius: 8, backgroundColor: '#1C1C38', marginRight: 12 },
-  selectedName: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
-  selectedSet: { color: '#8888CC', fontSize: 11, marginTop: 2 },
+  selectedThumb: { width: 50, height: 70, borderRadius: 8, backgroundColor: C.elevated, marginRight: 12 },
+  selectedName: { color: C.text, fontSize: 14, fontWeight: '700' },
+  selectedSet: { color: C.textSecondary, fontSize: 11, marginTop: 2 },
   qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 },
   qtyBtn: {
-    width: 36, height: 36, borderRadius: 10, backgroundColor: '#14142A',
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A2A50',
+    width: 36, height: 36, borderRadius: 10, backgroundColor: C.card,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border,
   },
   qtyInput: {
-    backgroundColor: '#14142A', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8,
-    color: '#F0F0FF', fontSize: 16, fontWeight: '700', width: 60,
-    borderWidth: 1, borderColor: '#2A2A50',
+    backgroundColor: C.card, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8,
+    color: C.text, fontSize: 16, fontWeight: '700', width: 60,
+    borderWidth: 1, borderColor: C.border,
   },
-  totalText: { color: '#FF3C3C', fontSize: 13, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
+  totalText: { color: C.action, fontSize: 13, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
 });
 
 

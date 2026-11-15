@@ -18,6 +18,7 @@
  */
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { C } from '../theme';
 
 export type GetPaymentMethodId = () => Promise<string | null>;
 
@@ -59,14 +60,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 24,
     paddingHorizontal: 16,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#2A2A50',
+    borderColor: C.border,
   },
   icon: { fontSize: 32, marginBottom: 12 },
-  title: { color: '#F0F0FF', fontSize: 15, fontWeight: '700', marginBottom: 6, textAlign: 'center' },
-  body: { color: '#8888CC', fontSize: 13, lineHeight: 20, textAlign: 'center' },
+  title: { color: C.text, fontSize: 15, fontWeight: '700', marginBottom: 6, textAlign: 'center' },
+  body: { color: C.textSecondary, fontSize: 13, lineHeight: 20, textAlign: 'center' },
 });
 
 export default CardPaymentForm;

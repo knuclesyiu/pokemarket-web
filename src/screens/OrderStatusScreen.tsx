@@ -10,6 +10,9 @@ import { getAuth } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { releaseFundsToSeller, raiseDispute } from '../services/stripeService';
+import { notify } from '../components/Feedback';
+import { C } from '../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type RouteProps = RouteProp<{ params: { txId?: string; orderId?: string } }, 'params'>;
 
@@ -26,7 +29,7 @@ const TIMELINE_STEPS: TimelineStep[] = [
   { key: 'paid', label: '已付款', sublabel: '款項由平台托管', icon: '💳' },
   { key: 'awaiting_ship', label: '等待發貨', sublabel: '賣家準備中', icon: '📦' },
   { key: 'shipped', label: '已發貨', sublabel: '快件運輸中', icon: '🚚' },
-  { key: 'confirmed', label: '已確認收貨', sublabel: '等待資金釋放', icon: '✅' },
+  { key: 'confirmed', label: '已確認收貨', sublabel: '等待資金釋放', icon: '' },
   { key: 'released', label: '資金已釋放', sublabel: '交易完成', icon: '🎉' },
 ];
 
@@ -118,9 +121,9 @@ const OrderStatusScreen: React.FC = () => {
       const extendFn = httpsCallable(getFunctions(), 'extendEscrow');
       await extendFn({ orderId });
       setIsExtended(true);
-      Alert.alert('✅ 已延長', '款項釋放期限已延長至 14 日，請放心。');
+      notify('已延長', '款項釋放期限已延長至 14 日，請放心。');
     } catch (e: any) {
-      Alert.alert('❌ 延長失敗', e.message ?? '請稍後再試');
+      notify('延長失敗', e.message ?? '請稍後再試');
     } finally {
       setExtending(false);
     }
@@ -128,7 +131,7 @@ const OrderStatusScreen: React.FC = () => {
 
   const handleCreateDispute = async () => {
     if (!disputeReason.trim()) {
-      Alert.alert('請輸入', '請描述問題原因才能提交 dispute');
+      notify('請輸入', '請描述問題原因才能提交 dispute');
       return;
     }
     setDisputing(true);
@@ -136,9 +139,9 @@ const OrderStatusScreen: React.FC = () => {
       await raiseDispute({ orderId, reason: disputeReason.trim() });
       setShowDisputeModal(false);
       setOrderStatus('disputed');
-      Alert.alert('✅ Dispute 已提交', '我們會在 24 小時內處理，請留意通知。');
+      notify('Dispute 已提交', '我們會在 24 小時內處理，請留意通知。');
     } catch (e: any) {
-      Alert.alert('❌ 提交失敗', e?.message ?? '請稍後再試');
+      notify('提交失敗', e?.message ?? '請稍後再試');
     } finally {
       setDisputing(false);
     }
@@ -165,7 +168,7 @@ const OrderStatusScreen: React.FC = () => {
       await confirmFn({ orderId });
       // Real-time listener will update the UI
     } catch (e: any) {
-      Alert.alert('❌ 確認失敗', e?.message ?? '請稍後再試');
+      notify('確認失敗', e?.message ?? '請稍後再試');
     }
   };
 
@@ -193,7 +196,7 @@ const OrderStatusScreen: React.FC = () => {
       // Successful release — Firestore listener will move us to 'released' step
     } catch (e: any) {
       console.error('[OrderStatus] release failed:', e);
-      Alert.alert('❌ 釋放失敗', e?.message ?? '請稍後再試');
+      notify('釋放失敗', e?.message ?? '請稍後再試');
     } finally {
       setReleasing(false);
     }
@@ -223,19 +226,19 @@ const OrderStatusScreen: React.FC = () => {
 
   if (loadingOrder) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#080810', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color="#D4AF37" size="large" />
-        <Text style={{ color: '#8888CC', marginTop: 12 }}>載入訂單中…</Text>
+      <View style={{ flex: 1, backgroundColor: C.void, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={C.gold} size="large" />
+        <Text style={{ color: C.textSecondary, marginTop: 12 }}>載入訂單中…</Text>
       </View>
     );
   }
   if (orderError || !order || !card) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#080810', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-        <Text style={{ color: '#F0F0FF', fontSize: 18, marginBottom: 8 }}>😕 訂單未找到</Text>
-        <Text style={{ color: '#8888CC', fontSize: 13, textAlign: 'center' }}>{orderError ?? `orderId: ${orderId}`}</Text>
+      <View style={{ flex: 1, backgroundColor: C.void, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <Text style={{ color: C.text, fontSize: 18, marginBottom: 8 }}>😕 訂單未找到</Text>
+        <Text style={{ color: C.textSecondary, fontSize: 13, textAlign: 'center' }}>{orderError ?? `orderId: ${orderId}`}</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 24, padding: 12 }}>
-          <Text style={{ color: '#D4AF37', fontSize: 14, fontWeight: '700' }}>← 返回</Text>
+          <Text style={{ color: C.gold, fontSize: 14, fontWeight: '700' }}>← 返回</Text>
         </TouchableOpacity>
       </View>
     );
@@ -250,7 +253,7 @@ const OrderStatusScreen: React.FC = () => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>訂單詳情</Text>
         <TouchableOpacity style={styles.chatBtn}>
-          <Text style={styles.chatBtnText}>💬</Text>
+          <Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} />
         </TouchableOpacity>
       </View>
 
@@ -281,7 +284,7 @@ const OrderStatusScreen: React.FC = () => {
           <Text style={styles.cardName}>{card.name}</Text>
           <Text style={styles.cardSet}>{card.set}</Text>
           <View style={styles.roleTag}>
-            <Text style={styles.roleTagText}>{isSeller ? '👤 你是賣家' : '🛒 你是買家'}</Text>
+            <Text style={styles.roleTagText}>{isSeller ? '你是賣家' : '你是買家'}</Text>
           </View>
         </View>
         <Text style={styles.cardPrice}>HK${card.price.toLocaleString()}</Text>
@@ -363,7 +366,7 @@ const OrderStatusScreen: React.FC = () => {
 
       {/* Counterparty info */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>👤 交易對方</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="person-outline" size={14} color={C.textTertiary} /><Text style={styles.sectionTitle}>交易對方</Text></View>
         <View style={styles.counterpartyCard}>
           <View style={styles.counterpartyAvatar}>
             <Text style={styles.counterpartyInitial}>
@@ -375,7 +378,7 @@ const OrderStatusScreen: React.FC = () => {
             <Text style={styles.counterpartyStats}>4.8 ⭐ · 328 筆成交</Text>
           </View>
           <TouchableOpacity style={styles.chatBtnLarge}>
-            <Text style={styles.chatBtnLargeText}>💬</Text>
+            <Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -383,7 +386,7 @@ const OrderStatusScreen: React.FC = () => {
       {/* Action area — varies by role and step */}
       {currentStep === 1 && !isSeller && (
         <View style={styles.actionArea}>
-          <Text style={styles.actionHint}>⏳ 等待賣家發貨中...</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="time-outline" size={14} color={C.textTertiary} /><Text style={styles.actionHint}>等待賣家發貨中...</Text></View>
           <Text style={styles.actionSub}>通常 1-2 個工作天內發貨</Text>
         </View>
       )}
@@ -397,13 +400,13 @@ const OrderStatusScreen: React.FC = () => {
             </Text>
           </View>
           <TouchableOpacity style={styles.confirmReceiptBtn} onPress={handleConfirmReceipt}>
-            <Text style={styles.confirmReceiptBtnText}>✅ 確認收貨</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.confirmReceiptBtnText}>確認收貨</Text></View>
           </TouchableOpacity>
           
           {/* Extend button - only show if not yet extended */}
           {!isExtended && (
             <TouchableOpacity style={styles.extendBtn} onPress={handleExtendEscrow}>
-              <Text style={styles.extendBtnText}>⏰ 延長期限 (14日)</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="time-outline" size={13} color={C.textTertiary} /><Text style={styles.extendBtnText}>延長期限 (14日)</Text></View>
             </TouchableOpacity>
           )}
           {isExtended && (
@@ -416,7 +419,7 @@ const OrderStatusScreen: React.FC = () => {
             style={styles.disputeBtn}
             onPress={() => setShowDisputeModal(true)}
           >
-            <Text style={styles.disputeBtnText}>🛡️ 有問題？提出爭議</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="shield-checkmark-outline" size={15} color={C.textTertiary} /><Text style={styles.disputeBtnText}>有問題？提出爭議</Text></View>
           </TouchableOpacity>
         </View>
       )}
@@ -424,13 +427,13 @@ const OrderStatusScreen: React.FC = () => {
       {currentStep === 3 && !isSeller && (
         <View style={styles.actionArea}>
           <View style={styles.confirmingAlert}>
-            <Text style={styles.confirmingAlertText}>✅ 已確認收貨</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.confirmingAlertText}>已確認收貨</Text></View>
             <Text style={styles.confirmingAlertSub}>
               資金將自動釋放俾賣家，交易完成！
             </Text>
           </View>
           <TouchableOpacity style={styles.releaseBtn} onPress={handleReleaseFund}>
-            <Text style={styles.releaseBtnText}>🔓 立即釋放款項</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-open-outline" size={13} color={C.textTertiary} /><Text style={styles.releaseBtnText}>立即釋放款項</Text></View>
           </TouchableOpacity>
         </View>
       )}
@@ -448,7 +451,7 @@ const OrderStatusScreen: React.FC = () => {
             style={styles.reportProblemBtn}
             onPress={() => setShowDisputeModal(true)}
           >
-            <Text style={styles.reportProblemBtnText}>🛡️ 報告問題（30日內）</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="shield-checkmark-outline" size={15} color={C.textTertiary} /><Text style={styles.reportProblemBtnText}>報告問題（30日內）</Text></View>
           </TouchableOpacity>
         </View>
       )}
@@ -459,7 +462,7 @@ const OrderStatusScreen: React.FC = () => {
           style={styles.disputeBanner}
           onPress={() => setShowDisputeModal(true)}
         >
-          <Text style={styles.disputeBannerIcon}>🛡️</Text>
+          <Ionicons name="shield-checkmark-outline" size={15} color={C.textTertiary} />
           <View style={styles.disputeBannerText}>
             <Text style={styles.disputeBannerTitle}>需要提出爭議？</Text>
             <Text style={styles.disputeBannerDesc}>
@@ -478,7 +481,7 @@ const OrderStatusScreen: React.FC = () => {
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
-            <Text style={modalStyles.title}>🔓 確認釋放款項？</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-open-outline" size={13} color={C.textTertiary} /><Text style={modalStyles.title}>確認釋放款項？</Text></View>
             <Text style={modalStyles.subtitle}>
               資金將直接轉俾賣家，交易完成後無法撤回。{'\n'}
               請確認已收到卡牌且狀態滿意。
@@ -498,7 +501,7 @@ const OrderStatusScreen: React.FC = () => {
                 style={modalStyles.releaseConfirmBtn}
                 onPress={confirmRelease}
               >
-                <Text style={modalStyles.releaseConfirmBtnText}>✅ 確認釋放款項</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={modalStyles.releaseConfirmBtnText}>確認釋放款項</Text></View>
               </TouchableOpacity>
             </View>
           </View>
@@ -570,7 +573,7 @@ const OrderStatusScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#080810' },
+  container: { flex: 1, backgroundColor: C.void },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -582,16 +585,16 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 36, height: 36,
     borderRadius: 12,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backBtnText: { color: '#F0F0FF', fontSize: 20, fontWeight: '700' },
-  headerTitle: { color: '#F0F0FF', fontSize: 17, fontWeight: '700' },
+  backBtnText: { color: C.text, fontSize: 20, fontWeight: '700' },
+  headerTitle: { color: C.text, fontSize: 17, fontWeight: '700' },
   chatBtn: {
     width: 36, height: 36,
     borderRadius: 12,
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -610,29 +613,29 @@ const styles = StyleSheet.create({
   },
   escrowBannerIcon: { fontSize: 24 },
   escrowBannerText: { flex: 1 },
-  escrowBannerTitle: { color: '#FF4060', fontSize: 13, fontWeight: '700', marginBottom: 4 },
-  escrowBannerDesc: { color: '#8888CC', fontSize: 11 },
+  escrowBannerTitle: { color: C.ruby, fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  escrowBannerDesc: { color: C.textSecondary, fontSize: 11 },
   escrowAmountBadge: {
-    backgroundColor: '#FF4060',
+    backgroundColor: C.ruby,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  escrowAmountBadgeText: { color: '#F0F0FF', fontSize: 12, fontWeight: '800' },
+  escrowAmountBadgeText: { color: C.text, fontSize: 12, fontWeight: '800' },
   cardSummary: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     marginHorizontal: 16,
     borderRadius: 16,
     padding: 14,
     gap: 12,
     marginBottom: 20,
   },
-  cardThumb: { width: 60, height: 84, borderRadius: 8, backgroundColor: '#2A2A50' },
+  cardThumb: { width: 60, height: 84, borderRadius: 8, backgroundColor: C.border },
   cardInfo: { flex: 1 },
-  cardName: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
-  cardSet: { color: '#8888CC', fontSize: 11, marginTop: 2 },
+  cardName: { color: C.text, fontSize: 14, fontWeight: '700' },
+  cardSet: { color: C.textSecondary, fontSize: 11, marginTop: 2 },
   roleTag: {
     backgroundColor: 'rgba(255,184,0,0.15)',
     borderRadius: 6,
@@ -641,11 +644,11 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 6,
   },
-  roleTagText: { color: '#FF4060', fontSize: 10, fontWeight: '700' },
-  cardPrice: { color: '#F0F0FF', fontSize: 16, fontWeight: '800' },
+  roleTagText: { color: C.ruby, fontSize: 10, fontWeight: '700' },
+  cardPrice: { color: C.text, fontSize: 16, fontWeight: '800' },
   section: { paddingHorizontal: 16, marginBottom: 20 },
-  sectionTitle: { color: '#F0F0FF', fontSize: 15, fontWeight: '700', marginBottom: 12 },
-  timeline: { backgroundColor: '#14142A', borderRadius: 16, padding: 16 },
+  sectionTitle: { color: C.text, fontSize: 15, fontWeight: '700', marginBottom: 12 },
+  timeline: { backgroundColor: C.card, borderRadius: 16, padding: 16 },
   timelineStep: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -658,9 +661,9 @@ const styles = StyleSheet.create({
     top: -12,
     width: 2,
     height: 20,
-    backgroundColor: '#2A2A50',
+    backgroundColor: C.border,
   },
-  timelineConnectorDone: { backgroundColor: '#00C896' },
+  timelineConnectorDone: { backgroundColor: C.up },
   stepCircle: {
     width: 32, height: 32,
     borderRadius: 16,
@@ -670,19 +673,19 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     zIndex: 1,
   },
-  stepCircleDone: { backgroundColor: '#00C896' },
-  stepCircleCurrent: { backgroundColor: '#FF4060' },
-  stepCirclePending: { backgroundColor: '#2A2A50' },
-  stepCheck: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
+  stepCircleDone: { backgroundColor: C.up },
+  stepCircleCurrent: { backgroundColor: C.ruby },
+  stepCirclePending: { backgroundColor: C.border },
+  stepCheck: { color: C.text, fontSize: 14, fontWeight: '700' },
   stepIcon: { fontSize: 14 },
   stepContent: { flex: 1, paddingTop: 4 },
-  stepLabel: { color: '#F0F0FF', fontSize: 13, fontWeight: '700' },
-  stepLabelDone: { color: '#00C896' },
-  stepLabelCurrent: { color: '#FF4060' },
-  stepLabelPending: { color: '#4A4A70' },
-  stepSublabel: { color: '#8888CC', fontSize: 11, marginTop: 2 },
+  stepLabel: { color: C.text, fontSize: 13, fontWeight: '700' },
+  stepLabelDone: { color: C.up },
+  stepLabelCurrent: { color: C.ruby },
+  stepLabelPending: { color: C.textDisabled },
+  stepSublabel: { color: C.textSecondary, fontSize: 11, marginTop: 2 },
   deliveryCard: {
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 14,
     padding: 14,
   },
@@ -691,14 +694,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A50',
+    borderBottomColor: C.border,
   },
-  deliveryLabel: { color: '#8888CC', fontSize: 12 },
-  deliveryValue: { color: '#F0F0FF', fontSize: 12, fontWeight: '600' },
+  deliveryLabel: { color: C.textSecondary, fontSize: 12 },
+  deliveryValue: { color: C.text, fontSize: 12, fontWeight: '600' },
   counterpartyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 16,
     padding: 14,
     gap: 12,
@@ -710,21 +713,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  counterpartyInitial: { color: '#F0F0FF', fontSize: 18, fontWeight: '700' },
+  counterpartyInitial: { color: C.text, fontSize: 18, fontWeight: '700' },
   counterpartyInfo: { flex: 1 },
-  counterpartyName: { color: '#F0F0FF', fontSize: 14, fontWeight: '700' },
-  counterpartyStats: { color: '#8888CC', fontSize: 11, marginTop: 2 },
+  counterpartyName: { color: C.text, fontSize: 14, fontWeight: '700' },
+  counterpartyStats: { color: C.textSecondary, fontSize: 11, marginTop: 2 },
   chatBtnLarge: {
     width: 40, height: 40,
     borderRadius: 12,
-    backgroundColor: '#2A2A50',
+    backgroundColor: C.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   chatBtnLargeText: { fontSize: 18 },
   actionArea: { paddingHorizontal: 16, marginBottom: 20 },
-  actionHint: { color: '#8888CC', fontSize: 14, textAlign: 'center', marginBottom: 4 },
-  actionSub: { color: '#4A4A70', fontSize: 12, textAlign: 'center', marginBottom: 16 },
+  actionHint: { color: C.textSecondary, fontSize: 14, textAlign: 'center', marginBottom: 4 },
+  actionSub: { color: C.textDisabled, fontSize: 12, textAlign: 'center', marginBottom: 16 },
   shippedAlert: {
     backgroundColor: 'rgba(255,184,0,0.1)',
     borderRadius: 14,
@@ -733,16 +736,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,184,0,0.2)',
   },
-  shippedAlertText: { color: '#FF4060', fontSize: 14, fontWeight: '700', marginBottom: 4 },
-  shippedAlertSub: { color: '#8888CC', fontSize: 12 },
+  shippedAlertText: { color: C.ruby, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  shippedAlertSub: { color: C.textSecondary, fontSize: 12 },
   confirmReceiptBtn: {
-    backgroundColor: '#00C896',
+    backgroundColor: C.up,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     marginBottom: 10,
   },
-  confirmReceiptBtnText: { color: '#F0F0FF', fontSize: 15, fontWeight: '700' },
+  confirmReceiptBtnText: { color: C.text, fontSize: 15, fontWeight: '700' },
   disputeBtn: {
     backgroundColor: 'rgba(255,60,60,0.1)',
     borderRadius: 14,
@@ -751,7 +754,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,60,60,0.3)',
   },
-  disputeBtnText: { color: '#FF4060', fontSize: 13, fontWeight: '600' },
+  disputeBtnText: { color: C.ruby, fontSize: 13, fontWeight: '600' },
   confirmingAlert: {
     backgroundColor: 'rgba(0,200,100,0.1)',
     borderRadius: 14,
@@ -760,17 +763,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,200,100,0.2)',
   },
-  confirmingAlertText: { color: '#00C896', fontSize: 14, fontWeight: '700', marginBottom: 4 },
-  confirmingAlertSub: { color: '#8888CC', fontSize: 12 },
+  confirmingAlertText: { color: C.up, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  confirmingAlertSub: { color: C.textSecondary, fontSize: 12 },
   releaseBtn: {
-    backgroundColor: '#00C896',
+    backgroundColor: C.up,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
   },
-  releaseBtnText: { color: '#F0F0FF', fontSize: 15, fontWeight: '700' },
+  releaseBtnText: { color: C.text, fontSize: 15, fontWeight: '700' },
   completeCard: {
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     borderRadius: 20,
     padding: 32,
     alignItems: 'center',
@@ -778,12 +781,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,200,100,0.3)',
   },
   completeEmoji: { fontSize: 48, marginBottom: 12 },
-  completeTitle: { color: '#F0F0FF', fontSize: 20, fontWeight: '800', marginBottom: 6 },
-  completeSub: { color: '#8888CC', fontSize: 13 },
+  completeTitle: { color: C.text, fontSize: 20, fontWeight: '800', marginBottom: 6 },
+  completeSub: { color: C.textSecondary, fontSize: 13 },
   disputeBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#14142A',
+    backgroundColor: C.card,
     marginHorizontal: 16,
     borderRadius: 14,
     padding: 14,
@@ -791,64 +794,64 @@ const styles = StyleSheet.create({
   },
   disputeBannerIcon: { fontSize: 24 },
   disputeBannerText: { flex: 1 },
-  disputeBannerTitle: { color: '#F0F0FF', fontSize: 13, fontWeight: '700' },
-  disputeBannerDesc: { color: '#8888CC', fontSize: 11, marginTop: 2 },
-  disputeArrow: { color: '#FF4060', fontSize: 18, fontWeight: '700' },
-  extendBtn: { backgroundColor: '#2A2A50', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 8 },
-  extendBtnText: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
+  disputeBannerTitle: { color: C.text, fontSize: 13, fontWeight: '700' },
+  disputeBannerDesc: { color: C.textSecondary, fontSize: 11, marginTop: 2 },
+  disputeArrow: { color: C.ruby, fontSize: 18, fontWeight: '700' },
+  extendBtn: { backgroundColor: C.border, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 8 },
+  extendBtnText: { color: C.text, fontSize: 13, fontWeight: '600' },
   extendedBadge: { backgroundColor: 'rgba(0,200,100,0.15)', borderRadius: 8, paddingVertical: 8, alignItems: 'center', marginTop: 8 },
-  extendedBadgeText: { color: '#00C896', fontSize: 12, fontWeight: '700' },
+  extendedBadgeText: { color: C.up, fontSize: 12, fontWeight: '700' },
   reportProblemBtn: { backgroundColor: 'rgba(255,60,60,0.1)', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,60,60,0.3)' },
-  reportProblemBtnText: { color: '#FF4060', fontSize: 13, fontWeight: '600' },
+  reportProblemBtnText: { color: C.ruby, fontSize: 13, fontWeight: '600' },
 });
 
 const modalStyles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#14142A', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },
+  sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },
   handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#3A3A4E', alignSelf: 'center', marginBottom: 16 },
-  title: { color: '#F0F0FF', fontSize: 18, fontWeight: '800', marginBottom: 4 },
-  subtitle: { color: '#8888CC', fontSize: 12, marginBottom: 20, lineHeight: 18 },
-  fieldLabel: { color: '#8888CC', fontSize: 12, marginBottom: 8, marginTop: 12 },
+  title: { color: C.text, fontSize: 18, fontWeight: '800', marginBottom: 4 },
+  subtitle: { color: C.textSecondary, fontSize: 12, marginBottom: 20, lineHeight: 18 },
+  fieldLabel: { color: C.textSecondary, fontSize: 12, marginBottom: 8, marginTop: 12 },
   reasonOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  reasonChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: '#2A2A50', borderWidth: 1, borderColor: 'transparent' },
-  reasonChipActive: { backgroundColor: 'rgba(255,60,60,0.15)', borderColor: '#FF4060' },
-  reasonChipText: { color: '#8888CC', fontSize: 12 },
-  reasonChipTextActive: { color: '#FF4060', fontWeight: '600' },
-  textArea: { backgroundColor: '#2A2A50', borderRadius: 12, padding: 14, minHeight: 80 },
-  textAreaPlaceholder: { color: '#4A4A70', fontSize: 13 },
-  uploadBtn: { backgroundColor: '#2A2A50', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
-  uploadBtnText: { color: '#F0F0FF', fontSize: 13, fontWeight: '600' },
+  reasonChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: C.border, borderWidth: 1, borderColor: 'transparent' },
+  reasonChipActive: { backgroundColor: 'rgba(255,60,60,0.15)', borderColor: C.ruby },
+  reasonChipText: { color: C.textSecondary, fontSize: 12 },
+  reasonChipTextActive: { color: C.ruby, fontWeight: '600' },
+  textArea: { backgroundColor: C.border, borderRadius: 12, padding: 14, minHeight: 80 },
+  textAreaPlaceholder: { color: C.textDisabled, fontSize: 13 },
+  uploadBtn: { backgroundColor: C.border, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  uploadBtnText: { color: C.text, fontSize: 13, fontWeight: '600' },
   actions: { marginTop: 20, gap: 10 },
-  submitBtn: { backgroundColor: '#FF4060', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  submitBtnText: { color: '#F0F0FF', fontSize: 15, fontWeight: '700' },
+  submitBtn: { backgroundColor: C.ruby, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+  submitBtnText: { color: C.text, fontSize: 15, fontWeight: '700' },
   cancelBtn: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  cancelBtnText: { color: '#8888CC', fontSize: 14 },
+  cancelBtnText: { color: C.textSecondary, fontSize: 14 },
   releaseCard: {
-    backgroundColor: '#0E0E1A', borderRadius: 14, padding: 16,
-    borderWidth: 1, borderColor: '#2A2A50', marginBottom: 16,
+    backgroundColor: C.surface, borderRadius: 14, padding: 16,
+    borderWidth: 1, borderColor: C.border, marginBottom: 16,
   },
-  releaseAmount: { color: '#D4AF37', fontSize: 28, fontWeight: '800', textAlign: 'center' },
-  releaseTo: { color: '#8888CC', fontSize: 12, textAlign: 'center', marginTop: 4 },
+  releaseAmount: { color: C.gold, fontSize: 28, fontWeight: '800', textAlign: 'center' },
+  releaseTo: { color: C.textSecondary, fontSize: 12, textAlign: 'center', marginTop: 4 },
   releaseConfirmBtn: {
-    backgroundColor: '#D4AF37', borderRadius: 14, paddingVertical: 14, flex: 1, marginLeft: 8, alignItems: 'center',
+    backgroundColor: C.gold, borderRadius: 14, paddingVertical: 14, flex: 1, marginLeft: 8, alignItems: 'center',
   },
-  releaseConfirmBtnText: { color: '#080810', fontSize: 15, fontWeight: '800' },
+  releaseConfirmBtnText: { color: C.void, fontSize: 15, fontWeight: '800' },
   amountInputWrap: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#0E0E1A', borderRadius: 14, borderWidth: 1, borderColor: '#D4AF37',
+    backgroundColor: C.surface, borderRadius: 14, borderWidth: 1, borderColor: C.gold,
     paddingHorizontal: 16, paddingVertical: 14, marginBottom: 8,
   },
-  currencyPrefix: { color: '#D4AF37', fontSize: 20, fontWeight: '700', marginRight: 6 },
-  amountInput: { color: '#F0F0FF', fontSize: 24, fontWeight: '800', flex: 1, padding: 0 },
-  warningText: { color: '#FF6B35', fontSize: 12, marginBottom: 12, textAlign: 'center' },
+  currencyPrefix: { color: C.gold, fontSize: 20, fontWeight: '700', marginRight: 6 },
+  amountInput: { color: C.text, fontSize: 24, fontWeight: '800', flex: 1, padding: 0 },
+  warningText: { color: C.warn, fontSize: 12, marginBottom: 12, textAlign: 'center' },
   btnDisabled: { opacity: 0.4 },
   consentCard: {
-    backgroundColor: '#0E0E1A', borderRadius: 14, padding: 16,
-    borderWidth: 1, borderColor: '#2A2A50', marginBottom: 16,
+    backgroundColor: C.surface, borderRadius: 14, padding: 16,
+    borderWidth: 1, borderColor: C.border, marginBottom: 16,
   },
-  consentLabel: { color: '#8888CC', fontSize: 11, marginBottom: 2 },
-  consentOriginal: { color: '#8888CC', fontSize: 16, fontWeight: '600', marginBottom: 12 },
-  consentRequested: { color: '#D4AF37', fontSize: 24, fontWeight: '800' },
+  consentLabel: { color: C.textSecondary, fontSize: 11, marginBottom: 2 },
+  consentOriginal: { color: C.textSecondary, fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  consentRequested: { color: C.gold, fontSize: 24, fontWeight: '800' },
 });
 
 export default OrderStatusScreen;

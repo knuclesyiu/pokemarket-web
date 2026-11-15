@@ -17,16 +17,19 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { Offer, OfferStatus } from '../../types/trade';
+import { confirmAction, notify } from '../../components/Feedback';
+import { C } from '../../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type NavProp = NativeStackNavigationProp<any>;
 const { width } = Dimensions.get('window');
 
 const STATUS_CONFIG: Record<OfferStatus, { label: string; color: string; bg: string }> = {
-  pending:   { label: '⏳ 待回覆',   color: '#FFB800', bg: '#2A1F00' },
-  accepted:  { label: '✅ 已接受',    color: '#00C864', bg: '#002A12' },
-  rejected:  { label: '❌ 已拒絕',    color: '#FF3C3C', bg: '#2A0000' },
-  cancelled: { label: '🚫 已取消',   color: '#8888AA', bg: '#1A1A2E' },
-  countered: { label: '💬 還價',    color: '#00B4FF', bg: '#001A2A' },
+  pending:   { label: '待回覆',   color: C.gold, bg: '#2A1F00' },
+  accepted:  { label: '已接受',    color: C.up, bg: '#002A12' },
+  rejected:  { label: '已拒絕',    color: C.action, bg: '#2A0000' },
+  cancelled: { label: '🚫 已取消',   color: C.textSecondary, bg: '#1A1A2E' },
+  countered: { label: '還價',    color: C.info, bg: '#001A2A' },
 };
 
 // ─── Single Offer Row ──────────────────────────────────────────────────────────
@@ -56,7 +59,7 @@ const OfferRow: React.FC<{
           />
         ) : (
           <View style={[styles.targetCardThumb, styles.thumbPlaceholder]}>
-            <Text style={{ fontSize: 20, opacity: 0.3 }}>🎴</Text>
+            <Ionicons name="card-outline" size={20} color={C.textTertiary} />
           </View>
         )}
       </View>
@@ -71,7 +74,7 @@ const OfferRow: React.FC<{
         </Text>
         <View style={styles.offerCardsPreview}>
           {(offer.offerCards || []).slice(0, 3).map((oc, i) => (
-            <Text key={i} style={styles.offerCardChip}>🎴</Text>
+            <Ionicons name="card-outline" size={22} color={C.textTertiary} />
           ))}
           {(offer.offerCards || []).length > 3 && (
             <Text style={styles.offerCardMore}>
@@ -102,13 +105,13 @@ const OfferRow: React.FC<{
               style={[styles.quickBtn, styles.quickBtnAccept]}
               onPress={() => onQuickAction('accept')}
             >
-              <Text style={styles.quickBtnAcceptText}>✅ 接受</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.quickBtnAcceptText}>接受</Text></View>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.quickBtn, styles.quickBtnReject]}
               onPress={() => onQuickAction('reject')}
             >
-              <Text style={styles.quickBtnRejectText}>❌</Text>
+              <Ionicons name="close-circle" size={14} color={C.textTertiary} />
             </TouchableOpacity>
           </View>
         )}
@@ -152,8 +155,8 @@ const MyOffersScreen: React.FC = () => {
 
   const handleQuickAction = async (offer: Offer, action: 'accept' | 'reject') => {
     if (action === 'reject') {
-      Alert.alert(
-        '❌ 拒絕 Offer',
+      confirmAction(
+        '拒絕 Offer',
         `確定要拒絕 ${offer.buyerName} 的這個 Offer 嗎？`,
         [
           { text: '取消', style: 'cancel' },
@@ -176,13 +179,13 @@ const MyOffersScreen: React.FC = () => {
       const respond = httpsCallable(fns, 'respondToOffer', { timeout: 30000 });
       const result = await respond({ offerId, action });
       const data = result.data as { offerId: string; newStatus: OfferStatus; tradeId?: string };
-      Alert.alert(
-        data.newStatus === 'accepted' ? '✅ 成交！' : '✅ 已回覆',
+      notify(
+        data.newStatus === 'accepted' ? '成交！' : '已回覆',
         data.newStatus === 'accepted' ? '卡片已交換，查看記錄吧！' : 'Offer 已更新'
       );
       loadOffers();
     } catch (err: any) {
-      Alert.alert('操作失敗', err.message || '請稍後重試');
+      notify('操作失敗', err.message || '請稍後重試');
     } finally {
       setActionLoading(null);
     }
@@ -220,7 +223,7 @@ const MyOffersScreen: React.FC = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backBtnText}>← 返回</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>💬 我的 Offer</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.headerTitle}>我的 Offer</Text></View>
         <View style={{ width: 60 }} />
       </View>
 
@@ -247,7 +250,7 @@ const MyOffersScreen: React.FC = () => {
       {/* List */}
       {loading ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color="#FF3C3C" />
+          <ActivityIndicator size="large" color={C.action} />
         </View>
       ) : (
         <FlatList
@@ -260,7 +263,7 @@ const MyOffersScreen: React.FC = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => { setRefreshing(true); loadOffers(); }}
-              tintColor="#FF3C3C"
+              tintColor={C.action}
             />
           }
         />
@@ -272,22 +275,22 @@ const MyOffersScreen: React.FC = () => {
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121F' },
+  container: { flex: 1, backgroundColor: C.surface },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
-    borderBottomWidth: 1, borderBottomColor: '#1E1E2E',
+    borderBottomWidth: 1, borderBottomColor: C.elevated,
   },
   backBtn: { width: 60 },
-  backBtnText: { color: '#FF3C3C', fontSize: 15, fontWeight: '600' },
-  headerTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
+  backBtnText: { color: C.action, fontSize: 15, fontWeight: '600' },
+  headerTitle: { color: C.text, fontSize: 18, fontWeight: '800' },
   tabBar: {
-    flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#1E1E2E',
+    flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: C.elevated,
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 14 },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: '#FF3C3C' },
-  tabText: { color: '#8888AA', fontSize: 14, fontWeight: '600' },
-  tabTextActive: { color: '#FFFFFF' },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: C.action },
+  tabText: { color: C.textSecondary, fontSize: 14, fontWeight: '600' },
+  tabTextActive: { color: C.text },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   listContent: { paddingBottom: 100 },
   emptyContainer: { flex: 1 },
@@ -295,9 +298,9 @@ const styles = StyleSheet.create({
   // Offer Row
   offerRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#1E1E2E', marginHorizontal: 16, marginTop: 12,
+    backgroundColor: C.elevated, marginHorizontal: 16, marginTop: 12,
     borderRadius: 14, padding: 12,
-    borderWidth: 1, borderColor: '#2A2A3E',
+    borderWidth: 1, borderColor: C.border,
   },
   targetCardWrap: { marginRight: 12 },
   targetCardThumb: {
@@ -305,31 +308,31 @@ const styles = StyleSheet.create({
   },
   thumbPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   offerInfo: { flex: 1 },
-  offerTargetName: { color: '#FFFFFF', fontSize: 13, fontWeight: '700', marginBottom: 2 },
-  offerMeta: { color: '#8888AA', fontSize: 11, marginBottom: 4 },
+  offerTargetName: { color: C.text, fontSize: 13, fontWeight: '700', marginBottom: 2 },
+  offerMeta: { color: C.textSecondary, fontSize: 11, marginBottom: 4 },
   offerCardsPreview: { flexDirection: 'row', alignItems: 'center', marginBottom: 2, gap: 3 },
   offerCardChip: { fontSize: 14 },
-  offerCardMore: { color: '#8888AA', fontSize: 10 },
+  offerCardMore: { color: C.textSecondary, fontSize: 10 },
   cashChip: {
-    backgroundColor: '#2A1F00', color: '#FFB800', fontSize: 10,
+    backgroundColor: '#2A1F00', color: C.gold, fontSize: 10,
     paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6,
   },
-  offerValue: { color: '#6666AA', fontSize: 10 },
+  offerValue: { color: C.textTertiary, fontSize: 10 },
   offerRight: { alignItems: 'flex-end', gap: 8 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   statusBadgeText: { fontSize: 10, fontWeight: '700' },
   quickActions: { flexDirection: 'row', gap: 6 },
   quickBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   quickBtnAccept: { backgroundColor: '#002A12' },
-  quickBtnAcceptText: { color: '#00C864', fontSize: 11, fontWeight: '700' },
+  quickBtnAcceptText: { color: C.up, fontSize: 11, fontWeight: '700' },
   quickBtnReject: { backgroundColor: '#2A0000' },
-  quickBtnRejectText: { color: '#FF3C3C', fontSize: 11 },
+  quickBtnRejectText: { color: C.action, fontSize: 11 },
 
   // Empty
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
   emptyIcon: { fontSize: 60, opacity: 0.3 },
-  emptyTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginTop: 16, textAlign: 'center' },
-  emptySub: { color: '#6666AA', fontSize: 13, marginTop: 8, textAlign: 'center' },
+  emptyTitle: { color: C.text, fontSize: 16, fontWeight: '700', marginTop: 16, textAlign: 'center' },
+  emptySub: { color: C.textTertiary, fontSize: 13, marginTop: 8, textAlign: 'center' },
 });
 
 export default MyOffersScreen;

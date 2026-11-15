@@ -19,6 +19,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { MarketListing } from '../../types/trade';
+import { C } from '../../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type NavProp = NativeStackNavigationProp<any>;
 const { width } = Dimensions.get('window');
@@ -38,10 +40,10 @@ const PRICE_OPTIONS = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  active: '#00C864',
-  sold: '#FF3C3C',
-  expired: '#8888AA',
-  cancelled: '#6666AA',
+  active: C.up,
+  sold: C.action,
+  expired: C.textSecondary,
+  cancelled: C.textTertiary,
 };
 
 export const getStatusLabel = (status: string) =>
@@ -59,7 +61,7 @@ const ListingCard: React.FC<{
         <Image source={{ uri: item.card.imageUrl }} style={styles.cardImage as any} resizeMode="contain" />
       ) : (
         <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
-          <Text style={styles.cardImagePlaceholderText}>🎴</Text>
+          <Ionicons name="card-outline" size={22} color={C.textTertiary} />
         </View>
       )}
       {/* Status badge */}
@@ -174,17 +176,17 @@ const TradeScreen: React.FC = () => {
           style={styles.filterBtn}
           onPress={() => setShowFilterModal(true)}
         >
-          <Text style={styles.filterBtnText}>🔍 篩選</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="search-outline" size={16} color={C.textTertiary} /><Text style={styles.filterBtnText}>篩選</Text></View>
         </TouchableOpacity>
       </View>
 
       {/* ── Search Bar ── */}
       <View style={styles.searchWrap}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Ionicons name="search-outline" size={16} color={C.textTertiary} />
         <TextInput
           style={styles.searchInput}
           placeholder="搜尋卡名、Series..."
-          placeholderTextColor="#6666AA"
+          placeholderTextColor={C.textTertiary}
           value={searchText}
           onChangeText={setSearchText}
         />
@@ -247,7 +249,7 @@ const TradeScreen: React.FC = () => {
         </View>
       ) : displayListings.length === 0 ? (
         <View style={styles.emptyWrap}>
-          <Text style={styles.emptyIcon}>🎴</Text>
+          <Ionicons name="card-outline" size={22} color={C.textTertiary} />
           <Text style={styles.emptyTitle}>目前沒有掛牌卡</Text>
           <Text style={styles.emptySub}>試試調整篩選條件，或先上傳你的收藏卡！</Text>
         </View>
@@ -263,7 +265,7 @@ const TradeScreen: React.FC = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => { setRefreshing(true); loadListings(); }}
-              tintColor="#FF3C3C"
+              tintColor={C.action}
             />
           }
         />
@@ -274,7 +276,7 @@ const TradeScreen: React.FC = () => {
         style={styles.fabOffers}
         onPress={() => navigation.navigate('MyOffers')}
       >
-        <Text style={styles.fabText}>💬 我的 OFFER</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.fabText}>我的 OFFER</Text></View>
       </TouchableOpacity>
     </View>
   );
@@ -338,7 +340,7 @@ const FilterModal: React.FC<{
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>🔍 篩選條件</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="search-outline" size={16} color={C.textTertiary} /><Text style={styles.modalTitle}>篩選條件</Text></View>
             <TouchableOpacity onPress={onClose}><Text style={{ color: '#888' }}>✕</Text></TouchableOpacity>
           </View>
           <ScrollView style={{ maxHeight: '75%' }}>
@@ -375,39 +377,39 @@ const FilterModal: React.FC<{
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121F' },
+  container: { flex: 1, backgroundColor: C.surface },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingTop: 56, paddingBottom: 12,
   },
-  greeting: { color: '#8888AA', fontSize: 12 },
-  headerTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
+  greeting: { color: C.textSecondary, fontSize: 12 },
+  headerTitle: { color: C.text, fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
   filterBtn: {
-    backgroundColor: '#1E1E2E', paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 12, borderWidth: 1, borderColor: '#2A2A3E',
+    backgroundColor: C.elevated, paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 12, borderWidth: 1, borderColor: C.border,
   },
-  filterBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+  filterBtnText: { color: C.text, fontSize: 13, fontWeight: '600' },
   searchWrap: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#1E1E2E', marginHorizontal: 16, borderRadius: 14,
+    backgroundColor: C.elevated, marginHorizontal: 16, borderRadius: 14,
     paddingHorizontal: 14, marginBottom: 12,
-    borderWidth: 1, borderColor: '#2A2A3E',
+    borderWidth: 1, borderColor: C.border,
   },
   searchIcon: { fontSize: 16, marginRight: 8 },
-  searchInput: { flex: 1, color: '#FFFFFF', fontSize: 14, paddingVertical: 13 },
+  searchInput: { flex: 1, color: C.text, fontSize: 14, paddingVertical: 13 },
   filterRow: { maxHeight: 40, marginBottom: 12 },
   chip: {
     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,
-    backgroundColor: '#1E1E2E', marginRight: 8, borderWidth: 1, borderColor: '#2A2A3E',
+    backgroundColor: C.elevated, marginRight: 8, borderWidth: 1, borderColor: C.border,
   },
-  chipActive: { backgroundColor: '#FF3C3C', borderColor: '#FF3C3C' },
-  chipText: { color: '#8888AA', fontSize: 12, fontWeight: '600' },
-  chipTextActive: { color: '#FFFFFF' },
+  chipActive: { backgroundColor: C.action, borderColor: C.action },
+  chipText: { color: C.textSecondary, fontSize: 12, fontWeight: '600' },
+  chipTextActive: { color: C.text },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, gap: 12 },
   cardTile: {
-    width: CARD_W, backgroundColor: '#1E1E2E', borderRadius: 14,
+    width: CARD_W, backgroundColor: C.elevated, borderRadius: 14,
     overflow: 'hidden', marginBottom: 12,
-    borderWidth: 1, borderColor: '#2A2A3E',
+    borderWidth: 1, borderColor: C.border,
   },
   cardImageWrap: { position: 'relative', height: CARD_W * 1.3 },
   cardImage: { width: '100%', height: '100%', backgroundColor: '#16213E' },
@@ -417,53 +419,53 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 6, right: 6,
     paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8,
   },
-  statusBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' },
+  statusBadgeText: { color: C.text, fontSize: 9, fontWeight: '700' },
   cardInfo: { padding: 8 },
-  cardName: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', marginBottom: 2 },
-  cardSet: { color: '#8888AA', fontSize: 10, marginBottom: 4 },
+  cardName: { color: C.text, fontSize: 12, fontWeight: '700', marginBottom: 2 },
+  cardSet: { color: C.textSecondary, fontSize: 10, marginBottom: 4 },
   cardPriceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
-  cardPrice: { color: '#FF3C3C', fontSize: 13, fontWeight: '800' },
-  cardCondition: { color: '#8888AA', fontSize: 9 },
-  sellerName: { color: '#6666AA', fontSize: 9 },
-  skelLine: { height: 10, backgroundColor: '#2A2A3E', borderRadius: 4 },
+  cardPrice: { color: C.action, fontSize: 13, fontWeight: '800' },
+  cardCondition: { color: C.textSecondary, fontSize: 9 },
+  sellerName: { color: C.textTertiary, fontSize: 9 },
+  skelLine: { height: 10, backgroundColor: C.border, borderRadius: 4 },
   errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  errorText: { color: '#8888AA', fontSize: 14 },
-  retryBtn: { marginTop: 12, backgroundColor: '#1E1E2E', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 12 },
-  retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  errorText: { color: C.textSecondary, fontSize: 14 },
+  retryBtn: { marginTop: 12, backgroundColor: C.elevated, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 12 },
+  retryBtnText: { color: C.text, fontSize: 14, fontWeight: '600' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyIcon: { fontSize: 60, opacity: 0.3 },
-  emptyTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginTop: 16 },
-  emptySub: { color: '#6666AA', fontSize: 13, marginTop: 8, textAlign: 'center', paddingHorizontal: 40 },
+  emptyTitle: { color: C.text, fontSize: 18, fontWeight: '700', marginTop: 16 },
+  emptySub: { color: C.textTertiary, fontSize: 13, marginTop: 8, textAlign: 'center', paddingHorizontal: 40 },
   fabOffers: {
     position: 'absolute', bottom: 90, right: 16,
-    backgroundColor: '#FF3C3C', borderRadius: 25,
+    backgroundColor: C.action, borderRadius: 25,
     paddingHorizontal: 16, paddingVertical: 12,
-    shadowColor: '#FF3C3C', shadowOpacity: 0.4, shadowRadius: 8, elevation: 8,
+    shadowColor: C.action, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8,
   },
-  fabText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  fabText: { color: C.text, fontSize: 14, fontWeight: '800' },
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   modalContent: {
-    backgroundColor: '#1E1E2E', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: C.elevated, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 20, maxHeight: '80%',
   },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
-  modalTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-  modalSectionTitle: { color: '#8888AA', fontSize: 12, marginBottom: 10, fontWeight: '600' },
+  modalTitle: { color: C.text, fontSize: 18, fontWeight: '700' },
+  modalSectionTitle: { color: C.textSecondary, fontSize: 12, marginBottom: 10, fontWeight: '600' },
   modalChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   modalChip: {
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16,
-    backgroundColor: '#12121F', borderWidth: 1, borderColor: '#2A2A3E',
+    backgroundColor: C.surface, borderWidth: 1, borderColor: C.border,
   },
-  modalChipActive: { backgroundColor: '#FF3C3C', borderColor: '#FF3C3C' },
-  modalChipText: { color: '#8888AA', fontSize: 12 },
-  modalChipTextActive: { color: '#FFFFFF', fontWeight: '600' },
+  modalChipActive: { backgroundColor: C.action, borderColor: C.action },
+  modalChipText: { color: C.textSecondary, fontSize: 12 },
+  modalChipTextActive: { color: C.text, fontWeight: '600' },
   applyBtn: {
-    backgroundColor: '#FF3C3C', borderRadius: 14, padding: 15,
+    backgroundColor: C.action, borderRadius: 14, padding: 15,
     alignItems: 'center', marginTop: 16,
   },
-  applyBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  applyBtnText: { color: C.text, fontSize: 16, fontWeight: '800' },
 });
 
 export default TradeScreen;
