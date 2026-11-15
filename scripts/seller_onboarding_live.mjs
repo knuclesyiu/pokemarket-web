@@ -83,8 +83,13 @@ try {
   check(!!accountId, '取得 accountId', accountId ?? '(none)');
   check(!!onboardingUrl, '取得 onboardingUrl');
   if (onboardingUrl) {
+    check(
+      onboardingUrl.includes('connect.stripe.com') || onboardingUrl.includes('accounts.stripe.com'),
+      'onboarding link 指向 Stripe',
+      onboardingUrl.slice(0, 70) + '…',
+    );
     const r = await fetch(onboardingUrl, { redirect: 'manual' });
-    console.log(`     onboarding link → HTTP ${r.status} ${r.status === 302 || r.status === 301 ? '(redirect 到 Stripe)' : ''}`);
+    console.log(`     onboarding link → HTTP ${r.status}`);
   }
 } catch (e) {
   check(false, 'createSellerAccount 失敗', String(e.message).slice(0, 200));
@@ -92,21 +97,54 @@ try {
 
 console.log('\n  ═══ 3. Stripe 實際上收咗咩 ═══');
 const stripe = async (p) => {
-  const r = await fetch('https://api.stripe.com/v1' + p, {
-    headers: { Authorization: 'Bearer ' + secrets.STRIPE_SECRET_KEY },
+  const r = await fetch('https://api.stripe.com' + p, {
+    headers: {
+      Authorization: 'Bearer ' + secrets.STRIPE_SECRET_KEY,
+      'Stripe-Version': '2026-03-25.dahlia',
+    },
   });
   return { status: r.status, body: await r.json() };
 };
 if (accountId) {
-  const { status, body } = await stripe(`/accounts/${accountId}`);
+  const { status, body } = await stripe(`/v1/accounts/${accountId}`);
   check(status === 200, 'connected account 存在', body.id ?? '');
-  check(body.type === 'express', 'type = express', body.type);
+  // A v2 account is read through the v2 API — the v1 view of one
+  // reports `transfers: inactive` no matter what the seller has done.
+  const v2 = (
+    await stripe(
+      `/v2/core/accounts/${accountId}` +
+        '?include=configuration.recipient&include=requirements',
+    )
+  ).body;
+  if (!v2.object) {
+    console.log('     v2 讀取失敗:', JSON.stringify(v2).slice(0, 300));
+  }
+  const caps = v2.configuration?.recipient?.capabilities?.stripe_balance ?? {};
+  const transfers = caps.stripe_transfers?.status;
+  const payouts = caps.payouts?.status;
+  check(v2.object === 'v2.core.account', '係 v2 帳戶', v2.object);
+  check(v2.dashboard === 'express', 'dashboard = express', v2.dashboard);
+  check(
+    Array.isArray(v2.applied_configurations) && v2.applied_configurations.includes('recipient'),
+    'applied_configurations 包含 recipient',
+    JSON.stringify(v2.applied_configurations),
+  );
+  check(
+    transfers === 'requested' || transfers === 'active' || transfers === 'restricted',
+    'stripe_transfers capability 已掛上',
+    transfers,
+  );
+  check(
+    transfers === 'restricted',
+    '狀態係 restricted（賣家未交 HK 身份證等資料 → 正常）',
+    transfers,
+  );
+  const missing = (v2.requirements?.entries ?? []).map((e) => e.description);
+  check(missing.includes('identity.individual.id_numbers.hk_id'),
+    '要求賣家交 HK 身份證號碼', `${missing.length} 項待交`);
   check(body.country === 'HK', 'country = HK', body.country);
-  check(body.capabilities?.transfers === 'requested' || body.capabilities?.transfers === 'active',
-    'transfers capability 已請求', body.capabilities?.transfers);
-  check(body.details_submitted === false, '仲未交個人資料（正常，要賣家自己填）');
   check(body.email === email, 'email 正確');
-  const { body: accs } = await stripe('/accounts?limit=10');
+  const { body: accs } = await stripe('/v1/accounts?limit=10');
   check((accs.data || []).some((a) => a.id === accountId), 'GET /v1/accounts 見到佢');
 }
 
@@ -123,7 +161,7 @@ try {
 
 console.log('\n  ═══ 5. Tax 狀態 ═══');
 {
-  const { body: settings } = await stripe('/tax/settings');
+  const { body: settings } = await stripe('/v1/tax/settings');
   console.log(`     tax/settings status = ${settings.status}  automatic_tax = ${settings.automatic_tax?.enabled ?? 'n/a'}`);
   const { status: ls, body: locs } = await stripe('/tax/locations?type=country');
   if (ls === 200) {
@@ -134,7 +172,7 @@ console.log('\n  ═══ 5. Tax 狀態 ═══');
   } else {
     console.log(`     tax/locations → HTTP ${ls} ${JSON.stringify(locs.error?.message || '').slice(0, 100)}`);
   }
-  const { body: acct } = await stripe('/account');
+  const { body: acct } = await stripe('/v1/account');
   const caps = acct.capabilities || {};
   console.log('     平台 capabilities: ' + Object.entries(caps).map(([k, v]) => `${k}=${v.status}`).join('  '));
   const req = acct.requirements || {};

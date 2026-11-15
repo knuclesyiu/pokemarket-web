@@ -25,7 +25,12 @@ import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
-import { stripeClient, stripeSecretKey } from '../shared/stripe';
+import {
+  stripeClient,
+  stripeSecretKey,
+  stripeV2,
+  recipientCapabilities,
+} from '../shared/stripe';
 
 const db = admin.firestore();
 
@@ -98,17 +103,43 @@ export const createSellerAccount = functions.onCall(
   let accountId = await sellerAccountId(uid);
 
   if (!accountId) {
-    let account;
+    let account: { id: string };
     try {
-      account = await stripeClient().accounts.create({
-        type: 'express',
-        email: address,
-        // The platform moves the money to the seller with a transfer,
-        // so the seller needs the transfer capability — not card
-        // payments of their own.
-        capabilities: { transfers: { requested: true } },
-        business_type: 'individual',
+      // The v2 API, because the v1 one does not work here.
+      //
+      // A marketplace platform has to create its sellers with a
+      // `recipient` configuration carrying the
+      // `stripe_balance.stripe_transfers` capability. The v1
+      // equivalent — `capabilities: { transfers: { requested: true } }`
+      // — is accepted and then ignored: the account comes back with
+      // the capability `inactive`, no error is raised, and the failure
+      // only appears much later as a refused transfer. With
+      // `fees_collector` and `losses_collector` set to `application`,
+      // the platform keeps the fees and carries the risk, which is
+      // what holding the buyer's money in escrow means.
+      account = await stripeV2<{ id: string }>('/v2/core/accounts', {
+        contact_email: address,
+        display_name: address,
+        identity: {
+          country: 'HK',
+          entity_type: 'individual',
+        },
+        configuration: {
+          recipient: {
+            capabilities: {
+              stripe_balance: { stripe_transfers: { requested: true } },
+            },
+          },
+        },
+        defaults: {
+          responsibilities: {
+            fees_collector: 'application',
+            losses_collector: 'application',
+          },
+        },
+        dashboard: 'express',
         metadata: { firebaseUid: uid },
+        include: ['configuration.recipient', 'requirements'],
       });
     } catch (err: any) {
       // Stripe refuses to create a connected account until the
@@ -140,14 +171,22 @@ export const createSellerAccount = functions.onCall(
     );
   }
 
-  const link = await stripeClient().accountLinks.create({
+  // The v1 account-links endpoint refuses a v2 account outright, so
+  // the link comes from the v2 one. `configurations` tells Stripe
+  // which of the account's configurations the form is for.
+  const link = await stripeV2('/v2/core/account_links', {
     account: accountId,
-    refresh_url: `${appUrl()}/?sellerOnboarding=refresh`,
-    return_url: `${appUrl()}/?sellerOnboarding=done`,
-    type: 'account_onboarding',
+    use_case: {
+      type: 'account_onboarding',
+      account_onboarding: {
+        refresh_url: `${appUrl()}/?sellerOnboarding=refresh`,
+        return_url: `${appUrl()}/?sellerOnboarding=done`,
+        configurations: ['recipient'],
+      },
+    },
   });
 
-  return { accountId, onboardingUrl: link.url };
+  return { accountId, onboardingUrl: (link as any).url };
 },
 );;
 
@@ -192,17 +231,39 @@ export const getSellerOnboardingStatus = functions.onCall(
     };
   }
 
-  const account = await stripeClient().accounts.retrieve(accountId);
-  const onboarded = Boolean(
-    account.details_submitted && account.payouts_enabled,
+  // The v2 API, because the account was created with it. The v1 view
+  // of a v2 account reports `transfers: inactive` no matter what the
+  // seller has done, so it cannot answer the question.
+  const account = await stripeV2(
+    `/v2/core/accounts/${accountId}` +
+      '?include=configuration.recipient&include=requirements',
   );
+  const caps = recipientCapabilities(account);
+  const transfersStatus = caps.stripe_transfers?.status;
+  const payoutsStatus = caps.payouts?.status;
+
+  // The seller is ready when the money can move both ways: the
+  // platform can transfer into their balance, and that balance can be
+  // paid out to their bank. Until the seller has given Stripe their
+  // identity and a bank account, the capability is `restricted` and
+  // a transfer would be refused.
+  const onboarded = transfersStatus === 'active' && payoutsStatus === 'active';
+
+  // What is still missing, in the seller's own words.
+  const outstanding: string[] = (
+    (account as any)?.requirements?.entries ?? []
+  )
+    .map((e: any) => e.description as string)
+    .filter((d: unknown): d is string => typeof d === 'string');
 
   await db.doc(`sellers/${uid}`).set(
     {
       onboarded,
-      detailsSubmitted: Boolean(account.details_submitted),
-      chargesEnabled: Boolean(account.charges_enabled),
-      payoutsEnabled: Boolean(account.payouts_enabled),
+      detailsSubmitted: outstanding.length === 0,
+      chargesEnabled: false,
+      payoutsEnabled: payoutsStatus === 'active',
+      transfersEnabled: transfersStatus === 'active',
+      outstandingRequirements: outstanding,
       checkedAt: FieldValue.serverTimestamp(),
     },
     { merge: true },
@@ -212,13 +273,18 @@ export const getSellerOnboardingStatus = functions.onCall(
   // them straight back to Stripe.
   let onboardingUrl: string | null = null;
   if (!onboarded) {
-    const link = await stripeClient().accountLinks.create({
+    const link = await stripeV2('/v2/core/account_links', {
       account: accountId,
-      refresh_url: `${appUrl()}/?sellerOnboarding=refresh`,
-      return_url: `${appUrl()}/?sellerOnboarding=done`,
-      type: 'account_onboarding',
+      use_case: {
+        type: 'account_onboarding',
+        account_onboarding: {
+          refresh_url: `${appUrl()}/?sellerOnboarding=refresh`,
+          return_url: `${appUrl()}/?sellerOnboarding=done`,
+          configurations: ['recipient'],
+        },
+      },
     });
-    onboardingUrl = link.url;
+    onboardingUrl = (link as any).url;
   }
 
   return { onboarded, accountId, onboardingUrl, stripeConfigured: true };

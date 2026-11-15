@@ -132,6 +132,49 @@ payload 由 6.9MB 跌到 2.9MB。
 - `ProfileScreen` 好評率 `undefined / 1` = **NaN%** → 已修
 - 主角「會員since」中英夾雜 → 「加入於 2026年11月14日」
 
+## Stripe Connect：改成 Accounts v2 API（2026-11-15 晚）
+
+### 問題
+平台揀咗「交易平台」（separate charges and transfers）之後，`transfers.create`
+一直畀 Stripe 拒絕：
+
+```
+Your destination account needs to have at least one of the following
+capabilities enabled: transfers, crypto_transfers, or legacy_payments
+```
+
+根因**唔係** dashboard 設定，係**用錯 API**：
+
+v1 `accounts.create({ capabilities: { transfers: { requested: true } } })`
+回 HTTP 200，但 capability 係 **`inactive`** —— Stripe 靜靜忽略咗個請求，
+冇 error、冇警告。所有 API version（2024-06-20 → 2026-03-25）都一樣。
+
+### 修正
+- `functions/src/shared/stripe.ts` 加 `stripeV2()` —— fetch-based，
+  帶 `Stripe-Version: 2026-03-25.dahlia`
+- `createSellerAccount` 改用 `POST /v2/core/accounts`，
+  `configuration.recipient.capabilities.stripe_balance.stripe_transfers.requested = true`，
+  `defaults.responsibilities = { fees_collector: application, losses_collector: application }`，
+  `dashboard: express`
+- onboarding link 改用 `POST /v2/core/account_links`
+  （v1 嘅 `account_links` 對 v2 帳戶直接 404）
+- `getSellerOnboardingStatus` 改讀 v2，
+  `onboarded = stripe_transfers.status === 'active' && payouts.status === 'active'`，
+  另外記低 `outstandingRequirements`
+
+### 驗證
+- live 賣家開通 E2E **20/20**（`scripts/seller_onboarding_live.mjs`）
+- emulator 交易 E2E **22/22**
+- functions tsc 0
+
+### 仲要人做
+賣家嘅 capability 係 `restricted`，等佢交：
+`identity.individual.id_numbers.hk_id`（HK 身份證號碼）、地址、生日、
+電話、電郵、銀行戶口、商業登記（MCC + 網址）。**呢個係真人 KYC，
+自動化做唔到** —— 要一個真人喺 Stripe 官方 onboarding 頁面完成。
+
+⚠️ 賣家 KYC 完成前，`transfers.create` 一定會被拒絕 —— 唔係 bug。
+
 ## Stripe key 輪換（2026-11-15 20:12）
 
 Ken 喺 Stripe dashboard 開咗新 key 並更新咗本機

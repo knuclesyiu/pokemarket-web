@@ -62,3 +62,81 @@ export function stripeClient(): Stripe {
   }
   return client;
 }
+
+/**
+ * The v2 API, for the endpoints the SDK does not cover.
+ *
+ * A connected account has to be created with the Accounts v2 API. The
+ * v1 request for a transfer capability — `capabilities[transfers]
+ * [requested]=true` — is dropped without a complaint on a marketplace
+ * platform: the account comes back with the capability `inactive` and
+ * nothing says why, and the refusal only surfaces later as a
+ * transfer error. The v2 API asks for the same thing the way a
+ * marketplace should: a `recipient` configuration carrying the
+ * `stripe_balance.stripe_transfers` capability, with the platform
+ * holding the fees and the losses.
+ *
+ * The v2 endpoints are versioned apart from v1 and refuse to answer
+ * without a version header, so the version is sent explicitly.
+ */
+export const STRIPE_V2_API_VERSION = '2026-03-25.dahlia';
+
+/**
+ * Call a Stripe v2 endpoint.
+ *
+ * The body is JSON, the path is absolute from the API root, and a
+ * failure is raised as an `HttpsError` so the reason reaches the
+ * caller instead of arriving as `functions/internal`.
+ */
+export async function stripeV2<T = Record<string, unknown>>(
+  path: string,
+  body?: Record<string, unknown>,
+): Promise<T> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new HttpsError('failed-precondition', 'Stripe 收款服務未設定。');
+  }
+  const res = await fetch(`https://api.stripe.com${path}`, {
+    method: body ? 'POST' : 'GET',
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      'Stripe-Version': STRIPE_V2_API_VERSION,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  let json: any = {};
+  try {
+    json = text ? JSON.parse(text) : {};
+  } catch {
+    json = {};
+  }
+  if (!res.ok) {
+    throw new HttpsError(
+      'internal',
+      `Stripe v2 ${path} 失敗：${json?.error?.message ?? `HTTP ${res.status}`}`,
+    );
+  }
+  return json as T;
+}
+
+/**
+ * The state of a connected account's money capabilities.
+ *
+ * A seller is ready when they can hold a Stripe balance, receive
+ * transfers into it, and have that balance paid out to their bank —
+ * which is what the `stripe_balance` capabilities say.
+ */
+export type RecipientCapabilities = {
+  stripe_transfers?: { status?: string };
+  payouts?: { status?: string };
+};
+
+export function recipientCapabilities(
+  account: any,
+): RecipientCapabilities {
+  return (
+    account?.configuration?.recipient?.capabilities?.stripe_balance ?? {}
+  );
+}
