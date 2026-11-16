@@ -11,6 +11,7 @@
  *   - clean sign-out (reset nav stack)      signOutAndReset()
  */
 
+import { t } from '../i18n';
 import {
   Auth,
   User,
@@ -55,7 +56,7 @@ export async function signInEmailOrPromptSignup(
     return {
       kind: 'error',
       code,
-      message: (e as Error)?.message ?? '登入失敗',
+      message: (e as Error)?.message ?? t('登入失敗'),
     };
   }
 }
@@ -86,7 +87,7 @@ export async function upgradeAnonymousToEmail(
   password: string,
 ): Promise<UpgradeResult> {
   if (!currentUser.isAnonymous) {
-    return { kind: 'error', code: 'not-anonymous', message: '帳戶已升級，請直接登入' };
+    return { kind: 'error', code: 'not-anonymous', message: t('帳戶已升級，請直接登入') };
   }
   const cred = EmailAuthProvider.credential(email, password);
   try {
@@ -96,7 +97,7 @@ export async function upgradeAnonymousToEmail(
     return {
       kind: 'error',
       code: (e as FirebaseError)?.code ?? '',
-      message: (e as Error)?.message ?? '升級失敗',
+      message: (e as Error)?.message ?? t('升級失敗'),
     };
   }
 }
@@ -127,15 +128,15 @@ export async function registerWithEmail(
     return { kind: 'ok', user: cred.user };
   } catch (e) {
     const code = (e as FirebaseError)?.code ?? '';
-    let message = (e as Error)?.message ?? '註冊失敗';
+    let message = (e as Error)?.message ?? t('註冊失敗');
     if (code === 'auth/email-already-in-use') {
-      message = '呢個 Email 已經註冊咗，請直接登入';
+      message = t('呢個 Email 已經註冊咗，請直接登入');
     } else if (code === 'auth/weak-password') {
-      message = '密碼太弱，請用至少 6 個字元';
+      message = t('密碼太弱，請用至少 6 個字元');
     } else if (code === 'auth/invalid-email') {
-      message = 'Email 格式唔啱';
+      message = t('Email 格式唔啱');
     } else if (code === 'auth/operation-not-allowed') {
-      message = '此 App 尚未啟用 Email 註冊，請聯絡管理員';
+      message = t('此 App 尚未啟用 Email 註冊，請聯絡管理員');
     }
     return { kind: 'error', code, message };
   }

@@ -11,13 +11,29 @@ import { PokemonCard } from '../../types';
 import { searchCardsByName, priceDataToCard } from '../../services/cardPriceService';
 import { C, R, SP, T, themed } from '../../theme';
 
-type VersionFilter = '全部' | '日版' | '中文版' | '英文版';
+/**
+ * The version filter, keyed by a stable identifier.
+ *
+ * The key used to be the Chinese label, which meant the map was looked
+ * up with a translated string: switch the language and the lookup
+ * missed, so the search silently stopped filtering. The identifier
+ * never changes; the label does.
+ */
+type VersionFilter = 'all' | 'jp' | 'cn' | 'en';
 
 const VERSION_MAP: Record<VersionFilter, string | null> = {
-  '全部': null,
-  '日版': 'Japanese',
-  '中文版': 'Chinese',
-  '英文版': 'English',
+  all: null,
+  jp: 'Japanese',
+  cn: 'Chinese',
+  en: 'English',
+};
+
+/** The label for each version, in the language being shown. */
+const VERSION_LABEL: Record<VersionFilter, string> = {
+  all: '全部',
+  jp: '日版',
+  cn: '中文版',
+  en: '英文版',
 };
 
 /**
@@ -27,10 +43,10 @@ const VERSION_MAP: Record<VersionFilter, string | null> = {
  * for the rest say what they mean and line up.
  */
 const VERSION_ICON: Record<VersionFilter, keyof typeof Ionicons.glyphMap | null> = {
-  '全部': 'globe-outline',
-  '日版': null,
-  '中文版': null,
-  '英文版': null,
+  all: 'globe-outline',
+  jp: null,
+  cn: null,
+  en: null,
 };
 
 interface Props {
@@ -47,7 +63,7 @@ const SearchBar: React.FC<Props> = ({
   const { t } = useAppearance();
 
   const [query, setQuery] = useState('');
-  const [activeVersion, setActiveVersion] = useState<VersionFilter>('全部');
+  const [activeVersion, setActiveVersion] = useState<VersionFilter>('all');
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -104,7 +120,7 @@ const SearchBar: React.FC<Props> = ({
     };
   }, [query, activeVersion, doSearch]);
 
-  const versions: VersionFilter[] = ['全部', '日版', '中文版', '英文版'];
+  const versions: VersionFilter[] = ['all', 'jp', 'cn', 'en'];
 
   return (
     <View style={styles.container}>
@@ -164,7 +180,7 @@ const SearchBar: React.FC<Props> = ({
               styles.versionText,
               activeVersion === v ? styles.versionTextActive : null,
             ]}>
-              {v}
+              {t(VERSION_LABEL[v])}
             </Text>
           </TouchableOpacity>
         ))}

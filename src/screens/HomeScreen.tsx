@@ -27,7 +27,15 @@ import { PokemonCard } from '../types';
 type NavProp = NativeStackNavigationProp<any>;
 const { width } = Dimensions.get('window');
 
-const SERIES_FILTER = [t('全部'), 'Sword&Shield', 'Sun&Moon', 'XY', 'Black&White', 'Base'];
+/**
+ * The series filter.
+ *
+ * 'all' is an identifier, not a label: the label is translated where
+ * it is drawn. A filter that held its own translated name would stop
+ * matching the moment the language changed.
+ */
+const SERIES_FILTER = ['all', 'Sword&Shield', 'Sun&Moon', 'XY', 'Black&White', 'Base'];
+const ALL_SERIES = 'all';
 
 // NEW: Obsidian Gallery design system — color constants
 const COLORS = {
@@ -73,7 +81,7 @@ const HomeScreen: React.FC = () => {
 
   const navigation = useNavigation<NavProp>();
   const [searchResults, setSearchResults] = useState<PokemonCard[] | null>(null);
-  const [activeFilter, setActiveFilter] = useState(t('全部'));
+  const [activeFilter, setActiveFilter] = useState(ALL_SERIES);
   const [marketMode, setMarketMode] = useState<'market' | 'swap'>('market');
   const [priceMap, setPriceMap] = useState<Record<string, {
     priceHkd: number; change24h: number; source: string; ageMs: number
@@ -147,7 +155,7 @@ const HomeScreen: React.FC = () => {
     return [];
   }, [searchResults, realCards]);
 
-  const filtered = activeFilter === t('全部')
+  const filtered = activeFilter === ALL_SERIES
     ? displayCards
     : displayCards.filter(c =>
         c.series?.toLowerCase().includes(activeFilter.toLowerCase()) ||
@@ -206,8 +214,8 @@ const HomeScreen: React.FC = () => {
     if (!lastUpdated) return null;
     const diff = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
     if (diff < 60) return t('剛剛');
-    if (diff < 3600) return `${Math.floor(diff / 60)} 分鐘前`;
-    return `${Math.floor(diff / 3600)} 小時前`;
+    if (diff < 3600) return t('{p0} 分鐘前', { p0: Math.floor(diff / 60) });
+    return t('{p0} 小時前', { p0: Math.floor(diff / 3600) });
   };
   const fmtLastUpdated = useMemo(() => formatLastUpdated(), [lastUpdated]);
 
@@ -285,7 +293,9 @@ const HomeScreen: React.FC = () => {
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>{t('實時報價')}</Text>
           <Text style={styles.statValueGold}>{quotedCount}</Text>
-          <Text style={styles.statSub} numberOfLines={1}>上次更新：{timeLabel}</Text>
+          <Text style={styles.statSub} numberOfLines={1}>
+            {t('上次更新：{p0}', { p0: timeLabel })}
+          </Text>
         </View>
         <View style={styles.statDivider} />
         <TouchableOpacity
@@ -336,7 +346,7 @@ const HomeScreen: React.FC = () => {
             onPress={() => setActiveFilter(f)}
           >
             <Text style={[styles.filterText, activeFilter === f ? styles.filterTextActive: null]}>
-              {f}
+              {f === ALL_SERIES ? t('全部') : f}
             </Text>
           </TouchableOpacity>
         ))}
@@ -347,7 +357,8 @@ const HomeScreen: React.FC = () => {
         <View style={styles.priceIndicator}>
           <View style={styles.livePulse} />
           <Text style={styles.priceIndicatorText}>
-            實時行情 · TCGdex{fmtLastUpdated ? ` · 更新於 ${fmtLastUpdated}` : ''}
+            {t('實時行情 · TCGdex')}
+            {fmtLastUpdated ? t(' · 更新於 {p0}', { p0: fmtLastUpdated }) : ''}
           </Text>
         </View>
       )}
@@ -393,7 +404,7 @@ const HomeScreen: React.FC = () => {
         </View>
         <TouchableOpacity>
           <Text style={styles.seeAll}>
-            全部 {enrichedFiltered.length} 張 →
+            {t('全部 {p0} 張 →', { p0: enrichedFiltered.length })}
           </Text>
         </TouchableOpacity>
       </View>

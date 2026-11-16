@@ -280,7 +280,7 @@ const OrderStatusScreen: React.FC = () => {
           </Text>
           <Text style={styles.escrowBannerDesc}>
             {currentStep < 3
-              ? `HK$ ${card.price.toLocaleString()} 擔保中，確認收卡後自動轉俾賣家`
+              ? t('HK$ {p0} 擔保中，確認收卡後自動轉俾賣家', { p0: card.price.toLocaleString() })
               : t('交易完成，資金已轉俾賣家')}
           </Text>
         </View>

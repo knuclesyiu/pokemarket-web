@@ -17,6 +17,7 @@
  * invented an API that never existed, which is why the web build could
  * not bundle at all.
  */
+import { t } from '../i18n';
 import { loadStripe } from "@stripe/stripe-js";
 import type { CardDetails, StripeCardResult } from "../types/stripe";
 
@@ -63,7 +64,7 @@ export async function confirmCardPayment(
 
   const paymentMethodId = await card.getPaymentMethodId?.();
   if (!paymentMethodId) {
-    throw new Error("請先填寫信用卡資料");
+    throw new Error(t('請先填寫信用卡資料'));
   }
 
   const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {

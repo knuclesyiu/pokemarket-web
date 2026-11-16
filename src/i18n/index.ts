@@ -36,8 +36,14 @@ export function setCurrentLanguage(language: Language): void {
  * A string that is not in the table comes back unchanged — the
  * Traditional Chinese text stays, which is better than a blank.
  */
-export function t(source: string): string {
+export function t(
+  source: string,
+  params?: Record<string, string | number>,
+): string {
   const entry = STRINGS[source];
-  if (!entry) return source;
-  return entry[currentLanguage] || source;
+  const text = entry ? entry[currentLanguage] || source : source;
+  if (!params) return text;
+  return text.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in params ? String(params[key]) : match,
+  );
 }

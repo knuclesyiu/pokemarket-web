@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import React, { useEffect, useRef } from 'react';
 import {
   View, Text, Image, StyleSheet, TouchableOpacity, Animated,
@@ -269,7 +270,7 @@ const CardItem: React.FC<CardItemProps> = ({ card, onPress, compact }) => {
         </View>
 
         <Text style={styles.listings} numberOfLines={1}>
-          {card.listingCount} 個掛牌 · {card.rarity}
+          {t('{p0} 個掛牌 · {p1}', { p0: card.listingCount, p1: card.rarity })}
         </Text>
       </View>
     </TouchableOpacity>

@@ -376,7 +376,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Lockout check
     if (isPinVerifyLocked()) {
       const remaining = Math.ceil(getPinLockoutRemainingMs() / 1000);
-      throw new Error(`交易密碼已鎖定，請等待 ${remaining} 秒後再試`);
+      throw new Error(t('交易密碼已鎖定，請等待 {p0} 秒後再試', { p0: remaining }));
     }
     // Cooldown: at least PIN_MIN_INTERVAL_MS between attempts
     const now = Date.now();

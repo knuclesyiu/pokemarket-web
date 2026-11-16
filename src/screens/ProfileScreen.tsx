@@ -18,8 +18,8 @@ import { C, themed, ThemeName } from '../theme';
 type Language = 'zh-HK' | 'zh-CN' | 'en';
 
 const LANGUAGES: { value: Language; label: string }[] = [
-  { value: 'zh-HK', label: '🇭🇰 繁體中文' },
-  { value: 'zh-CN', label: '🇨🇳 简体中文' },
+  { value: 'zh-HK', label: t('🇭🇰 繁體中文') },
+  { value: 'zh-CN', label: t('🇨🇳 简体中文') },
   { value: 'en', label: '🇺🇸 English' },
 ];
 
@@ -183,7 +183,7 @@ const ProfileScreen: React.FC = () => {
         const summary = reviews.slice(0, 5).map((r: any) =>
           `${r.type === 'positive' ? '' : ''} ${r.comment || '(no comment)'}`
         ).join('\n');
-        notify(`評價（${totalReviews} 個）`, summary);
+        notify(t('評價（{p0} 個）', { p0: totalReviews }), summary);
       }
     } catch (e: any) {
       notify(t('載入失敗'), e.message);
@@ -240,7 +240,13 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.displayName}>{profile.displayName}</Text>
           <Text style={styles.memberSince}>
             {profile.memberSince
-              ? `加入於 ${new Date(profile.memberSince).toLocaleDateString('zh-HK', { year: 'numeric', month: 'long', day: 'numeric' })}`
+              ? t('加入於 {p0}', {
+                  p0: new Date(profile.memberSince).toLocaleDateString('zh-HK', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  }),
+                })
               : t('新會員')}
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>

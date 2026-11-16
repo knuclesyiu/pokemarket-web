@@ -33,22 +33,22 @@ type Status = 'unknown' | 'not-started' | 'pending' | 'onboarded';
 const STATUS_TEXT: Record<Status, { title: string; body: string; tone: string }> = {
   unknown: {
     title: 'Checking…',
-    body: '睇下你嘅收款帳戶設定咗未。',
+    body: t('睇下你嘅收款帳戶設定咗未。'),
     tone: C.textSecondary,
   },
   'not-started': {
-    title: '未設定收款帳戶',
-    body: '設定咗之後你賣卡收到嘅錢先會入到你嘅戶口。Stripe 會帶你去一個官方頁面填資料，大約 3 分鐘。',
+    title: t('未設定收款帳戶'),
+    body: t('設定咗之後你賣卡收到嘅錢先會入到你嘅戶口。Stripe 會帶你去一個官方頁面填資料，大約 3 分鐘。'),
     tone: C.warn,
   },
   pending: {
-    title: '仲未完成設定',
-    body: 'Stripe 仲有嘢要你填。撳下面繼續，或者檢查返啱啱做咗乜。',
+    title: t('仲未完成設定'),
+    body: t('Stripe 仲有嘢要你填。撳下面繼續，或者檢查返啱啱做咗乜。'),
     tone: C.gold,
   },
   onboarded: {
-    title: '收款帳戶已設定 ✓',
-    body: '你可以喺錢包提現。有新卡賣出同放款之後，餘額會喺呢度出現。',
+    title: t('收款帳戶已設定 ✓'),
+    body: t('你可以喺錢包提現。有新卡賣出同放款之後，餘額會喺呢度出現。'),
     tone: C.up,
   },
 };

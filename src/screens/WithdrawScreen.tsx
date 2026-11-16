@@ -91,9 +91,9 @@ const WithdrawScreen: React.FC = () => {
     if (!amount) return null;
     if (!Number.isFinite(parsed)) return t('請輸入有效金額');
     if (parsed < MIN_WITHDRAWAL_HKD)
-      return `最少提現 HK$ ${MIN_WITHDRAWAL_HKD}`;
+      return t('最少提現 HK$ {p0}', { p0: MIN_WITHDRAWAL_HKD });
     if (parsed > available)
-      return `超過可提現餘額 HK$ ${available.toFixed(2)}`;
+      return t('超過可提現餘額 HK$ {p0}', { p0: available.toFixed(2) });
     return null;
   }, [amount, parsed, available]);
 
@@ -103,8 +103,8 @@ const WithdrawScreen: React.FC = () => {
     try {
       const res = await createWithdrawal(parsed, accountId);
       confirmAction(t('提現已提交'),
-        `HK$ ${parsed.toFixed(2)} 已經交俾 Stripe 處理。\n` +
-          `一般 1–3 個工作日到账。\n\n提現編號：${res.payoutId}`,
+        t('HK$ {p0} 已經交俾 Stripe 處理。\n', { p0: parsed.toFixed(2) }) +
+          t('一般 1–3 個工作日到账。\n\n提現編號：{p0}', { p0: res.payoutId }),
         [{ text: t('好'), onPress: () => navigation.goBack() }],
       );
     } catch (e: any) {

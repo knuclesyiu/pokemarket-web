@@ -99,11 +99,11 @@ const CardDetailScreen: React.FC = () => {
     const diff = Date.now() - ts;
     const min = Math.floor(diff / 60000);
     if (min < 1) return t('剛剛');
-    if (min < 60) return `${min} 分鐘`;
+    if (min < 60) return t('{p0} 分鐘', { p0: min });
     const hr = Math.floor(min / 60);
-    if (hr < 24) return `${hr} 小時`;
+    if (hr < 24) return t('{p0} 小時', { p0: hr });
     const d = Math.floor(hr / 24);
-    return `${d} 日`;
+    return t('{p0} 日', { p0: d });
   };
 
   return (
@@ -162,7 +162,9 @@ const CardDetailScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
-            <Text style={styles.listingCount}>📦 {card.listingCount} 個掛牌</Text>
+            <Text style={styles.listingCount}>
+            📦 {t('{p0} 個掛牌', { p0: card.listingCount })}
+          </Text>
           </View>
         </View>
 

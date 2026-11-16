@@ -124,7 +124,7 @@ const RegisterScreen: React.FC = () => {
           <Text style={styles.subtitle}>{t('每次交易釋放款項時都需要輸入呢個密碼')}</Text>
           <TextInput
             style={styles.input}
-            placeholder={`${MIN_PIN_LENGTH} 位數字交易密碼`}
+            placeholder={t('{p0} 位數字交易密碼', { p0: MIN_PIN_LENGTH })}
             placeholderTextColor={C.textTertiary}
             keyboardType="number-pad"
             maxLength={8}

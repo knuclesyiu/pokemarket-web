@@ -11,6 +11,7 @@
  * here, the buyer confirms inside Airwallex's own UI and we are told
  * afterwards.
  */
+import { t } from '../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
 
@@ -58,7 +59,7 @@ export default function AirwallexPaymentForm(props: AirwallexPaymentFormProps) {
           layout: 'tab',
           elements: {
             paymentMethod: {
-              title: '付款方式',
+              title: t('付款方式'),
               // The buyer picks FPS here if the account has it enabled.
               alignment: 'left',
             },
@@ -77,7 +78,7 @@ export default function AirwallexPaymentForm(props: AirwallexPaymentFormProps) {
             if (status === 'SUCCEEDED' || status === 'success') {
               props.onSuccess();
             } else if (status === 'CANCELLED') {
-              setHint('已取消付款');
+              setHint(t('已取消付款'));
             } else {
               // 'inProgress' means the payment is with the processor:
               // the webhook will say so, and the order screen polls.
@@ -85,7 +86,7 @@ export default function AirwallexPaymentForm(props: AirwallexPaymentFormProps) {
             }
           } catch (err: any) {
             if (!mounted.current) return;
-            props.onError(String(err?.message ?? '付款失敗'));
+            props.onError(String(err?.message ?? t('付款失敗')));
           }
         });
 
@@ -94,7 +95,7 @@ export default function AirwallexPaymentForm(props: AirwallexPaymentFormProps) {
         if (!mounted.current) return;
         setLoading(false);
         props.onError(
-          `載入付款方式失敗：${String(err?.message ?? err).slice(0, 160)}`,
+          t('載入付款方式失敗：{p0}', { p0: String(err?.message ?? err).slice(0, 160) }),
         );
       }
     })();

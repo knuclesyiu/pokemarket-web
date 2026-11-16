@@ -5,6 +5,7 @@
  * that says so — so this is not a regression. It says what is missing
  * instead of failing silently.
  */
+import { t } from '../i18n';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -36,7 +37,7 @@ export default function AirwallexPaymentForm(props: AirwallexPaymentFormProps) {
   return (
     <View style={styles.box}>
       <Text style={styles.text}>
-        {'轉數快同信用卡收款暫時只支援網頁版，請用網頁落單。手機版會盡快接上。'}
+        {t('轉數快同信用卡收款暫時只支援網頁版，請用網頁落單。手機版會盡快接上。')}
       </Text>
     </View>
   );

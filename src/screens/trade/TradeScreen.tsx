@@ -30,11 +30,20 @@ const CARD_W = (width - 48 - 12) / 2; // 2 columns + padding
 
 // ─── Filter Options ────────────────────────────────────────────────────────────
 
-const SERIES_OPTIONS = [t('全部'), 'Sword&Shield', 'Sun&Moon', 'XY', 'Black&White', 'Base'];
-const RARITY_OPTIONS = [t('全部'), 'Rare Holo', 'Rare Ultra', 'Rare Secret', 'Promo', 'Rare'];
-const CONDITION_OPTIONS = [t('全部'), 'Mint', 'Near Mint', 'Excellent', 'Good'];
+/**
+ * The filter for "everything".
+ *
+ * An identifier, not a label: the label is translated where it is
+ * drawn. A filter that held its own translated name would stop
+ * matching the moment the language changed.
+ */
+const ALL = 'all';
+
+const SERIES_OPTIONS = [ALL, 'Sword&Shield', 'Sun&Moon', 'XY', 'Black&White', 'Base'];
+const RARITY_OPTIONS = [ALL, 'Rare Holo', 'Rare Ultra', 'Rare Secret', 'Promo', 'Rare'];
+const CONDITION_OPTIONS = [ALL, 'Mint', 'Near Mint', 'Excellent', 'Good'];
 const PRICE_OPTIONS = [
-  { label: t('全部'), min: 0, max: 999999 },
+  { label: ALL, min: 0, max: 999999 },
   { label: '~$200', min: 0, max: 200 },
   { label: '$200~500', min: 200, max: 500 },
   { label: '$500~1,000', min: 500, max: 1000 },
@@ -111,9 +120,9 @@ const TradeScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Filters
-  const [seriesFilter, setSeriesFilter] = useState(t('全部'));
-  const [rarityFilter, setRarityFilter] = useState(t('全部'));
-  const [conditionFilter, setConditionFilter] = useState(t('全部'));
+  const [seriesFilter, setSeriesFilter] = useState(ALL);
+  const [rarityFilter, setRarityFilter] = useState(ALL);
+  const [conditionFilter, setConditionFilter] = useState(ALL);
   const [priceIdx, setPriceIdx] = useState(0);
   const [searchText, setSearchText] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -126,9 +135,9 @@ const TradeScreen: React.FC = () => {
       const fns = getFunctions();
       const getListings = httpsCallable(fns, 'getMarketListings', { timeout: 20000 });
       const result = await getListings({
-        series: seriesFilter !== t('全部') ? seriesFilter : undefined,
-        rarity: rarityFilter !== t('全部') ? rarityFilter : undefined,
-        condition: conditionFilter !== t('全部') ? conditionFilter : undefined,
+        series: seriesFilter !== ALL ? seriesFilter : undefined,
+        rarity: rarityFilter !== ALL ? rarityFilter : undefined,
+        condition: conditionFilter !== ALL ? conditionFilter : undefined,
         minPrice: PRICE_OPTIONS[priceIdx].min || undefined,
         maxPrice: PRICE_OPTIONS[priceIdx].max < 999999 ? PRICE_OPTIONS[priceIdx].max : undefined,
         type: 'buy_now',
@@ -204,27 +213,27 @@ const TradeScreen: React.FC = () => {
         contentContainerStyle={{ paddingHorizontal: 16 }}
       >
         <TouchableOpacity
-          style={[styles.chip, seriesFilter !== t('全部') ? styles.chipActive : null]}
+          style={[styles.chip, seriesFilter !== ALL ? styles.chipActive : null]}
           onPress={() => setSeriesFilter(t('全部'))}
         >
-          <Text style={[styles.chipText, seriesFilter !== t('全部') ? styles.chipTextActive : null]}>
-            {seriesFilter}
+          <Text style={[styles.chipText, seriesFilter !== ALL ? styles.chipTextActive : null]}>
+            {seriesFilter === ALL ? t('全部') : seriesFilter}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.chip, rarityFilter !== t('全部') ? styles.chipActive : null]}
+          style={[styles.chip, rarityFilter !== ALL ? styles.chipActive : null]}
           onPress={() => setRarityFilter(t('全部'))}
         >
-          <Text style={[styles.chipText, rarityFilter !== t('全部') ? styles.chipTextActive : null]}>
-            {rarityFilter}
+          <Text style={[styles.chipText, rarityFilter !== ALL ? styles.chipTextActive : null]}>
+            {rarityFilter === ALL ? t('全部') : rarityFilter}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.chip, conditionFilter !== t('全部') ? styles.chipActive : null]}
+          style={[styles.chip, conditionFilter !== ALL ? styles.chipActive : null]}
           onPress={() => setConditionFilter(t('全部'))}
         >
-          <Text style={[styles.chipText, conditionFilter !== t('全部') ? styles.chipTextActive : null]}>
-            {conditionFilter}
+          <Text style={[styles.chipText, conditionFilter !== ALL ? styles.chipTextActive : null]}>
+            {conditionFilter === ALL ? t('全部') : conditionFilter}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity

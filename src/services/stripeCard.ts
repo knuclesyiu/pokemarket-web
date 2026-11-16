@@ -36,6 +36,7 @@
  * Usage:
  *   const { paymentIntentId } = await confirmCardPayment(clientSecret, card);
  */
+import { t } from '../i18n';
 import type { CardDetails, StripeCardResult } from "../types/stripe";
 
 /**
@@ -56,7 +57,7 @@ export async function confirmCardPayment(
   _card: CardDetails,
 ): Promise<StripeCardResult> {
   throw new Error(
-    '手機版暫時未支援信用卡付款。請改用「FPS 轉數快」付款，' +
-      '或者用網頁版完成呢筆交易。'
+    t('手機版暫時未支援信用卡付款。請改用「FPS 轉數快」付款，') +
+      t('或者用網頁版完成呢筆交易。')
   );
 }

@@ -39,13 +39,14 @@
 /*
 // ─── Pseudo-code (not deployed) ─────────────────────────────────────────────
 
+import { t } from '../i18n';
 import * as functions from 'firebase-functions';
 import { sendEmailVerification, getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 export const sendVerificationEmail = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', '需要登入');
+    throw new functions.https.HttpsError('unauthenticated', t('需要登入'));
   }
   const user = await getAuth().getUser(context.auth.uid);
   if (user.emailVerified) {
@@ -63,7 +64,7 @@ export const sendVerificationEmail = functions.https.onCall(async (data, context
 
 export const checkEmailVerified = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', '需要登入');
+    throw new functions.https.HttpsError('unauthenticated', t('需要登入'));
   }
   const user = await getAuth().getUser(context.auth.uid);
   if (user.emailVerified) {
@@ -93,17 +94,17 @@ export const verifyPinServerSide = functions.https.onCall(async (data, context) 
   const now = Date.now();
   if (attempts.count >= 5 && now - attempts.lastAt < 5 * 60 * 1000) {
     throw new functions.https.HttpsError('resource-exhausted',
-      '交易密碼已鎖定 5 分鐘');
+      t('交易密碼已鎖定 5 分鐘'));
   }
 
   const userSnap = await getFirestore().doc(`users/${context.auth.uid}`).get();
   const hash = userSnap.data()?.transactionPinHash;
-  if (!hash) throw new functions.https.HttpsError('not-found', '未設定 PIN');
+  if (!hash) throw new functions.https.HttpsError('not-found', t('未設定 PIN'));
 
   const ok = await verifyPinHash(pin, hash);
   if (!ok) {
     await attemptsRef.set({ count: attempts.count + 1, lastAt: now });
-    throw new functions.https.HttpsError('permission-denied', 'PIN 不正確');
+    throw new functions.https.HttpsError('permission-denied', t('PIN 不正確'));
   }
   await attemptsRef.set({ count: 0, lastAt: now });
   return { verified: true };

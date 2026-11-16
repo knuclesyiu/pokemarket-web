@@ -322,8 +322,8 @@ const CheckoutScreen: React.FC = () => {
         <View style={styles.breakdown}>
           {[
             [t('商品金額'), formatHkd(fee.cardPriceHkd)],
-            [`Stripe 處理費 (${Math.round(STRIPE_PERCENT_FEE * 100)}% + HK$2.35)`, formatHkd(fee.stripeFeeHkd)],
-            [`平台服務費 (${Math.round(PLATFORM_FEE_PERCENT * 100)}%)`, formatHkd(fee.platformFeeHkd)],
+            [t('Stripe 處理費 ({p0}% + HK$2.35)', { p0: Math.round(STRIPE_PERCENT_FEE * 100) }), formatHkd(fee.stripeFeeHkd)],
+            [t('平台服務費 ({p0}%)', { p0: Math.round(PLATFORM_FEE_PERCENT * 100) }), formatHkd(fee.platformFeeHkd)],
             [t('總手續費'), formatHkd(fee.totalFeeHkd)],
             delivery === 'sf' ? [t('運費（順豐到付）'), `HK$ ${deliveryFee}`] : [t('運費'), t('免費（面交）')],
           ].map(([label, value]) => (
@@ -355,7 +355,7 @@ const CheckoutScreen: React.FC = () => {
             <Text style={styles.confirmBtnText}>
               {payment === 'card' && !showCardForm
                 ? t('下一步：填寫信用卡資料')
-                : `確認支付 HK$ ${total.toLocaleString()}`}
+                : t('確認支付 HK$ {p0}', { p0: total.toLocaleString() })}
             </Text>
           )}
         </TouchableOpacity>

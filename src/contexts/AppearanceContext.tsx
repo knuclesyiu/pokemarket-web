@@ -27,7 +27,7 @@ import { getActiveTheme, setActiveTheme, ThemeName } from '../theme';
 export interface AppearanceValue {
   theme: ThemeName;
   language: Language;
-  t: (source: string) => string;
+  t: (source: string, params?: Record<string, string | number>) => string;
   setTheme: (theme: ThemeName) => void;
   setLanguage: (language: Language) => void;
 }

@@ -43,11 +43,11 @@ type RoutingType =
   | 'bank_code';
 
 const ROUTING_OPTIONS: Array<{ value: RoutingType; label: string; hint: string }> = [
-  { value: 'fps_identifier', label: 'FPS ID', hint: '7-9 位數字' },
-  { value: 'phone_number', label: '手機號碼', hint: '已登記喺銀行戶口嘅號碼' },
-  { value: 'email_address', label: '電郵地址', hint: '已登記喺銀行戶口嘅電郵' },
-  { value: 'personal_id_number', label: '香港身份證號碼', hint: 'X123456(A)' },
-  { value: 'bank_code', label: '銀行帳號 + 行號', hint: '行號 3 位數 + 帳號' },
+  { value: 'fps_identifier', label: 'FPS ID', hint: t('7-9 位數字') },
+  { value: 'phone_number', label: t('手機號碼'), hint: t('已登記喺銀行戶口嘅號碼') },
+  { value: 'email_address', label: t('電郵地址'), hint: t('已登記喺銀行戶口嘅電郵') },
+  { value: 'personal_id_number', label: t('香港身份證號碼'), hint: 'X123456(A)' },
+  { value: 'bank_code', label: t('銀行帳號 + 行號'), hint: t('行號 3 位數 + 帳號') },
 ];
 
 export default function SellerPayoutDetailsScreen() {

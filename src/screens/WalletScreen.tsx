@@ -99,7 +99,7 @@ const WalletScreen: React.FC = () => {
 
   const handleTopUp = () => {
     notify(t('充值功能即將推出'),
-      '我們正在整合 Stripe 信用卡及 FPS 充值管道。\n請期待下次更新，或聯絡客服協助。',
+      t('我們正在整合 Stripe 信用卡及 FPS 充值管道。\n請期待下次更新，或聯絡客服協助。'),
     );
   };
 

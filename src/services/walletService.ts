@@ -17,6 +17,7 @@
  * wallet subcollection when Stripe webhooks fire).
  */
 
+import { t } from '../i18n';
 import {
   doc, onSnapshot, collection, query, orderBy, limit, getDoc,
 } from 'firebase/firestore';
@@ -88,9 +89,9 @@ export function subscribeTransactions(
         return {
           id: d.id,
           type: data.type ?? 'buy',
-          cardName: data.cardName ?? '(未知卡牌)',
+          cardName: data.cardName ?? t('(未知卡牌)'),
           cardImage: data.cardImage,
-          counterparty: data.counterparty ?? '(未知用戶)',
+          counterparty: data.counterparty ?? t('(未知用戶)'),
           amount: Number(data.amount ?? 0),
           state: (data.state ?? 'pending') as WalletTxState,
           createdAt: Number(data.createdAt ?? 0),

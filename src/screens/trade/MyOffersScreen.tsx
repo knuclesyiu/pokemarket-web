@@ -27,11 +27,11 @@ type NavProp = NativeStackNavigationProp<any>;
 const { width } = Dimensions.get('window');
 
 const STATUS_CONFIG: Record<OfferStatus, { label: string; color: string; bg: string }> = {
-  pending:   { label: '待回覆',   color: C.gold, bg: '#2A1F00' },
-  accepted:  { label: '已接受',    color: C.up, bg: '#002A12' },
-  rejected:  { label: '已拒絕',    color: C.action, bg: '#2A0000' },
-  cancelled: { label: '🚫 已取消',   color: C.textSecondary, bg: '#1A1A2E' },
-  countered: { label: '還價',    color: C.info, bg: '#001A2A' },
+  pending:   { label: t('待回覆'),   color: C.gold, bg: '#2A1F00' },
+  accepted:  { label: t('已接受'),    color: C.up, bg: '#002A12' },
+  rejected:  { label: t('已拒絕'),    color: C.action, bg: '#2A0000' },
+  cancelled: { label: t('🚫 已取消'),   color: C.textSecondary, bg: '#1A1A2E' },
+  countered: { label: t('還價'),    color: C.info, bg: '#001A2A' },
 };
 
 // ─── Single Offer Row ──────────────────────────────────────────────────────────
@@ -72,7 +72,7 @@ const OfferRow: React.FC<{
           {offer.targetCard?.name || t('未知卡片')}
         </Text>
         <Text style={styles.offerMeta}>
-          {isSeller ? `← ${offer.buyerName} 的 Offer` : `→ ${offer.targetCard?.name}`}
+          {isSeller ? t('← {p0} 的 Offer', { p0: offer.buyerName }) : `→ ${offer.targetCard?.name}`}
         </Text>
         <View style={styles.offerCardsPreview}>
           {(offer.offerCards || []).slice(0, 3).map((oc, i) => (
@@ -160,7 +160,7 @@ const MyOffersScreen: React.FC = () => {
   const handleQuickAction = async (offer: Offer, action: 'accept' | 'reject') => {
     if (action === 'reject') {
       confirmAction(t('拒絕 Offer'),
-        `確定要拒絕 ${offer.buyerName} 的這個 Offer 嗎？`,
+        t('確定要拒絕 {p0} 的這個 Offer 嗎？', { p0: offer.buyerName }),
         [
           { text: t('取消'), style: 'cancel' },
           {

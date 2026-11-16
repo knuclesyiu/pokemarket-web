@@ -354,9 +354,9 @@ const SellScreen: React.FC = () => {
             <View style={styles.priceCompare}>
               <Text style={styles.compareText}>
                 {Number(price) > selectedCard.price
-                  ? `📈 比市價高 ${(((Number(price) - selectedCard.price) / selectedCard.price) * 100).toFixed(0)}%`
+                  ? t('📈 比市價高 {p0}%', { p0: (((Number(price) - selectedCard.price) / selectedCard.price) * 100).toFixed(0) })
                   : Number(price) < selectedCard.price
-                  ? `📉 比市價低 ${(((selectedCard.price - Number(price)) / selectedCard.price) * 100).toFixed(0)}%`
+                  ? t('📉 比市價低 {p0}%', { p0: (((selectedCard.price - Number(price)) / selectedCard.price) * 100).toFixed(0) })
                   : t('與市價相同')}
               </Text>
             </View>

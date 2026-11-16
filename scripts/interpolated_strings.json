@@ -1,0 +1,71 @@
+{
+  "載入付款方式失敗：{p0}": [
+    "src/components/AirwallexPaymentForm.web.tsx:98"
+  ],
+  "評價（{p0} 個）": [
+    "src/screens/ProfileScreen.tsx:186"
+  ],
+  "加入於 {p0})}": [
+    "src/screens/ProfileScreen.tsx:243"
+  ],
+  "📈 比市價高 {p0}%": [
+    "src/screens/SellScreen.tsx:357"
+  ],
+  "📉 比市價低 {p0}%": [
+    "src/screens/SellScreen.tsx:359"
+  ],
+  "{p0} 分鐘": [
+    "src/screens/CardDetailScreen.tsx:102"
+  ],
+  "{p0} 小時": [
+    "src/screens/CardDetailScreen.tsx:104"
+  ],
+  "{p0} 日": [
+    "src/screens/CardDetailScreen.tsx:106"
+  ],
+  "HK$ {p0} 擔保中，確認收卡後自動轉俾賣家": [
+    "src/screens/OrderStatusScreen.tsx:283"
+  ],
+  "最少提現 HK$ {p0}": [
+    "src/screens/WithdrawScreen.tsx:94"
+  ],
+  "超過可提現餘額 HK$ {p0}": [
+    "src/screens/WithdrawScreen.tsx:96"
+  ],
+  "HK$ {p0} 已經交俾 Stripe 處理。\\n": [
+    "src/screens/WithdrawScreen.tsx:106"
+  ],
+  "一般 1–3 個工作日到账。\\n\\n提現編號：{p0}": [
+    "src/screens/WithdrawScreen.tsx:107"
+  ],
+  "{p0} 分鐘前": [
+    "src/screens/HomeScreen.tsx:209"
+  ],
+  "{p0} 小時前": [
+    "src/screens/HomeScreen.tsx:210"
+  ],
+  " · 更新於 {p0}": [
+    "src/screens/HomeScreen.tsx:350"
+  ],
+  "Stripe 處理費 ({p0}% + HK$2.35)": [
+    "src/screens/CheckoutScreen.tsx:325"
+  ],
+  "平台服務費 ({p0}%)": [
+    "src/screens/CheckoutScreen.tsx:326"
+  ],
+  "確認支付 HK$ {p0}": [
+    "src/screens/CheckoutScreen.tsx:358"
+  ],
+  "交易密碼已鎖定，請等待 {p0} 秒後再試": [
+    "src/contexts/AuthContext.tsx:379"
+  ],
+  "← {p0} 的 Offer": [
+    "src/screens/trade/MyOffersScreen.tsx:75"
+  ],
+  "確定要拒絕 {p0} 的這個 Offer 嗎？": [
+    "src/screens/trade/MyOffersScreen.tsx:163"
+  ],
+  "{p0} 位數字交易密碼": [
+    "src/screens/auth/RegisterScreen.tsx:127"
+  ]
+}

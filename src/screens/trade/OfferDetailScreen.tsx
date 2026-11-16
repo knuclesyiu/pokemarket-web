@@ -8,6 +8,7 @@
  * - 接受 / 拒絕 / 還價 / 取消
  */
 
+import { t } from '../../i18n';
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image,
@@ -35,7 +36,7 @@ const OfferCardItem: React.FC<{ oc: OfferCard; label?: string }> = ({ oc, label 
       </View>
     )}
     <View style={styles.offerCardInfo}>
-      <Text style={styles.offerCardName} numberOfLines={1}>{oc.card?.name || '未知卡片'}</Text>
+      <Text style={styles.offerCardName} numberOfLines={1}>{oc.card?.name || t('未知卡片')}</Text>
       <Text style={styles.offerCardSet} numberOfLines={1}>{oc.card?.set}</Text>
       <View style={styles.offerCardMeta}>
         <Text style={styles.offerCardRarity}>{oc.card?.rarity}</Text>
@@ -55,10 +56,10 @@ const CounterOfferSection: React.FC<{
   onReject: () => void;
 }> = ({ counterOffer, onAccept, onReject }) => (
   <View style={styles.counterSection}>
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.counterTitle}>對方還價</Text></View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.counterTitle}>{t(t('對方還價'))}</Text></View>
     {counterOffer.counterCards?.length > 0 && (
       <View>
-        <Text style={styles.counterSectionLabel}>還價卡片：</Text>
+        <Text style={styles.counterSectionLabel}>{t(t('還價卡片：'))}</Text>
         {counterOffer.counterCards.map((oc, i) => (
           <OfferCardItem key={i} oc={oc} />
         ))}
@@ -74,10 +75,10 @@ const CounterOfferSection: React.FC<{
     )}
     <View style={styles.counterActions}>
       <TouchableOpacity style={styles.acceptBtn} onPress={onAccept}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.acceptBtnText}>接受還價</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.acceptBtnText}>{t(t('接受還價'))}</Text></View>
       </TouchableOpacity>
       <TouchableOpacity style={styles.rejectBtn} onPress={onReject}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="close-circle" size={14} color={C.textTertiary} /><Text style={styles.rejectBtnText}>拒絕</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="close-circle" size={14} color={C.textTertiary} /><Text style={styles.rejectBtnText}>{t(t('拒絕'))}</Text></View>
       </TouchableOpacity>
     </View>
   </View>
@@ -98,11 +99,11 @@ const OfferDetailScreen: React.FC = () => {
   const [counterMessage, setCounterMessage] = useState('');
 
   const STATUS_CONFIG: Record<OfferStatus, { label: string; color: string; bg: string }> = {
-    pending:   { label: '待回覆',   color: C.gold, bg: '#2A1F00' },
-    accepted:  { label: '已接受',    color: C.up, bg: '#002A12' },
-    rejected:  { label: '已拒絕',    color: C.action, bg: '#2A0000' },
-    cancelled: { label: '🚫 已取消',   color: C.textSecondary, bg: '#1A1A2E' },
-    countered: { label: '待接受還價', color: C.info, bg: '#001A2A' },
+    pending:   { label: t('待回覆'),   color: C.gold, bg: '#2A1F00' },
+    accepted:  { label: t('已接受'),    color: C.up, bg: '#002A12' },
+    rejected:  { label: t('已拒絕'),    color: C.action, bg: '#2A0000' },
+    cancelled: { label: t('🚫 已取消'),   color: C.textSecondary, bg: '#1A1A2E' },
+    countered: { label: t('待接受還價'), color: C.info, bg: '#001A2A' },
   };
   const cfg = STATUS_CONFIG[offer.status] || STATUS_CONFIG.pending;
 
@@ -136,45 +137,45 @@ const OfferDetailScreen: React.FC = () => {
       const data = result.data as { offerId: string; newStatus: OfferStatus; tradeId?: string };
 
       if (action === 'cancel') {
-        notify('已取消', '你的 Offer 已被取消');
+        notify(t('已取消'), t('你的 Offer 已被取消'));
         navigation.goBack();
       } else if (data.newStatus === 'accepted') {
-        confirmAction('成交完成！', '卡片已成功交換，請在收藏頁確認！', [
-          { text: '查看收藏', onPress: () => navigation.navigate('Main', { screen: 'PortfolioTab' }) },
-          { text: '返回', onPress: () => navigation.goBack() },
+        confirmAction(t('成交完成！'), t('卡片已成功交換，請在收藏頁確認！'), [
+          { text: t('查看收藏'), onPress: () => navigation.navigate('Main', { screen: 'PortfolioTab' }) },
+          { text: t('返回'), onPress: () => navigation.goBack() },
         ]);
       } else if (data.newStatus === 'countered') {
-        notify('還價已發出', '等待對方回覆');
+        notify(t('還價已發出'), t('等待對方回覆'));
         navigation.goBack();
       } else {
-        notify('已處理', `Offer 狀態：${data.newStatus}`);
+        notify(t('已處理'), `Offer 狀態：${data.newStatus}`);
         navigation.goBack();
       }
     } catch (err: any) {
-      notify('操作失敗', err.message || '請稍後重試');
+      notify(t('操作失敗'), err.message || t('請稍後重試'));
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleAccept = () => {
-    confirmAction('確認接受 Offer', '即將進行卡片交換，雙方收藏將同步更新', [
-      { text: '取消', style: 'cancel' },
-      { text: '確認接受', onPress: () => executeAction('accept') },
+    confirmAction(t('確認接受 Offer'), t('即將進行卡片交換，雙方收藏將同步更新'), [
+      { text: t('取消'), style: 'cancel' },
+      { text: t('確認接受'), onPress: () => executeAction('accept') },
     ]);
   };
 
   const handleReject = () => {
-    confirmAction('確認拒絕', `確定要拒絕這個 Offer 嗎？`, [
-      { text: '取消', style: 'cancel' },
-      { text: '確認拒絕', style: 'destructive', onPress: () => executeAction('reject') },
+    confirmAction(t('確認拒絕'), t('確定要拒絕這個 Offer 嗎？'), [
+      { text: t('取消'), style: 'cancel' },
+      { text: t('確認拒絕'), style: 'destructive', onPress: () => executeAction('reject') },
     ]);
   };
 
   const handleCancel = () => {
-    confirmAction('🚫 取消 Offer', '確定要撤回你的 Offer 嗎？', [
-      { text: '否', style: 'cancel' },
-      { text: '是，取消 Offer', style: 'destructive', onPress: () => executeAction('cancel') },
+    confirmAction(t('🚫 取消 Offer'), t('確定要撤回你的 Offer 嗎？'), [
+      { text: t('否'), style: 'cancel' },
+      { text: t('是，取消 Offer'), style: 'destructive', onPress: () => executeAction('cancel') },
     ]);
   };
 
@@ -183,9 +184,9 @@ const OfferDetailScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>← 返回</Text>
+          <Text style={styles.backBtnText}>{t(t('← 返回'))}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Offer 詳情</Text>
+        <Text style={styles.headerTitle}>{t(t('Offer 詳情'))}</Text>
         <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
           <Text style={[styles.statusBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
         </View>
@@ -194,7 +195,7 @@ const OfferDetailScreen: React.FC = () => {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── Target Card ── */}
         <View style={styles.section}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="albums-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>目標卡片 {isSeller ? '(你的掛牌)' : '(賣家的卡)'}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="albums-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>目標卡片 {isSeller ? '(你的掛牌)' : t('(賣家的卡)')}
           </Text></View>
           <View style={styles.targetCard}>
             {offer.targetCard?.imageUrl ? (
@@ -220,7 +221,7 @@ const OfferDetailScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
-              {isSeller ? `📤 ${offer.buyerName} 的 Offer` : '📤 你的 Offer'}
+              {isSeller ? `📤 ${offer.buyerName} 的 Offer` : t('📤 你的 Offer')}
             </Text>
             <Text style={styles.offerTotalValue}>
               約 HK${totalOfferValue.toLocaleString()}
@@ -231,17 +232,17 @@ const OfferDetailScreen: React.FC = () => {
           {(offer.offerCards || []).length > 0 ? (
             <View style={styles.cardsGrid}>
               {(offer.offerCards || []).map((oc, i) => (
-                <OfferCardItem key={i} oc={oc} label={isSeller ? `來自 ${offer.buyerName}` : '你的卡'} />
+                <OfferCardItem key={i} oc={oc} label={isSeller ? `來自 ${offer.buyerName}` : t('你的卡')} />
               ))}
             </View>
           ) : (
-            <Text style={styles.noCardsText}>無卡片，只有現金</Text>
+            <Text style={styles.noCardsText}>{t(t('無卡片，只有現金'))}</Text>
           )}
 
           {/* Cash */}
           {offer.cashAddHkd > 0 && (
             <View style={styles.cashRow}>
-              <Text style={styles.cashLabel}>💵 現金補貼</Text>
+              <Text style={styles.cashLabel}>{t(t('💵 現金補貼'))}</Text>
               <Text style={styles.cashValue}>HK${offer.cashAddHkd.toLocaleString()}</Text>
             </View>
           )}
@@ -249,7 +250,7 @@ const OfferDetailScreen: React.FC = () => {
           {/* Message */}
           {offer.message && (
             <View style={styles.messageRow}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.messageLabel}>留言</Text></View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.messageLabel}>{t(t('留言'))}</Text></View>
               <Text style={styles.messageText}>「{offer.message}」</Text>
             </View>
           )}
@@ -271,20 +272,20 @@ const OfferDetailScreen: React.FC = () => {
               style={styles.counterTrigger}
               onPress={() => setShowCounterForm(true)}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.counterTriggerText}>提出還價</Text></View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.counterTriggerText}>{t(t('提出還價'))}</Text></View>
             </TouchableOpacity>
           </View>
         )}
 
         {showCounterForm && (
           <View style={styles.section}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>你的還價（可選）</Text></View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>{t(t('你的還價（可選）'))}</Text></View>
             <Text style={styles.counterHint}>
               你可以提供不同的卡片或現金作為反提案
             </Text>
             <TextInput
               style={styles.counterMessageInput}
-              placeholder="還價留言..."
+              placeholder={t('還價留言...')}
               placeholderTextColor={C.textTertiary}
               multiline
               value={counterMessage}
@@ -292,7 +293,7 @@ const OfferDetailScreen: React.FC = () => {
             />
             <TextInput
               style={styles.counterCashInput}
-              placeholder="現金補貼金額（HKD）"
+              placeholder={t('現金補貼金額（HKD）')}
               placeholderTextColor={C.textTertiary}
               keyboardType="numeric"
               value={counterCash > 0 ? String(counterCash) : ''}
@@ -318,7 +319,7 @@ const OfferDetailScreen: React.FC = () => {
                 {actionLoading ? (
                   <ActivityIndicator color={C.text} size="small" />
                 ) : (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.actionBtnText}>接受</Text></View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle" size={14} color={C.textTertiary} /><Text style={styles.actionBtnText}>{t(t('接受'))}</Text></View>
                 )}
               </TouchableOpacity>
               <TouchableOpacity
@@ -330,7 +331,7 @@ const OfferDetailScreen: React.FC = () => {
                 }}
               >
                 <Text style={styles.counterActionBtnText}>
-                  {showCounterForm ? '發出還價 💬' : '還價'}
+                  {showCounterForm ? '發出還價 💬' : t('還價')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -338,7 +339,7 @@ const OfferDetailScreen: React.FC = () => {
                 disabled={actionLoading}
                 onPress={handleReject}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="close-circle" size={14} color={C.textTertiary} /><Text style={styles.rejectActionBtnText}>拒絕</Text></View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="close-circle" size={14} color={C.textTertiary} /><Text style={styles.rejectActionBtnText}>{t(t('拒絕'))}</Text></View>
               </TouchableOpacity>
             </>
           ) : (
@@ -351,7 +352,7 @@ const OfferDetailScreen: React.FC = () => {
               {actionLoading ? (
                 <ActivityIndicator color={C.text} size="small" />
               ) : (
-                <Text style={styles.cancelActionBtnText}>🚫 取消 Offer</Text>
+                <Text style={styles.cancelActionBtnText}>{t(t('🚫 取消 Offer'))}</Text>
               )}
             </TouchableOpacity>
           )}

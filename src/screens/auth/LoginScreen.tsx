@@ -123,7 +123,7 @@ const LoginScreen: React.FC = () => {
       if (result.kind === 'needs_signup') {
         // User doesn't exist — offer explicit signup rather than auto-creating
         confirmAction(t('帳戶未註冊'),
-          `未有此 Email 帳戶。是否前往註冊？`,
+          t('未有此 Email 帳戶。是否前往註冊？'),
           [
             { text: t('前往註冊'), onPress: () => navigation.navigate('Register') },
             { text: t('取消'), style: 'cancel' },

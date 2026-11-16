@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { C, themed } from '../theme';
@@ -12,9 +13,9 @@ interface Props {
 }
 
 const CONFIG: Record<ReviewStatus, { icon: string; label: string; bg: string; color: string }> = {
-  pending:   { icon: '', label: '評審中',   bg: 'rgba(255,184,0,0.15)',  color: C.gold },
-  approved:  { icon: '', label: '已驗證',    bg: 'rgba(0,200,100,0.15)',  color: C.up },
-  rejected:  { icon: '', label: '品相不符',  bg: 'rgba(255,60,60,0.15)',  color: C.action },
+  pending:   { icon: '', label: t('評審中'),   bg: 'rgba(255,184,0,0.15)',  color: C.gold },
+  approved:  { icon: '', label: t('已驗證'),    bg: 'rgba(0,200,100,0.15)',  color: C.up },
+  rejected:  { icon: '', label: t('品相不符'),  bg: 'rgba(255,60,60,0.15)',  color: C.action },
 };
 
 const ReviewBadge: React.FC<Props> = ({ status, grade, size = 'md' }) => {
