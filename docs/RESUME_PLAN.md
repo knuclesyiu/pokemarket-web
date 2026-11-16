@@ -342,6 +342,73 @@ App 假設 Stripe 卡費 **2.9% + HK$2.35**，但 Stripe 香港公開價係
 （HK$1000 一單 = HK$5）。要查：睇 Stripe dashboard 實際費率，或者拉
 `balance_transaction` 睇 fee。
 
+## Airwallex 實測結果（2026-11-16 深夜，production key）
+
+憑證已入 Secret Manager（`AIRWALLEX_CLIENT_ID` / `AIRWALLEX_API_KEY`，
+`AIRWALLEX_ENV=production`）。**認證通咗** ✅ —— 但三個 API 全部被 Airwallex
+嘅**戶口層面**閘門擋住：
+
+| API | 錯誤 | 意思 |
+| --- | --- | --- |
+| `POST /api/v1/pa/payment_intents/create` | `configuration_error` — "Invalid request against merchant configuration. Please contact your account manager." | 收款未開通：MCC、付款方式、3DS、settlement currency 未配 |
+| `POST /api/v1/accounts/create` | `invalid_argument` — "This account cannot onboard individual accounts" | 開唔到個人賣家收款戶口（Connected Accounts 產品未開） |
+| `POST /api/v1/beneficiaries/create` | `validation_failed` — `transfer_methods` code 001 | FPS 出款方式未開 |
+
+**要問 Airwallex Account Manager：**
+1. 開通收款（Payment Acceptance）：本地卡 + FPS、MCC、3DS 設定、settlement currency
+2. 開通 Connected Accounts（要可以 onboard **個人** 賣家）
+3. 開通 Payouts + FPS outbound
+4. **開一個 sandbox 環境**（production 唔方便測試，尤其唔想真係出錢）
+5. PCI-DSS SAQ A 問卷（佢哋嘅 go-live checklist 標明 mandatory）
+
+### 驗證過嘅 API 細節（踩過嘅坑）
+
+**認證**
+```bash
+curl -X POST https://api.airwallex.com/api/v1/authentication/login \
+  -H 'x-api-key: {{API_KEY}}' -H 'x-client-id: {{CLIENT_ID}}' \
+  -H 'Content-Type: application/json' \
+  -d '{"client_id":"...","api_key":"...","grant_type":"client_credentials"}'
+```
+- key 同 client id 要喺 **headers**（`x-api-key` / `x-client-id`）✓ body 兩樣都畀埋最穩陣 ✓
+- 回應 token 喺 **`token`** 欄唔係 `access_token` ✓（`expires_at` 係時間戳 ✓）
+- token 有效 **30 分鐘** → 要喺 instance 入面快取 ✓（唔好每次 request 都攞 ✓）
+- key 係 environment-specific ✓（sandbox 同 production 唔同 ✓）
+
+**開賣家收款帳戶**（`POST /api/v1/accounts/create`）—— 官方 request shape 係
+`primary_contact` 同 `customer_agreements` 喺**頂層**，`individual_details` 喺
+`account_details` 入面而且係**物件**（唔係陣列 ✗）：
+```json
+{
+  "account_details": { "legal_entity_type": "INDIVIDUAL",
+                       "individual_details": { "first_name": "...", "last_name": "...",
+                                              "identification_type": "PERSONAL_ID",
+                                              "identification_number": "..." } },
+  "customer_agreements": { "agreed_to_terms_and_conditions": true,
+                           "terms_and_conditions": { "service_agreement_type": "RECIPIENT" } },
+  "identifier": "pokemarket-<uid>",
+  "primary_contact": { "email": "...", "mobile": "..." }
+}
+```
+
+**收款人**（`POST /api/v1/beneficiaries/create`）
+```json
+{ "beneficiary": { "entity_type": "PERSONAL",     ← PERSONAL | COMPANY（唔係 INDIVIDUAL ✗）
+                    "account_name": "...",
+                    "transfer_methods": ["FPS"],   ← 陣列
+                    "bank_details": { "account_currency": "HKD",
+                                      "bank_country_code": "HK",
+                                      "local_clearing_system": "FPS",
+                                      "account_routing_type1": "phone_number",
+                                      "account_routing_value1": "+852-..." } } }
+```
+- `entity_type` 係 `PERSONAL|COMPANY` ✓（schema API 查得到：`POST /api/v1/beneficiary_api_schemas/generate`，body `{country_code, currency}` ✓）
+- `bank_details` 嘅欄位（`bank_country_code` / `account_currency`）要入 `bank_details` 入面 ✓
+
+**實用工具**
+- `POST /api/v1/beneficiary_api_schemas/generate` — 攞收款人欄位規則（enum 喺 pattern 入面 ✓）
+- `POST /api/v1/beneficiary_form_schemas/generate` — 表單 schema（但 transfer_methods 嘅 options 係空 ✗）
+
 ## 淺色主題 + 三語言（2026-11-15 晚）
 
 ### 語言掣唔 work 嘅原因

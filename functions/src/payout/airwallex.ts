@@ -71,28 +71,32 @@ export async function createRecipient(
   details: SellerPayoutDetails,
 ): Promise<RecipientResult> {
   const [given, ...rest] = details.accountName.trim().split(/\s+/);
+  // The shape Airwallex's own API reference documents: the individual
+  // details sit inside `account_details` as an object, while the
+  // contact and the agreements sit at the top level of the request.
   const created = await awFetch<any>('/api/v1/accounts/create', {
     account_details: {
-      identifier: `pokemarket-${uid}`,
       legal_entity_type: 'INDIVIDUAL',
-      primary_contact: { email },
-      individual_details: [
-        {
-          first_name: given,
-          last_name: rest.join(' ') || given,
-          identification_type: 'PERSONAL_ID',
-          identification_number: details.routingType === 'personal_id_number'
+      individual_details: {
+        first_name: given,
+        last_name: rest.join(' ') || given,
+        identification_type: 'PERSONAL_ID',
+        identification_number:
+          details.routingType === 'personal_id_number'
             ? details.routingValue
             : undefined,
-        },
-      ],
-      customer_agreements: {
-        agreed_to_terms_and_conditions: true,
-        agreed_to_data_usage: true,
-        agreed_to_biometrics_consent: true,
-        terms_and_conditions: { service_agreement_type: 'RECIPIENT' },
       },
     },
+    customer_agreements: {
+      agreed_to_biometrics_consent: true,
+      agreed_to_data_usage: true,
+      agreed_to_terms_and_conditions: true,
+      opt_in_for_marketing: false,
+      terms_and_conditions: { service_agreement_type: 'RECIPIENT' },
+    },
+    identifier: `pokemarket-${uid}`,
+    nickname: `PokeMarket ${uid.slice(0, 8)}`,
+    primary_contact: { email, mobile: details.routingValue },
   });
 
   const recipientId = created?.id;
@@ -128,14 +132,19 @@ export async function createBeneficiary(
 ): Promise<string> {
   const beneficiary = await awFetch<any>('/api/v1/beneficiaries/create', {
     beneficiary: {
+      entity_type: 'PERSONAL',
       account_name: details.accountName,
-      bank_country_code: 'HK',
-      local_clearing_system: 'FPS',
-      account_routing_type1: details.routingType,
-      account_routing_value1: details.routingValue,
-      ...(details.routingType === 'bank_code' && details.accountNumber
-        ? { account_number: details.accountNumber }
-        : {}),
+      transfer_methods: ['FPS'],
+      bank_details: {
+        account_currency: 'HKD',
+        bank_country_code: 'HK',
+        local_clearing_system: 'FPS',
+        account_routing_type1: details.routingType,
+        account_routing_value1: details.routingValue,
+        ...(details.routingType === 'bank_code' && details.accountNumber
+          ? { account_number: details.accountNumber }
+          : {}),
+      },
     },
   });
   const id = beneficiary?.id;

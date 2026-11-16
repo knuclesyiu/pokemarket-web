@@ -18,7 +18,9 @@
         "npm --prefix \"$RESOURCE_DIR\" run build"
       ],
       "env": {
-        "AIRWALLEX_ENV": "sandbox"
+        "AIRWALLEX_ENV": "production",
+        "PAYOUT_RAIL": "airwallex",
+        "PAYMENT_RAIL": "stripe"
       }
     }
   ],

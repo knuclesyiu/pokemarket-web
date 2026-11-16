@@ -45,14 +45,19 @@ async function token() {
   for (const body of bodies) {
     const res = await fetch(`${BASE}/api/v1/authentication/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'x-client-id': CLIENT_ID,
+      },
       body: JSON.stringify(body),
     });
     const text = await res.text();
     if (res.ok) {
       const j = JSON.parse(text);
-      if (j.access_token) return j.access_token;
-      last = '回應冇 access_token';
+      const value = j.access_token ?? j.token;
+      if (value) return String(value);
+      last = '回應冇 token';
       continue;
     }
     last = `HTTP ${res.status}: ${text.slice(0, 300)}`;
@@ -97,24 +102,24 @@ try {
 console.log('\n  ════ 2. 開賣家收款帳戶（recipient）════');
 const account = await call('/api/v1/accounts/create', {
   account_details: {
-    identifier: `pokemarket-probe-${Date.now()}`,
     legal_entity_type: 'INDIVIDUAL',
-    primary_contact: { email: 'probe@example.com' },
-    individual_details: [
-      {
-        first_name: 'Test',
-        last_name: 'Seller',
-        identification_type: 'PERSONAL_ID',
-        identification_number: 'Z00000001',
-      },
-    ],
-    customer_agreements: {
-      agreed_to_terms_and_conditions: true,
-      agreed_to_data_usage: true,
-      agreed_to_biometrics_consent: true,
-      terms_and_conditions: { service_agreement_type: 'RECIPIENT' },
+    individual_details: {
+      first_name: 'Test',
+      last_name: 'Seller',
+      identification_type: 'PERSONAL_ID',
+      identification_number: 'Z00000001',
     },
   },
+  customer_agreements: {
+    agreed_to_biometrics_consent: true,
+    agreed_to_data_usage: true,
+    agreed_to_terms_and_conditions: true,
+    opt_in_for_marketing: false,
+    terms_and_conditions: { service_agreement_type: 'RECIPIENT' },
+  },
+  identifier: `pokemarket-probe-${Date.now()}`,
+  nickname: 'PokeMarket probe',
+  primary_contact: { email: 'probe@example.com', mobile: '+852-91234567' },
 });
 const recipientId = account.body?.id;
 check('開到收款帳戶', account.ok && Boolean(recipientId),
@@ -132,11 +137,16 @@ if (recipientId) {
 console.log('\n  ════ 3. 收款人（beneficiary）════');
 const beneficiary = await call('/api/v1/beneficiaries/create', {
   beneficiary: {
+    entity_type: 'PERSONAL',
     account_name: 'Test Seller',
-    bank_country_code: 'HK',
-    local_clearing_system: 'FPS',
-    account_routing_type1: 'phone_number',
-    account_routing_value1: '+852-91234567',
+    transfer_methods: ['FPS'],
+    bank_details: {
+      account_currency: 'HKD',
+      bank_country_code: 'HK',
+      local_clearing_system: 'FPS',
+      account_routing_type1: 'phone_number',
+      account_routing_value1: '+852-91234567',
+    },
   },
 });
 const beneficiaryId = beneficiary.body?.id;

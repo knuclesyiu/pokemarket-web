@@ -81,18 +81,22 @@ export async function airwallexToken(): Promise<string> {
     if (res.ok) {
       try {
         const parsed = JSON.parse(text);
-        if (parsed?.access_token) {
-          const expiresIn = Number(parsed.expires_in ?? 1800);
-          cachedToken = {
-            token: parsed.access_token as string,
-            expiresAt: Date.now() + expiresIn * 1000,
-          };
+        // The token comes back as `access_token` in some responses and
+        // as `token` in others, with the expiry as `expires_in` or as
+        // an `expires_at` timestamp. Both shapes are accepted.
+        const value = parsed?.access_token ?? parsed?.token;
+        if (value) {
+          const expiresIn = Number(parsed.expires_in ?? 0);
+          const expiresAt = parsed.expires_at
+            ? Date.parse(String(parsed.expires_at))
+            : Date.now() + (expiresIn || 1800) * 1000;
+          cachedToken = { token: String(value), expiresAt };
           return cachedToken.token;
         }
       } catch {
         /* fall through to the next shape */
       }
-      lastError = '回應冇 access_token';
+      lastError = '回應冇 token';
       continue;
     }
     lastError = `HTTP ${res.status}: ${text.slice(0, 200)}`;
