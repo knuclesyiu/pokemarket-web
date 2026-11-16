@@ -23,7 +23,13 @@ if [[ -z "${AIRWALLEX_CLIENT_ID:-}" || -z "${AIRWALLEX_API_KEY:-}" ]]; then
   exit 1
 fi
 
-for name in AIRWALLEX_CLIENT_ID AIRWALLEX_API_KEY; do
+# The webhook secret is optional: without it the webhook still works,
+# but every event is unsigned and the handler says so in the log.
+if [[ -z "${AIRWALLEX_WEBHOOK_SECRET:-}" ]]; then
+  echo "  ! AIRWALLEX_WEBHOOK_SECRET 未填 —— webhook 會冇簽名驗證" >&2
+fi
+
+for name in AIRWALLEX_CLIENT_ID AIRWALLEX_API_KEY AIRWALLEX_WEBHOOK_SECRET; do
   printf '%s' "${!name}" | firebase functions:secrets:set "$name" --project "$PROJECT" >/dev/null
   echo "  ✔ $name 已推上 Secret Manager"
 done

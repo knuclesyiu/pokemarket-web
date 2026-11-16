@@ -297,6 +297,51 @@ Stripe 平台戶口。所以：
   transfers 一樣係平台短暫持有買家嘅錢），但出款由自己做會令責任更明顯。
   Stripe Connect 版本（平台用持牌機構嘅錢）係監管上另一個位置。
 
+## 收款行也轉 Airwallex（2026-11-16 晚）
+
+### 點解
+Stripe **香港完全唔支援 FPS 收款**（Airwallex 對比表自己都寫咗 ✓）。
+Airwallex 支援（QR code、HK$2.00 + 方式費、T+1、冇 chargeback ✓）。
+而且如果收款同出款唔同一間機構，錢要由 Stripe 過水去 Airwallex（T+2），
+平台仲要 keep 一個 float 頂住未清算嘅 escrow —— 兩本帳、兩次對賬。
+
+費率（2026-11-16 查）：本地卡 Airwallex **3.30% + HK$2.35** vs Stripe
+**3.40% + HK$2.35** ✓。Marketplace 客製價要去同 Airwallex 傾 ✓。
+
+### 程式做咗咩
+- `functions/src/shared/airwallex.ts` — 共同 client（token + fetch + 環境判斷）
+- `functions/src/shared/feeCalculator.ts` — `calculateFee(price, rail)`，
+  處理商費率跟住收款行；`AIRWALLEX_PERCENT_FEE` 可用 env 覆寫 ✓
+- `functions/src/payment/rail.ts` — `paymentRail()`：`PAYMENT_RAIL=airwallex|stripe`，
+  預設 Airwallex（憑證存在時），否則 Stripe ✓
+- `functions/src/payment/airwallex.ts` — `createCollectionIntent`（PaymentIntent +
+  client_secret）、`cancelIntent`、`refundPayment`
+- `functions/src/payment/config.ts` — `getPaymentConfig`：client 問 server 用邊條行，
+  拎返 public client id（同環境）✓
+- `functions/src/escrow/createPaymentIntent.ts` — 分岔兩條收款行；Airwallex 唔需要
+  賣家開 Stripe 帳戶 ✓；冪等檢查兩邊都有 ✓
+- `functions/src/webhooks/airwallexWebhook.ts` — `payment_intent.succeeded` 事件：
+  HMAC-SHA256 驗簽（`x-timestamp` + body）✓、同 Stripe 一樣冪等計法 ✓、
+  解析唔到就 200、寫入失敗先 5xx ✓
+- `src/services/paymentConfig.ts` + `src/components/AirwallexPaymentForm.web.tsx`
+  （drop-in element：卡 + FPS + 錢包喺同一個 UI ✓）
+- `src/screens/CheckoutScreen.tsx` — 讀收款行；Airwallex 行：先開 intent，
+  再開 element，買家喺 element 入面確認 ✓
+
+### 未驗證
+- Airwallex drop-in element 嘅 init/createElement 參數係照文檔寫，未用真憑證跑過
+- Airwallex webhook URL 要喺 dashboard 開：
+  `https://us-central1-pokemarket-255c6.cloudfunctions.net/airwallexWebhook`
+  事件揀 `payment_intent.succeeded`（+ `payment_intent.payment_failed`）✓
+- 手機版（native）未有 Airwallex 收款（卡付款本來就係 stub，唔算退步 ✓）
+
+### ⚠️ 漏錢疑點（未查實）
+App 假設 Stripe 卡費 **2.9% + HK$2.35**，但 Stripe 香港公開價係
+**3.40% + HK$2.35**。之前個測試只驗證「app 收幾多 = Stripe 收幾多」，
+**冇驗證 Stripe 實際抽幾多**。如果真係 3.4%，每筆卡費少收 0.5%
+（HK$1000 一單 = HK$5）。要查：睇 Stripe dashboard 實際費率，或者拉
+`balance_transaction` 睇 fee。
+
 ## 淺色主題 + 三語言（2026-11-15 晚）
 
 ### 語言掣唔 work 嘅原因

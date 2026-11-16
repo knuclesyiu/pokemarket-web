@@ -42,6 +42,8 @@ export { createSellerAccount , setSellerPayoutDetails
 } from './escrow/sellerPayouts';
 export { getSellerOnboardingStatus } from './escrow/sellerPayouts';
 export { createWithdrawal } from './escrow/sellerPayouts';
+export { airwallexWebhook } from './webhooks/airwallexWebhook';
+export { getPaymentConfig } from './payment/config';
 export { confirmPayment } from './escrow/sellerPayouts';
 
 export { extendEscrow } from './escrow/extendEscrow';

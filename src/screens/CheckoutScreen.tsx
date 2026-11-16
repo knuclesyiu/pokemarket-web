@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
 import {
@@ -13,6 +13,8 @@ import { PokemonCard } from '../types';
 import { calculateFee, formatHkd, PLATFORM_FEE_PERCENT, STRIPE_PERCENT_FEE } from '../utils/feeCalculator';
 import { createEscrowPayment, confirmCardPayment } from '../services/stripeService';
 import CardPaymentForm from '../components/CardPaymentForm';
+import AirwallexPaymentForm from '../components/AirwallexPaymentForm';
+import { getPaymentConfig } from '../services/paymentConfig';
 import { notify } from '../components/Feedback';
 import { C, themed } from '../theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -62,6 +64,15 @@ const CheckoutScreen: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   // Card collection form
   const [showCardForm, setShowCardForm] = useState(false);
+  // Which processor takes the money. The server decides; the client
+  // asks, because the client must not carry a processor's choice.
+  const [rail, setRail] = useState<'stripe' | 'airwallex'>('stripe');
+  const [awClientId, setAwClientId] = useState<string | null>(null);
+  const [awEnvironment, setAwEnvironment] = useState<'sandbox' | 'production'>('sandbox');
+  const [awIntent, setAwIntent] = useState<{
+    clientSecret: string;
+    paymentIntentId: string;
+  } | null>(null);
   const [getPaymentMethodId, setGetPaymentMethodId] = useState<
     (() => Promise<string | null>) | null
   >(null);
@@ -71,6 +82,28 @@ const CheckoutScreen: React.FC = () => {
   const deliveryFee = delivery === 'sf' ? 35 : 0;
   const total = fee.buyerTotalHkd + deliveryFee;
 
+  // Which rail is live, and the public identifier for it.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const cfg = await getPaymentConfig();
+        if (cancelled) return;
+        if (cfg.rail === 'airwallex' && cfg.clientId) {
+          setRail('airwallex');
+          setAwClientId(cfg.clientId);
+          setAwEnvironment(cfg.environment === 'production' ? 'production' : 'sandbox');
+        }
+      } catch {
+        // The Stripe rail is the default; if the server cannot say,
+        // that is what we use.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handlePlaceOrder = async () => {
     if (!delivery || !payment) return;
     const uid = getAuth().currentUser?.uid;
@@ -79,7 +112,7 @@ const CheckoutScreen: React.FC = () => {
       return;
     }
     // Card payments require entering card details first
-    if (payment === 'card' && !showCardForm) {
+    if (payment === 'card' && !showCardForm && rail === 'stripe') {
       setShowCardForm(true);
       return;
     }
@@ -100,10 +133,20 @@ const CheckoutScreen: React.FC = () => {
         cardName: card.name,
         cardId: card.id,
       });
-      // 2. If buyer chose card, confirm with Stripe SDK using clientSecret.
-      //    FPS path skips this and waits for buyer to transfer manually;
-      //    order stays in 'awaiting_fps' until webhook confirms receipt.
-      if (payment === 'card') {
+      // 2. The Airwallex element confirms the payment itself, so the
+      //    intent has to exist before the element is shown. The first
+      //    tap creates it and opens the element; the buyer's
+      //    confirmation inside the element is what moves the order on.
+      if (rail === 'airwallex') {
+        if (!awIntent) {
+          setAwIntent({ clientSecret, paymentIntentId });
+          setShowCardForm(true);
+          setSubmitting(false);
+          return;
+        }
+      } else if (payment === 'card') {
+        //    FPS path skips this and waits for buyer to transfer manually;
+        //    order stays in 'awaiting_fps' until webhook confirms receipt.
         // The card form hands us a factory that turns the card the user
         // entered (collected by Stripe's own element) into a
         // PaymentMethod. Stripe never lets raw card data touch our code.
@@ -116,6 +159,7 @@ const CheckoutScreen: React.FC = () => {
       // 3. Order created server-side; navigate to status screen with real ID.
       setCreatedOrderId(paymentIntentId);
       setOrderPlaced(true);
+      setShowCardForm(false);
     } catch (e: any) {
       console.error('[Checkout] place order failed:', e);
       notify(t('下單失敗'), e?.message ?? t('請稍後再試'));
@@ -412,30 +456,44 @@ const CheckoutScreen: React.FC = () => {
             <Text style={modalStyles.title}>{t('💳 信用卡資料')}</Text>
             <Text style={modalStyles.subtitle}>{t('透過 Stripe 加密處理。款項先由平台託管，收卡後釋放。')}</Text>
 
-            <CardPaymentForm
-              onPaymentMethodReady={setGetPaymentMethodId}
-              submitting={submitting}
-            />
+            {rail === 'airwallex' && awIntent && awClientId ? (
+              <AirwallexPaymentForm
+                clientSecret={awIntent.clientSecret}
+                paymentIntentId={awIntent.paymentIntentId}
+                merchantOrderId={createdOrderId ?? ''}
+                amountHkd={total}
+                clientId={awClientId}
+                environment={awEnvironment}
+                onSuccess={() => {
+                  setShowCardForm(false);
+                  setOrderPlaced(true);
+                }}
+                onError={(m) => notify(t('付款失敗'), m)}
+              />
+            ) : (
+              <CardPaymentForm
+                onPaymentMethodReady={setGetPaymentMethodId}
+                submitting={submitting}
+              />
+            )}
 
-            <TouchableOpacity
-              style={modalStyles.confirmAddressBtn}
-              onPress={handlePlaceOrder}
-              disabled={submitting || !getPaymentMethodId}
-            >
-              {submitting ? (
-                <ActivityIndicator color={C.void} />
-              ) : (
-                <Text style={modalStyles.confirmAddressBtnText}>
-                  立即支付 HK$ {total.toLocaleString()}
-                </Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={modalStyles.closeBtn}
-              onPress={() => setShowCardForm(false)}
-            >
-              <Text style={modalStyles.closeText}>{t('返回')}</Text>
-            </TouchableOpacity>
+            {/* On the Airwallex rail the buyer confirms inside the
+                element, so there is no confirm button of our own. */}
+            {rail === 'stripe' && (
+              <TouchableOpacity
+                style={modalStyles.confirmAddressBtn}
+                onPress={handlePlaceOrder}
+                disabled={submitting || !getPaymentMethodId}
+              >
+                {submitting ? (
+                  <ActivityIndicator color={C.void} />
+                ) : (
+                  <Text style={modalStyles.confirmAddressBtnText}>
+                    立即支付 HK$ {total.toLocaleString()}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>

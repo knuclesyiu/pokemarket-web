@@ -34,6 +34,11 @@ import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { stripeClient, stripeSecretKey } from '../shared/stripe';
 import { calculateFee, ESCROW_MIN_HKD } from '../shared/feeCalculator';
+import { paymentRail } from '../payment/rail';
+import {
+  createCollectionIntent,
+  retrieveIntent,
+} from '../payment/airwallex';
 
 const db = admin.firestore();
 
@@ -106,11 +111,16 @@ export const createPaymentIntent = functions.onCall(
     throw new functions.HttpsError('not-found', '賣家帳戶不存在');
   }
 
+  // Which processor takes the money. The seller does not need a
+  // Stripe account on the Airwallex rail — that is the whole point of
+  // it — so the check below only applies to Stripe.
+  const rail = paymentRail();
+
   const sellerRecord = await db.doc(`sellers/${data.sellerId}`).get();
   const sellerStripeAccountId = sellerRecord.data()?.stripeAccountId as
     | string
     | undefined;
-  if (!sellerStripeAccountId) {
+  if (rail === 'stripe' && !sellerStripeAccountId) {
     throw new functions.HttpsError(
       'failed-precondition',
       '賣家尚未完成 Stripe 帳戶設定，無法收款',
@@ -120,7 +130,7 @@ export const createPaymentIntent = functions.onCall(
   // 4. Compute fees — the server is the only place the fee policy
   //    lives. The client displays what this produces; it never sends
   //    the total it wants to be charged.
-  const fee = calculateFee(cardPriceHkd);
+  const fee = calculateFee(cardPriceHkd, rail);
   const buyerTotalHkd = Math.round((fee.buyerTotalHkd + deliveryFeeHkd) * 100) / 100;
   const amountCents = Math.round(buyerTotalHkd * 100);
 
@@ -142,10 +152,17 @@ export const createPaymentIntent = functions.onCall(
       existing.paymentIntentStatus !== 'canceled' &&
       ['awaiting_payment', 'payment_failed'].includes(existing.status)
     ) {
-      const existingPi = await stripeClient().paymentIntents.retrieve(
-        existing.paymentIntentId,
-      );
-      if (!['canceled', 'succeeded'].includes(existingPi.status)) {
+      const existingPi =
+        rail === 'airwallex'
+          ? await retrieveIntent(existing.paymentIntentId)
+          : await stripeClient().paymentIntents.retrieve(
+              existing.paymentIntentId,
+            );
+      const stillOpen =
+        rail === 'airwallex'
+          ? !['SUCCEEDED', 'CANCELLED'].includes(String(existingPi?.status ?? '').toUpperCase())
+          : !['canceled', 'succeeded'].includes(existingPi.status);
+      if (stillOpen) {
         return {
           orderId,
           clientSecret: existingPi.client_secret,
@@ -161,23 +178,45 @@ export const createPaymentIntent = functions.onCall(
     }
   }
 
-  // 6. Create the Stripe PaymentIntent. The charge lands on the
-  //    platform account, so Stripe holds the buyer's money until the
-  //    release. No transfer_data, no application_fee_amount — the
-  //    platform fee is kept out of the balance when the seller is
-  //    paid.
-  const paymentIntent = await stripeClient().paymentIntents.create({
-    amount: amountCents,
-    currency: 'hkd',
-    metadata: {
-      orderId,
-      buyerId,
+  // 6. Create the payment intent. The charge lands on the platform's
+  //    own account, so the processor holds the buyer's money until the
+  //    release. No destination, no application fee — the platform fee
+  //    is kept out of the balance when the seller is paid.
+  let paymentIntentId: string;
+  let clientSecret: string;
+  if (rail === 'airwallex') {
+    const intent = await createCollectionIntent({
+      amountHkd: buyerTotalHkd,
+      merchantOrderId: orderId,
+      requestId: `pm-${orderId}`,
+      metadata: {
+        orderId,
+        buyerId,
+        sellerId: data.sellerId,
+        cardId: data.cardId,
+        deliveryMethod: data.deliveryMethod,
+      },
       sellerId: data.sellerId,
-      cardId: data.cardId,
-      deliveryMethod: data.deliveryMethod,
-    },
-    description: `PokeMarket: ${data.cardName}`,
-  });
+      buyerId,
+    });
+    paymentIntentId = intent.paymentIntentId;
+    clientSecret = intent.clientSecret;
+  } else {
+    const paymentIntent = await stripeClient().paymentIntents.create({
+      amount: amountCents,
+      currency: 'hkd',
+      metadata: {
+        orderId,
+        buyerId,
+        sellerId: data.sellerId,
+        cardId: data.cardId,
+        deliveryMethod: data.deliveryMethod,
+      },
+      description: `PokeMarket: ${data.cardName}`,
+    });
+    paymentIntentId = paymentIntent.id;
+    clientSecret = paymentIntent.client_secret!;
+  }
 
   // 7. Write order doc (status='awaiting_payment' — webhook will flip to 'paid')
   await orderRef.set({
@@ -198,8 +237,9 @@ export const createPaymentIntent = functions.onCall(
     totalFeeHkd: fee.totalFeeHkd,
     sellerNetHkd: fee.sellerNetHkd,
     deliveryMethod: data.deliveryMethod,
-    paymentIntentId: paymentIntent.id,
-    clientSecret: paymentIntent.client_secret,
+    paymentIntentId,
+    paymentRail: rail,
+    clientSecret,
     sellerStripeAccountId,
     status: 'awaiting_payment',
     createdAt: FieldValue.serverTimestamp(),
@@ -209,8 +249,9 @@ export const createPaymentIntent = functions.onCall(
   // 8. Return
   return {
     orderId,
-    clientSecret: paymentIntent.client_secret,
-    paymentIntentId: paymentIntent.id,
+    clientSecret,
+    paymentIntentId,
+    paymentRail: rail,
     amount: buyerTotalHkd,
     cardPrice: cardPriceHkd,
     platformFee: fee.platformFeeHkd,
