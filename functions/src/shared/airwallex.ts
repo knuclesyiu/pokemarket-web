@@ -31,37 +31,64 @@ export function airwallexConfigured(): boolean {
 }
 
 /**
+ * The bearer token, cached.
+ *
+ * Airwallex's token lasts thirty minutes and the documentation is
+ * explicit that the authentication endpoint should not be called
+ * before every request. An instance keeps the token in memory and
+ * reuses it until it is nearly expired.
+ */
+let cachedToken: { token: string; expiresAt: number } | null = null;
+
+/**
  * A bearer token for the client API.
  *
- * The login takes the client id and the API key. Newer Airwallex keys
- * are issued as a client id plus an API key, older ones as a client id
- * plus a client secret; both shapes are tried so the deploy does not
- * depend on which one the account was issued.
+ * The key and the client id go in the request HEADERS — `x-api-key` and
+ * `x-client-id`. Older documentation showed them in a JSON body, and
+ * an account can be issued either an admin key or a scoped key, so
+ * both shapes are sent: the headers are what the API documents, and
+ * the body is harmless.
  */
 export async function airwallexToken(): Promise<string> {
+  if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
+    return cachedToken.token;
+  }
+
   const clientId = process.env.AIRWALLEX_CLIENT_ID;
   const apiKey = process.env.AIRWALLEX_API_KEY;
   if (!clientId || !apiKey) {
     throw new Error('AIRWALLEX_CLIENT_ID / AIRWALLEX_API_KEY 未設定');
   }
 
-  const attempts = [
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-api-key': apiKey,
+    'x-client-id': clientId,
+  };
+  const bodies = [
     { client_id: clientId, api_key: apiKey, grant_type: 'client_credentials' },
     { client_id: clientId, client_secret: apiKey, grant_type: 'client_credentials' },
   ];
 
   let lastError = '';
-  for (const body of attempts) {
+  for (const body of bodies) {
     const res = await fetch(`${airwallexBase()}/api/v1/authentication/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
     });
     const text = await res.text();
     if (res.ok) {
       try {
         const parsed = JSON.parse(text);
-        if (parsed?.access_token) return parsed.access_token as string;
+        if (parsed?.access_token) {
+          const expiresIn = Number(parsed.expires_in ?? 1800);
+          cachedToken = {
+            token: parsed.access_token as string,
+            expiresAt: Date.now() + expiresIn * 1000,
+          };
+          return cachedToken.token;
+        }
       } catch {
         /* fall through to the next shape */
       }
