@@ -252,6 +252,51 @@ Firebase 官方指定要用 `signInWithRedirect`。
 - 賣家提現要賣家本人完成 Stripe KYC（`stripe_transfers` 仍 restricted）
 - 交易紀錄嘅 counterparty 仍然係 uid 前 6 位，應該用 displayName
 
+## 出款行改成 Airwallex / 轉數快（2026-11-16）
+
+### 點解要改
+賣家唔想做 Stripe 15 項 KYC 先收到錢。Airwallex 嘅 marketplace
+Ledger Account model 做 **light screening**，賣家只需要「戶口持有人姓名 +
+收款識別碼（FPS ID / 手機 / 電郵 / HKID，或者行號+帳號）」。
+
+### 程式做咗咩
+- `functions/src/payout/airwallex.ts` — Airwallex client：認證、開收款帳戶
+  (recipient, RECIPIENT)、開收款人 (beneficiary)、出款 (transfer)
+- `functions/src/payout/rail.ts` — 出款行選擇：`PAYOUT_RAIL=airwallex|stripe`，
+  預設係 Airwallex（如果憑證存在），Stripe 保留做 fallback
+- `functions/src/payout/secrets.ts` — `AIRWALLEX_CLIENT_ID` / `AIRWALLEX_API_KEY`
+  經 `defineSecret()` 綁定（`secrets:set` 唔會自動綁，一定要 declare）
+- `functions/src/escrow/sellerPayouts.ts`
+  - `setSellerPayoutDetails` — 賣家提交收款資料 → server 開帳戶 + 收款人
+  - `getSellerPayoutStatus` — 狀態，識別碼會遮住（只顯示最後 4 個字元）
+  - `createWithdrawal` — 分岔兩條出款行，兩個都行同一個 `recordPayout`
+    transaction（餘額同 payout 記錄一齊寫）
+- `src/screens/SellerPayoutDetailsScreen.tsx` — 收款設定表單
+- Profile 賣家設定：`收款設定（轉數快）` → 新畫面；`Stripe 收款帳戶` 保留
+
+### 未驗證嘅位（要真憑證先試到）
+`scripts/airwallex_payout_probe.mjs` 會行：認證 → 開收款帳戶 → 提交審批 →
+讀狀態 → 開收款人 → 出款 HK$10。**用 sandbox 跑唔會郁真錢。**
+
+### Ken 要做嘅嘢
+1. Airwallex dashboard → 开发者 → API keys → 產生一組 **Sandbox** key
+   （Production 嗰組遲啲先，唔好一開始就用真錢）
+2. 填 `~/.hermes/secrets/airwallex-pokemarket.env`（mode 600，唔好 paste 落 chat）
+3. `bash scripts/set_airwallex_secrets.sh` → 推上 Secret Manager
+4. `cd functions && firebase deploy --only functions`
+5. `node scripts/airwallex_payout_probe.mjs` → 睇 4 步過唔過
+
+### 營運上嘅位（要諗清楚）
+Airwallex 出款係由**平台自己嘅 Airwallex 戶口**出。而家買家嘅錢收喺
+Stripe 平台戶口。所以：
+
+- Stripe 平台餘額 → 要轉去 Airwallex（銀行轉賬，T+2）先出得咗款
+- 想賣家即時收到，平台要 keep 一個 float（預先喺 Stripe 戶口留住錢）
+- **牌照**：平台「代客持有資金 + 代賣家出款」嘅形態，會唔會觸及 PSRO / MSO，
+  要搵律師睇。呢個風險喺改用 Airwallex 之前已經存在（separate charges and
+  transfers 一樣係平台短暫持有買家嘅錢），但出款由自己做會令責任更明顯。
+  Stripe Connect 版本（平台用持牌機構嘅錢）係監管上另一個位置。
+
 ## 淺色主題 + 三語言（2026-11-15 晚）
 
 ### 語言掣唔 work 嘅原因

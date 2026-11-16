@@ -302,15 +302,26 @@ const ProfileScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>{t('🏪 賣家設定')}</Text>
         <TouchableOpacity
           style={styles.actionRow}
-          onPress={() => navigation.navigate('SellerOnboarding')}
+          onPress={() => navigation.navigate('SellerPayoutDetails')}
         >
-          <Text style={styles.actionIcon}>💳</Text>
+          <Ionicons name="wallet-outline" size={16} color={C.textTertiary} />
           <View style={styles.actionContent}>
-            <Text style={styles.actionLabel}>{t('收款帳戶')}</Text>
-            <Text style={styles.actionSub}>{t('設定 Stripe 收款戶口，賣出嘅卡收到嘅錢會直接入你嘅銀行')}</Text>
+              <Text style={styles.actionLabel}>{t('收款設定（轉數快）')}</Text>
+              <Text style={styles.actionSub}>{t('填姓名同收款識別碼，賣出嘅卡收到嘅錢會直接入你嘅銀行')}</Text>
           </View>
           <Text style={styles.actionArrow}>→</Text>
         </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionRow}
+            onPress={() => navigation.navigate('SellerOnboarding')}
+          >
+            <Ionicons name="card-outline" size={16} color={C.textTertiary} />
+            <View style={styles.actionContent}>
+              <Text style={styles.actionLabel}>{t('Stripe 收款帳戶')}</Text>
+              <Text style={styles.actionSub}>{t('用 Stripe 出款（舊有做法，賣家要做 KYC）')}</Text>
+            </View>
+            <Text style={styles.actionArrow}>→</Text>
+          </TouchableOpacity>
       </View>
 
       {/* Preferences */}

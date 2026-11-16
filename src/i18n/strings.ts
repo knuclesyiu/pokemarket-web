@@ -28,6 +28,22 @@ export interface LocalisedString {
 }
 
 export const STRINGS: Record<string, LocalisedString> = {
+  '收款設定': { 'zh-HK': '收款設定', 'zh-CN': '收款设置', 'en': "Payout details" },
+  '出款服務未設定，暫時未能提交收款資料。': { 'zh-HK': '出款服務未設定，暫時未能提交收款資料。', 'zh-CN': '出款服务未设定，暂时无法提交收款资料。', 'en': "The payout service is not set up yet, so payout details cannot be submitted." },
+  '已設定收款資料': { 'zh-HK': '已設定收款資料', 'zh-CN': '已设定收款资料', 'en': "Payout details saved" },
+  '銀行戶口持有人姓名': { 'zh-HK': '銀行戶口持有人姓名', 'zh-CN': '银行账户持有人姓名', 'en': "Name on the bank account" },
+  '同銀行戶口一樣嘅名': { 'zh-HK': '同銀行戶口一樣嘅名', 'zh-CN': '同银行账户一样的名字', 'en': "The name on your bank account" },
+  '出款只會畀同名嘅收款人，所以呢個名一定要啱。': { 'zh-HK': '出款只會畀同名嘅收款人，所以呢個名一定要啱。', 'zh-CN': '出款只会给同名的收款人，所以这个名字一定要对。', 'en': "Money is only released to a beneficiary with the same name, so this has to be exact." },
+  '收款方式': { 'zh-HK': '收款方式', 'zh-CN': '收款方式', 'en': "How to receive" },
+  '收款識別碼': { 'zh-HK': '收款識別碼', 'zh-CN': '收款识别码', 'en': "Payout identifier" },
+  '請填寫銀行帳號': { 'zh-HK': '請填寫銀行帳號', 'zh-CN': '请填写银行账号', 'en': "Enter the account number" },
+  '行號唔可以代替帳號': { 'zh-HK': '行號唔可以代替帳號', 'zh-CN': '行号不可以代替账号', 'en': "The branch code is not the account number" },
+  '儲存收款資料': { 'zh-HK': '儲存收款資料', 'zh-CN': '保存收款资料', 'en': "Save payout details" },
+  '資料只會存喺伺服器，唔會俾第三方睇。轉數快出款一般 0-1 個工作天到帳。': { 'zh-HK': '資料只會存喺伺服器，唔會俾第三方睇。轉數快出款一般 0-1 個工作天到帳。', 'zh-CN': '资料只会存在服务器，不会给第三方看。转数快出款一般 0-1 个工作天到账。', 'en': "These details are stored on the server and are not shown to anyone else. An FPS payout usually arrives within 0-1 business days." },
+  '收款設定（轉數快）': { 'zh-HK': '收款設定（轉數快）', 'zh-CN': '收款设置（转数快）', 'en': "Payout details (FPS)" },
+  '填姓名同收款識別碼，賣出嘅卡收到嘅錢會直接入你嘅銀行': { 'zh-HK': '填姓名同收款識別碼，賣出嘅卡收到嘅錢會直接入你嘅銀行', 'zh-CN': '填姓名和收款识别码，卖出的卡收到的钱会直接进入你的银行', 'en': "Enter your name and payout identifier - the money from a card you sell goes straight to your bank" },
+  'Stripe 收款帳戶': { 'zh-HK': 'Stripe 收款帳戶', 'zh-CN': 'Stripe 收款账户', 'en': "Stripe payout account" },
+  '用 Stripe 出款（舊有做法，賣家要做 KYC）': { 'zh-HK': '用 Stripe 出款（舊有做法，賣家要做 KYC）', 'zh-CN': '用 Stripe 出款（旧有做法，卖家要做 KYC）', 'en': "Pay out through Stripe (the old way - the seller has to do KYC)" },
   '買家已付款，請寄出卡片': { 'zh-HK': '買家已付款，請寄出卡片', 'zh-CN': '买家已付款，请寄出卡片', 'en': 'The buyer has paid — send the card' },
   '賣家寄出後，買家收到卡會確認收貨，款項就會釋放俾你。': { 'zh-HK': '賣家寄出後，買家收到卡會確認收貨，款項就會釋放俾你。', 'zh-CN': '卖家寄出后，买家收到卡会确认收货，款项就会释放给你。', 'en': 'Once the buyer confirms the card, the money is released to you.' },
   '我已寄出卡片': { 'zh-HK': '我已寄出卡片', 'zh-CN': '我已寄出卡片', 'en': "I've sent the card" },

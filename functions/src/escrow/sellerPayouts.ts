@@ -31,6 +31,16 @@ import {
   stripeV2,
   recipientCapabilities,
 } from '../shared/stripe';
+import { airwallexClientId, airwallexApiKey } from '../payout/secrets';
+import {
+  airwallexConfigured,
+  createBeneficiary,
+  createRecipient,
+  createTransfer,
+  recipientStatus,
+  type SellerPayoutDetails,
+} from '../payout/airwallex';
+import { payoutRail } from '../payout/rail';
 
 const db = admin.firestore();
 
@@ -375,6 +385,66 @@ export const createWithdrawal = functions.onCall(
       (src.chargeId ?? null) !== null,
   );
 
+  // Which rail pays this out. Airwallex moves the money by FPS out of
+  // the platform's own account; Stripe moves it into a connected
+  // account and then on to the seller's bank.
+  const rail = payoutRail();
+
+  if (rail === 'airwallex') {
+    // ── Airwallex / FPS ────────────────────────────────────────────
+    const sellerSnap = await db.doc(`sellers/${uid}`).get();
+    const sellerData = sellerSnap.data() as any;
+    const recipientAccountId = sellerData?.airwallexRecipientId as string | null;
+    const beneficiaryId = sellerData?.airwallexBeneficiaryId as string | null;
+    if (!recipientAccountId || !beneficiaryId) {
+      throw new functions.HttpsError(
+        'failed-precondition',
+        '未填寫收款資料，未能出款',
+      );
+    }
+
+    let awTransfer;
+    try {
+      awTransfer = await createTransfer({
+        recipientAccountId,
+        beneficiaryId,
+        amountHkd,
+        reference: `PM-${uid.slice(0, 8)}-${Date.now()}`,
+        description: 'PokeMarket 賣家結算',
+      });
+    } catch (err: any) {
+      const message = String(err?.message ?? '');
+      if (/insufficient|balance|fund/i.test(message)) {
+        throw new functions.HttpsError(
+          'failed-precondition',
+          '平台資金未到帳，請稍後再試',
+        );
+      }
+      throw new functions.HttpsError(
+        'internal',
+        `出款失敗：${message.slice(0, 200)}`,
+      );
+    }
+
+    await recordPayout({
+      uid,
+      amountHkd,
+      transferId: awTransfer.transferId,
+      status: awTransfer.status,
+      rail: 'airwallex',
+      sourceTransaction: null,
+      sources,
+    });
+    return {
+      success: true,
+      amountHkd,
+      rail: 'airwallex',
+      transferId: awTransfer.transferId,
+      status: awTransfer.status,
+      message: '出款已提交，會喺 0-1 個工作天內到帳',
+    };
+  }
+
   // A Stripe payout cannot name a connected account: it pays out to a
   // bank account that belongs to the account making the payout. The
   // right call is a transfer, which moves the money from the
@@ -415,6 +485,46 @@ export const createWithdrawal = functions.onCall(
 
   // Record the payout and take the money out of the balance in one
   // transaction. If either half fails, neither happens.
+  await recordPayout({
+    uid,
+    amountHkd,
+    transferId: transfer.id,
+    status: 'submitted',
+    rail: 'stripe',
+    sourceTransaction: exactSource?.chargeId ?? null,
+    sources,
+    stripeAccountId: onFile,
+  });
+
+  return {
+    success: true,
+    amountHkd,
+    rail: 'stripe',
+    transferId: transfer.id,
+    message: '提現已提交，會喺 1-2 個工作天內到帳',
+  };
+},
+);
+
+/**
+ * Take the money out of the seller's balance and record the payout.
+ *
+ * One transaction: either the balance drops and the payout is
+ * recorded, or neither happens. A payout that is recorded without the
+ * balance dropping lets the seller ask again and be paid twice.
+ */
+async function recordPayout(args: {
+  uid: string;
+  amountHkd: number;
+  transferId: string;
+  status: string;
+  rail: string;
+  sourceTransaction: string | null;
+  sources: Array<{ id: string; remainingHkd: number }>;
+  stripeAccountId?: string;
+}): Promise<void> {
+  const { uid, amountHkd } = args;
+  const walletRef = db.doc(`users/${uid}/wallet/main`);
   const payoutRef = db.collection('payouts').doc();
   await db.runTransaction(async (tx) => {
     const fresh = await tx.get(walletRef);
@@ -432,18 +542,20 @@ export const createWithdrawal = functions.onCall(
     tx.set(payoutRef, {
       id: payoutRef.id,
       sellerId: uid,
-      stripeAccountId: onFile,
-      stripeTransferId: transfer.id,
-      sourceTransaction: exactSource?.chargeId ?? null,
+      rail: args.rail,
+      stripeAccountId: args.stripeAccountId ?? null,
+      stripeTransferId: args.rail === 'stripe' ? args.transferId : null,
+      airwallexTransferId: args.rail === 'airwallex' ? args.transferId : null,
+      sourceTransaction: args.sourceTransaction,
       amountHkd,
-      status: 'submitted',
+      status: args.status,
       createdAt: FieldValue.serverTimestamp(),
     });
 
     // Mark the charges this money came from as used, so the same
     // money cannot be named as the source of a second transfer.
     let left = amountHkd;
-    for (const src of sources) {
+    for (const src of args.sources) {
       if (left <= 0.005) break;
       const srcRef = db.doc(`payout_sources/${src.id}`);
       const take = Math.min(Number(src.remainingHkd), left);
@@ -455,15 +567,7 @@ export const createWithdrawal = functions.onCall(
       left -= take;
     }
   });
-
-  return {
-    success: true,
-    payoutId: transfer.id,
-    status: 'submitted',
-    amountHkd,
-  };
-},
-);;
+}
 
 /* ── buyer confirming an FPS transfer ───────────────────────── */
 
@@ -520,3 +624,183 @@ export const confirmPayment = functions.onCall(async (request) => {
     orderId: orders.docs[0].id,
   };
 });
+
+
+/**
+ * The seller tells us how to be paid.
+ *
+ * Four fields, and that is the whole point: the seller is not made to
+ * complete a KYC form to be paid for a card. The account name has to
+ * be the name on the bank account, because the payout rail only
+ * releases money to a beneficiary whose name matches the recipient
+ * account's.
+ *
+ * The details are written by the server. The client is never asked to
+ * say which rail pays it out, and never asked to name an account.
+ */
+export const setSellerPayoutDetails = functions.onCall(
+  { secrets: [airwallexClientId, airwallexApiKey] },
+  async (request) => {
+    if (!request.auth) {
+      throw new functions.HttpsError('unauthenticated', '需要登入');
+    }
+    const uid = request.auth.uid;
+
+    if (!airwallexConfigured()) {
+      throw new functions.HttpsError(
+        'failed-precondition',
+        '出款服務未設定，暫時未能設定收款資料',
+      );
+    }
+
+    const { accountName, routingType, routingValue, accountNumber } =
+      request.data as Partial<SellerPayoutDetails>;
+
+    if (!accountName || accountName.trim().length < 2) {
+      throw new functions.HttpsError('invalid-argument', '請填寫銀行戶口持有人姓名');
+    }
+    const allowed: SellerPayoutDetails['routingType'][] = [
+      'phone_number',
+      'email_address',
+      'fps_identifier',
+      'personal_id_number',
+      'bank_code',
+    ];
+    if (!routingType || !allowed.includes(routingType)) {
+      throw new functions.HttpsError('invalid-argument', '請選擇收款方式');
+    }
+    if (!routingValue || routingValue.trim().length < 3) {
+      throw new functions.HttpsError('invalid-argument', '請填寫收款識別碼');
+    }
+    if (routingType === 'bank_code' && !accountNumber) {
+      throw new functions.HttpsError('invalid-argument', '請填寫銀行帳號');
+    }
+
+    const details: SellerPayoutDetails = {
+      accountName: accountName.trim(),
+      routingType,
+      routingValue: routingValue.trim(),
+      ...(routingType === 'bank_code' && accountNumber
+        ? { accountNumber: accountNumber.trim() }
+        : {}),
+    };
+
+    const email = request.auth.token?.email ?? '';
+
+    let recipientId: string;
+    let status: string;
+    try {
+      const created = await createRecipient(uid, email, details);
+      recipientId = created.recipientId;
+      status = created.status;
+    } catch (err: any) {
+      throw new functions.HttpsError(
+        'internal',
+        `開通收款帳戶失敗：${String(err?.message ?? '').slice(0, 200)}`,
+      );
+    }
+
+    let beneficiaryId: string;
+    try {
+      beneficiaryId = await createBeneficiary(details);
+    } catch (err: any) {
+      throw new functions.HttpsError(
+        'internal',
+        `建立收款人失敗：${String(err?.message ?? '').slice(0, 200)}`,
+      );
+    }
+
+    await db.doc(`sellers/${uid}`).set(
+      {
+        uid,
+        payoutRail: 'airwallex',
+        airwallexRecipientId: recipientId,
+        airwallexBeneficiaryId: beneficiaryId,
+        payoutDetails: {
+          accountName: details.accountName,
+          routingType: details.routingType,
+          routingValue: details.routingValue,
+          accountNumber: details.accountNumber ?? '',
+        },
+        payoutStatus: status,
+        onboarded: String(status).toUpperCase() === 'ACTIVE',
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return { success: true, recipientId, status };
+  },
+);
+
+/**
+ * Whether the seller can be paid, and how.
+ *
+ * The proxy ID is masked: it identifies a person, and the app does not
+ * need to show it back.
+ */
+export const getSellerPayoutStatus = functions.onCall(
+  { secrets: [airwallexClientId, airwallexApiKey] },
+  async (request) => {
+    if (!request.auth) {
+      throw new functions.HttpsError('unauthenticated', '需要登入');
+    }
+    const uid = request.auth.uid;
+    const rail = payoutRail();
+
+    const sellerSnap = await db.doc(`sellers/${uid}`).get();
+    const seller = (sellerSnap.data() ?? {}) as any;
+
+    if (rail !== 'airwallex') {
+      return {
+        rail,
+        configured: Boolean(process.env.STRIPE_SECRET_KEY),
+        onboarded: Boolean(seller.onboarded),
+        details: null,
+      };
+    }
+
+    if (!airwallexConfigured()) {
+      return {
+        rail,
+        configured: false,
+        onboarded: false,
+        details: null,
+      };
+    }
+
+    let status = seller.payoutStatus ?? null;
+    if (seller.airwallexRecipientId) {
+      try {
+        status = await recipientStatus(seller.airwallexRecipientId);
+      } catch {
+        // The status is a convenience, not the answer. Keep what we
+        // know rather than failing the whole call.
+      }
+    }
+
+    const details = seller.payoutDetails
+      ? {
+          accountName: seller.payoutDetails.accountName,
+          routingType: seller.payoutDetails.routingType,
+          maskedValue: maskValue(seller.payoutDetails.routingValue),
+          hasAccountNumber: Boolean(seller.payoutDetails.accountNumber),
+        }
+      : null;
+
+    return {
+      rail,
+      configured: true,
+      onboarded: String(status ?? '').toUpperCase() === 'ACTIVE',
+      status,
+      details,
+    };
+  },
+);
+
+/** Show the last few characters and nothing else. */
+function maskValue(value: string): string {
+  const v = String(value ?? '');
+  if (v.length <= 4) return '*'.repeat(v.length);
+  return `${'*'.repeat(Math.max(0, v.length - 4))}${v.slice(-4)}`;
+}

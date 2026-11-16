@@ -32,6 +32,7 @@ import LoginScreen from "./src/screens/auth/LoginScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import EditProfileScreen from "./src/screens/EditProfileScreen";
 import SellerOnboardingScreen from "./src/screens/SellerOnboardingScreen";
+import SellerPayoutDetailsScreen from "./src/screens/SellerPayoutDetailsScreen";
 import WithdrawScreen from "./src/screens/WithdrawScreen";
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { AppearanceProvider } from "./src/contexts/AppearanceContext";

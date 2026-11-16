@@ -16,7 +16,10 @@
       ],
       "predeploy": [
         "npm --prefix \"$RESOURCE_DIR\" run build"
-      ]
+      ],
+      "env": {
+        "AIRWALLEX_ENV": "sandbox"
+      }
     }
   ],
   "hosting": {
