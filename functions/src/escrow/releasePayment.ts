@@ -135,27 +135,41 @@ export const releasePayment = functions.onCall(
     );
   }
 
-  // Write transaction records
-  await db.collection(`users/${buyerId}/transactions`).add({
-    type: 'buy',
-    cardName: order.cardName,
-    cardImage: order.cardImageUrl,
-    counterparty: order.sellerName ?? `Seller ${order.sellerId.slice(0, 6)}`,
-    amount: buyerPaidHkd,
-    state: 'released',
-    orderId,
-    createdAt: now,
-  });
-  await db.collection(`users/${order.sellerId}/transactions`).add({
-    type: 'sell',
-    cardName: order.cardName,
-    cardImage: order.cardImageUrl,
-    counterparty: `Buyer ${buyerId.slice(0, 6)}`,
-    amount: releaseAmountHkd,
-    state: 'released',
-    orderId,
-    createdAt: now,
-  });
+    // Write transaction records.
+    //
+    // The counterparty is the person's name. A uid prefix is what a
+    // placeholder looks like: it shows in the transaction list as
+    // "Buyer a1b2c3" and tells the other side nothing. The buyer's
+    // name is looked up here because the order does not carry it.
+    const buyerProfile = await db.doc(`users/${buyerId}`).get();
+    const buyerName =
+      (buyerProfile.data()?.displayName as string | undefined) || '';
+    const sellerName =
+      (order.sellerName as string | undefined) ||
+      ((await db.doc(`users/${order.sellerId}`).get()).data()
+        ?.displayName as string | undefined) ||
+      '';
+
+    await db.collection(`users/${buyerId}/transactions`).add({
+      type: 'buy',
+      cardName: order.cardName,
+      cardImage: order.cardImageUrl,
+      counterparty: sellerName || '賣家',
+      amount: buyerPaidHkd,
+      state: 'released',
+      orderId,
+      createdAt: now,
+    });
+    await db.collection(`users/${order.sellerId}/transactions`).add({
+      type: 'sell',
+      cardName: order.cardName,
+      cardImage: order.cardImageUrl,
+      counterparty: buyerName || '買家',
+      amount: releaseAmountHkd,
+      state: 'released',
+      orderId,
+      createdAt: now,
+    });
 
   return {
     orderId,

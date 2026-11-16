@@ -116,6 +116,9 @@ export const createPaymentIntent = functions.onCall(
   // it — so the check below only applies to Stripe.
   const rail = paymentRail();
 
+  const buyerRecord = await db.doc(`users/${buyerId}`).get();
+  const buyerName = (buyerRecord.data()?.displayName as string | undefined) || '';
+
   const sellerRecord = await db.doc(`sellers/${data.sellerId}`).get();
   const sellerStripeAccountId = sellerRecord.data()?.stripeAccountId as
     | string
@@ -225,6 +228,7 @@ export const createPaymentIntent = functions.onCall(
     sellerId: data.sellerId,
     cardId: data.cardId,
     listingId: listingRef.id,
+    buyerName,
     cardName: listing.cardName ?? data.cardName ?? '',
     cardSet: listing.card?.set?.name ?? listing.cardSet ?? '',
     cardImageUrl: listing.imageUrl ?? listing.card?.imageUrl ?? '',
