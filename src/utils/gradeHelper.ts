@@ -14,27 +14,73 @@ import { C } from '../theme';
 export const GRADE_LABEL: Record<CardGrade, string> = {
   raw: 'Raw (NM)',
   psa10: 'PSA 10',
+  psa95: 'PSA 9.5',
   psa9: 'PSA 9',
   psa8: 'PSA 8',
   psa7: 'PSA 7',
   bgs95: 'BGS 9.5',
   bgs10: 'BGS 10 (Black Label)',
   bgs9: 'BGS 9',
+  bgs8: 'BGS 8',
   cgc10: 'CGC 10',
+  cgc95: 'CGC 9.5',
+  cgc9: 'CGC 9',
   other_graded: 'Graded',
 };
+
+/**
+ * The graders a seller can choose from, and the grades each of them
+ * issues. PSA 9.5 and CGC 9.5 are the ones people forget, so they are
+ * here rather than left out.
+ */
+export const GRADERS = [
+  { id: 'PSA', grades: ['psa10', 'psa95', 'psa9', 'psa8', 'psa7'] as CardGrade[] },
+  { id: 'BGS', grades: ['bgs10', 'bgs95', 'bgs9', 'bgs8'] as CardGrade[] },
+  { id: 'CGC', grades: ['cgc10', 'cgc95', 'cgc9'] as CardGrade[] },
+] as const;
+
+/** The grade a slider-style picker should start on for a grader. */
+export function defaultGradeFor(graderId: string): CardGrade {
+  const grader = GRADERS.find((g) => g.id === graderId);
+  return grader ? grader.grades[0] : 'raw';
+}
+
+/** Every grade a grader offers, in one flat list. */
+export function gradesFor(graderId: string): CardGrade[] {
+  const grader = GRADERS.find((g) => g.id === graderId);
+  return grader ? [...grader.grades] : [];
+}
+
+/** The numeric grade behind a CardGrade, e.g. psa95 → 9.5. */
+export function gradeNumber(grade: CardGrade): number | undefined {
+  const m = /^([a-z]+)(\d+)?/.exec(grade);
+  if (!m) return undefined;
+  const prefix = m[1];
+  const digits = m[2];
+  if (!digits) return undefined;
+  const n = Number(digits);
+  if (prefix === 'psa' || prefix === 'bgs' || prefix === 'cgc') {
+    // psa95 means 9.5, bgs95 means 9.5.
+    return digits.length === 2 ? n / 10 : n;
+  }
+  return n;
+}
 
 // ── Chip colors per grade (background + text) ───────────────────────────────
 export const GRADE_CHIP: Record<CardGrade, { bg: string; text: string; border: string }> = {
   raw:         { bg: 'rgba(136,136,204,0.15)', text: C.textSecondary, border: C.borderActive },
   psa10:       { bg: 'rgba(255,60,60,0.18)',   text: '#FF6B7A', border: C.action },
+  psa95:       { bg: 'rgba(255,107,53,0.18)',  text: '#FF8A5C', border: C.warn },
   psa9:        { bg: 'rgba(212,175,55,0.18)',  text: C.gold, border: C.gold },
   psa8:        { bg: 'rgba(0,200,150,0.15)',   text: C.up, border: C.up },
   psa7:        { bg: 'rgba(136,136,204,0.15)', text: C.textSecondary, border: C.textSecondary },
   bgs95:       { bg: 'rgba(255,60,60,0.18)',   text: '#FF6B7A', border: C.action },
   bgs10:       { bg: 'rgba(139,92,246,0.20)',  text: '#A78BFA', border: C.violet }, // Black Label — special violet
   bgs9:        { bg: 'rgba(212,175,55,0.18)',  text: C.gold, border: C.gold },
+  bgs8:        { bg: 'rgba(0,200,150,0.15)',   text: C.up, border: C.up },
   cgc10:       { bg: 'rgba(255,107,53,0.18)',  text: '#FF8A5C', border: C.warn },
+  cgc95:       { bg: 'rgba(212,175,55,0.18)',  text: C.gold, border: C.gold },
+  cgc9:        { bg: 'rgba(0,200,150,0.15)',   text: C.up, border: C.up },
   other_graded:{ bg: 'rgba(136,136,204,0.15)', text: C.textSecondary, border: C.textSecondary },
 };
 
@@ -52,15 +98,7 @@ export function makeGrading(
               : grade.startsWith('bgs') ? 'BGS'
               : grade.startsWith('cgc') ? 'CGC'
               : 'Other';
-  const gradeValue = grade === 'psa10' ? 10
-                   : grade === 'psa9'  ? 9
-                   : grade === 'psa8'  ? 8
-                   : grade === 'psa7'  ? 7
-                   : grade === 'bgs95' ? 9.5
-                   : grade === 'bgs10' ? 10
-                   : grade === 'bgs9'  ? 9
-                   : grade === 'cgc10' ? 10
-                   : undefined;
+  const gradeValue = gradeNumber(grade);
   const info: GradingInfo = { grade };
   if (grade !== 'raw') info.grader = grader as any;
   if (gradeValue != null) info.gradeValue = gradeValue;
@@ -111,12 +149,16 @@ export function formatGradeChip(info: GradingInfo | undefined): string {
 export const GRADE_PREMIUM_HINT: Record<CardGrade, number> = {
   raw:          1.0,
   psa10:        5.0,   // raw → PSA 10 is typically 3-10× depending on card
+  psa95:        3.0,
   psa9:         1.8,
   psa8:         1.3,
   psa7:         1.1,
   bgs95:        4.5,
   bgs10:        7.0,   // BGS 10 Black Label — extreme premium
   bgs9:         1.6,
+  bgs8:         1.2,
   cgc10:        4.0,
+  cgc95:        2.8,
+  cgc9:         1.7,
   other_graded: 1.5,
 };

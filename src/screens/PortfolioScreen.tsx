@@ -217,7 +217,7 @@ const PortfolioScreen: React.FC = () => {
       {/* Holdings */}
       <View style={styles.sectionHeader}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="briefcase-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>{t('持有卡牌')}</Text></View>
-        <Text style={styles.count}>{portfolioItems.length} 張</Text>
+        <Text style={styles.count}>{t('{p0} 張', { p0: portfolioItems.length })}</Text>
       </View>
 
       {portfolioItems.map((item: PortfolioItem) => (
@@ -371,7 +371,7 @@ const PortfolioScreen: React.FC = () => {
 
             {selectedCard && (
               <Text style={addModalStyles.totalText}>
-                總值：HK$ {(parseInt(addQty) * selectedCard.price).toLocaleString()}
+                {t('總值：HK$ {p0}', { p0: (parseInt(addQty) * selectedCard.price).toLocaleString() })}
               </Text>
             )}
 

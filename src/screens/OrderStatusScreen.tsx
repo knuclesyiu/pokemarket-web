@@ -465,7 +465,7 @@ const OrderStatusScreen: React.FC = () => {
           <View style={styles.completeCard}>
             <Text style={styles.completeEmoji}>🎉</Text>
             <Text style={styles.completeTitle}>{t('交易完成！')}</Text>
-            <Text style={styles.completeSub}>資金已轉俾 {card.counterparty}</Text>
+            <Text style={styles.completeSub}>{t('資金已轉俾 {p0}', { p0: card.counterparty })}</Text>
           </View>
           
           {/* Report Problem button - visible within 30 days of release */}
@@ -503,14 +503,14 @@ const OrderStatusScreen: React.FC = () => {
             <View style={modalStyles.handle} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="lock-open-outline" size={13} color={C.textTertiary} /><Text style={modalStyles.title}>{t('確認釋放款項？')}</Text></View>
             <Text style={modalStyles.subtitle}>
-              資金將直接轉俾賣家，交易完成後無法撤回。{'\n'}
-              請確認已收到卡牌且狀態滿意。
+              {t('資金將直接轉俾賣家，交易完成後無法撤回。')}{'\n'}
+              {t('請確認已收到卡牌且狀態滿意。')}
             </Text>
             <View style={modalStyles.releaseCard}>
               <Text style={modalStyles.releaseAmount}>
                 HK$ {Number(order?.sellerNetHkd ?? card.price).toLocaleString()}
               </Text>
-              <Text style={modalStyles.releaseTo}>款項將轉俾 {card.counterparty}</Text>
+              <Text style={modalStyles.releaseTo}>{t('款項將轉俾 {p0}', { p0: card.counterparty })}</Text>
             </View>
             <View style={modalStyles.actions}>
               <TouchableOpacity

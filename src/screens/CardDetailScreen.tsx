@@ -1,3 +1,4 @@
+import GradeChip from '../components/GradeChip';
 import React, { useState, useEffect } from 'react';
 import { t } from '../i18n';
 import { useAppearance } from '../contexts/AppearanceContext';
@@ -243,6 +244,7 @@ const CardDetailScreen: React.FC = () => {
                   <View style={styles.listingLeft}>
                     <Text style={styles.listingSeller}>{listing.sellerName || t('賣家')}</Text>
                     <Text style={styles.listingCondition}>{listing.condition}</Text>
+                    <GradeChip grading={listing.grading} />
                   </View>
                   <View style={styles.listingRight}>
                     <Text style={styles.listingPrice}>{formatPrice(listing.price)}</Text>
@@ -334,7 +336,7 @@ const CardDetailScreen: React.FC = () => {
         <View style={modalStyles.overlay}>
           <View style={modalStyles.sheet}>
             <View style={modalStyles.handle} />
-            <Text style={modalStyles.title}>放售 {card.name}</Text>
+            <Text style={modalStyles.title}>{t('放售 {p0}', { p0: card.name })}</Text>
             <Text style={modalStyles.subtitle}>{t('選擇掛牌方式')}</Text>
             <TouchableOpacity
               style={modalStyles.option}

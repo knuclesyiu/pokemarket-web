@@ -67,7 +67,7 @@ const CounterOfferSection: React.FC<{
     )}
     {counterOffer.counterCashHkd > 0 && (
       <Text style={styles.counterCashText}>
-        + 現金補貼：HK${counterOffer.counterCashHkd.toLocaleString()}
+        {t('+ 現金補貼：HK${p0}', { p0: counterOffer.counterCashHkd.toLocaleString() })}
       </Text>
     )}
     {counterOffer.counterMessage && (
@@ -224,7 +224,7 @@ const OfferDetailScreen: React.FC = () => {
               {isSeller ? `📤 ${offer.buyerName} 的 Offer` : t('📤 你的 Offer')}
             </Text>
             <Text style={styles.offerTotalValue}>
-              約 HK${totalOfferValue.toLocaleString()}
+              {t('約 HK${p0}', { p0: totalOfferValue.toLocaleString() })}
             </Text>
           </View>
 
@@ -281,7 +281,7 @@ const OfferDetailScreen: React.FC = () => {
           <View style={styles.section}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.sectionTitle}>{t(t('你的還價（可選）'))}</Text></View>
             <Text style={styles.counterHint}>
-              你可以提供不同的卡片或現金作為反提案
+              {t('你可以提供不同的卡片或現金作為反提案')}
             </Text>
             <TextInput
               style={styles.counterMessageInput}

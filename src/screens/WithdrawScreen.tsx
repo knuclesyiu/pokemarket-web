@@ -168,7 +168,7 @@ const WithdrawScreen: React.FC = () => {
             })}`}
           </Text>
           <Text style={styles.balanceHint}>
-            提現最低 HK$ {MIN_WITHDRAWAL_HKD}
+            {t('提現最低 HK$ {p0}', { p0: MIN_WITHDRAWAL_HKD })}
           </Text>
         </View>
 
@@ -203,7 +203,7 @@ const WithdrawScreen: React.FC = () => {
             <ActivityIndicator color={C.void} />
           ) : (
             <Text style={styles.primaryBtnText}>
-              確認提現{parsed > 0 ? ` HK$ ${parsed.toFixed(2)}` : ''}
+              {t('確認提現')}{parsed > 0 ? ` HK$ ${parsed.toFixed(2)}` : ''}
             </Text>
           )}
         </TouchableOpacity>

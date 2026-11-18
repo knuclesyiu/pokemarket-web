@@ -140,7 +140,7 @@ const details = () => [
   { label: t('公司地址'), value: BUSINESS.address },
   { label: t('聯絡電郵'), value: BUSINESS.supportEmail },
   { label: t('聯絡電話'), value: BUSINESS.supportPhone },
-  { label: t('付款方式'), value: PAYMENT_METHODS.join(' · ') },
+  { label: t('付款方式'), value: PAYMENT_METHODS.map((m) => t(m.label)).join(' · ') },
   { label: t('管轄法律'), value: BUSINESS.governingLaw },
 ];
 

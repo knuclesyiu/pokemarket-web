@@ -84,7 +84,7 @@ const NotificationScreen: React.FC = () => {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="notifications-outline" size={18} color={C.textTertiary} /><Text style={styles.headerTitle}>{t('通知')}</Text></View>
         {notifications.filter(n => !n.read).length > 0 && (
           <Text style={styles.unreadCount}>
-            {notifications.filter(n => !n.read).length} 未讀
+            {t('{p0} 未讀', { p0: notifications.filter(n => !n.read).length })}
           </Text>
         )}
       </View>

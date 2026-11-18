@@ -62,9 +62,15 @@ export const BUSINESS = {
   registry: 'Hong Kong Companies Registry',
 } as const;
 
-/** The payment methods the marketplace takes. */
+/**
+ * The payment methods the marketplace takes.
+ *
+ * The labels are translated when they are rendered, not here: a
+ * constant built at import time would keep whatever language was
+ * loaded when the module was first read.
+ */
 export const PAYMENT_METHODS = [
-  'Visa',
-  'Mastercard',
-  'FPS (轉數快)',
+  { id: 'visa', label: 'Visa' },
+  { id: 'mastercard', label: 'Mastercard' },
+  { id: 'fps', label: 'FPS (轉數快)' },
 ] as const;

@@ -31,8 +31,10 @@ export type CardCondition = 'Mint' | 'Near Mint' | 'Excellent' | 'Good' | 'Fair'
 // Graded = PSA/BGS slab. `gradeValue` carries the numeric (e.g. 10, 9.5).
 export type CardGrade =
   | 'raw'              // ungraded, condition is CardCondition
-  | 'psa10' | 'psa9' | 'psa8' | 'psa7'
-  | 'bgs95' | 'bgs10' | 'bgs9' | 'cgc10' | 'other_graded';
+  | 'psa10' | 'psa95' | 'psa9' | 'psa8' | 'psa7'
+  | 'bgs10' | 'bgs95' | 'bgs9' | 'bgs8'
+  | 'cgc10' | 'cgc95' | 'cgc9'
+  | 'other_graded';
 
 export interface GradingInfo {
   grade: CardGrade;

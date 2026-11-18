@@ -88,7 +88,7 @@ const OfferRow: React.FC<{
           )}
         </View>
         <Text style={styles.offerValue}>
-          Offer 總值：HK${totalOfferValue.toLocaleString()}
+          {t('Offer 總值：HK${p0}', { p0: totalOfferValue.toLocaleString() })}
         </Text>
       </View>
 

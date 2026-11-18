@@ -10,6 +10,7 @@
  * - 發送 Offer 按鈕
  */
 
+import GradeChip from '../../components/GradeChip';
 import React, { useState, useEffect } from 'react';
 import { t } from '../../i18n';
 import { useAppearance } from '../../contexts/AppearanceContext';
@@ -202,8 +203,9 @@ const MakeOfferScreen: React.FC = () => {
               <View style={styles.targetCardMeta}>
                 <Text style={styles.targetCardPrice}>HK${listing.price.toLocaleString()}</Text>
                 <Text style={styles.targetCardCondition}>{listing.condition}</Text>
+                <GradeChip grading={listing.grading} showCert />
               </View>
-              <Text style={styles.sellerLabel}>📦 賣家：{listing.sellerName}</Text>
+              <Text style={styles.sellerLabel}>📦 {t('賣家：{p0}', { p0: listing.sellerName })}</Text>
             </View>
           </View>
         </View>
@@ -213,7 +215,7 @@ const MakeOfferScreen: React.FC = () => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('🃏 選擇你的卡片作為 Offer')}</Text>
             <Text style={styles.selectedCount}>
-              已選 {selectedCardIds.size} 張（約 HK${selectedValue.toLocaleString()}）
+              {t('已選 {p0} 張（約 HK${p1}）', { p0: selectedCardIds.size, p1: selectedValue.toLocaleString() })}
             </Text>
           </View>
 

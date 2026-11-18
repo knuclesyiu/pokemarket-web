@@ -129,7 +129,7 @@ const SellerOnboardingScreen: React.FC = () => {
         <Text style={styles.statusBody}>{t(info.body)}</Text>
 
         {accountId ? (
-          <Text style={styles.accountId}>帳戶：{accountId}</Text>
+          <Text style={styles.accountId}>{t('帳戶：{p0}', { p0: accountId })}</Text>
         ) : null}
       </View>
 

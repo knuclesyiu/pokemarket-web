@@ -12,7 +12,7 @@ import type { RootStackParamList } from '../types/navigation';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { auth } from '../services/firebase';
 import { PokemonCard, CardCondition, CardGrade, GradingInfo } from '../types';
-import { GRADE_LABEL, GRADE_CHIP, makeGrading, isPlausibleCert, GRADE_PREMIUM_HINT } from '../utils/gradeHelper';
+import { GRADE_LABEL, GRADE_CHIP, GRADERS, gradesFor, defaultGradeFor, makeGrading, isPlausibleCert, GRADE_PREMIUM_HINT } from '../utils/gradeHelper';
 import ReviewBadge from '../components/ReviewBadge';
 import { calculateFee, PLATFORM_FEE_PERCENT, STRIPE_PERCENT_FEE, STRIPE_FIXED_CENTS, ORDER_MIN_FEE_HKD } from '../utils/feeCalculator';
 import type { CardCondition as CardCondType } from '../types';
@@ -70,6 +70,7 @@ const SellScreen: React.FC = () => {
   const [price, setPrice] = useState('');
   const [condition, setCondition] = useState<CardCondition>('Near Mint');
   const [grade, setGrade] = useState<CardGrade>('raw');
+  const [grader, setGrader] = useState<string>('none');
   const [certNumber, setCertNumber] = useState('');
   const [showCardPicker, setShowCardPicker] = useState(false);
   const [pickerQuery, setPickerQuery] = useState('');
@@ -269,7 +270,7 @@ const SellScreen: React.FC = () => {
                 <View style={styles.previewInfo}>
                   <Text style={styles.previewName}>{selectedCard.name}</Text>
                   <Text style={styles.previewSet}>{selectedCard.set}</Text>
-                  <Text style={styles.previewPrice}>市場參考價：HK$ {selectedCard.price.toLocaleString()}</Text>
+                  <Text style={styles.previewPrice}>{t('市場參考價：HK$ {p0}', { p0: selectedCard.price.toLocaleString() })}</Text>
                   {selectedCard.language && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="globe-outline" size={13} color={C.textTertiary} /><Text style={styles.previewLang}>{selectedCard.language}</Text></View>
                   )}
@@ -364,7 +365,8 @@ const SellScreen: React.FC = () => {
 
           {Number(price) >= REVIEW_THRESHOLD && (
             <View style={styles.reviewNotice}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="time-outline" size={14} color={C.textTertiary} /><Text style={styles.reviewNoticeText}>HK${REVIEW_THRESHOLD}+ 掛牌需進行品相審核
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="time-outline" size={14} color={C.textTertiary} /><Text style={styles.reviewNoticeText}>
+                {t('HK${p0}+ 掛牌需進行品相審核', { p0: REVIEW_THRESHOLD })}
               </Text></View>
             </View>
           )}
@@ -382,26 +384,94 @@ const SellScreen: React.FC = () => {
             ))}
           </View>
 
+          {/* External grading. A slabbed card is worth a different amount
+              from the same card raw, so the grade and the certification
+              number travel with the listing. */}
+          <Text style={styles.fieldLabel}>{t('外部認證（PSA / BGS / CGC）')}</Text>
+          <View style={styles.conditionRow}>
+            <TouchableOpacity
+              style={[styles.conditionChip, !isGraded ? styles.conditionChipActive : null]}
+              onPress={() => { setGrader('none'); setGrade('raw'); setCertNumber(''); }}
+            >
+              <Text style={[styles.conditionText, !isGraded ? styles.conditionTextActive : null]}>
+                {t('無認證（裸卡）')}
+              </Text>
+            </TouchableOpacity>
+            {GRADERS.map(g => (
+              <TouchableOpacity
+                key={g.id}
+                style={[styles.conditionChip, grader === g.id ? styles.conditionChipActive : null]}
+                onPress={() => {
+                  setGrader(g.id);
+                  setGrade(defaultGradeFor(g.id));
+                }}
+              >
+                <Text style={[styles.conditionText, grader === g.id ? styles.conditionTextActive : null]}>
+                  {g.id}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {isGraded && (
+            <>
+              <Text style={styles.fieldLabel}>{t('認證分數')}</Text>
+              <View style={styles.conditionRow}>
+                {gradesFor(grader).map(g => (
+                  <TouchableOpacity
+                    key={g}
+                    style={[styles.conditionChip, grade === g ? styles.conditionChipActive : null]}
+                    onPress={() => setGrade(g)}
+                  >
+                    <Text style={[styles.conditionText, grade === g ? styles.conditionTextActive : null]}>
+                      {GRADE_LABEL[g]}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.fieldLabel}>{t('認證編號')}</Text>
+              <TextInput
+                style={styles.certInput}
+                value={certNumber}
+                onChangeText={setCertNumber}
+                placeholder={t('例如 12345678')}
+                placeholderTextColor={C.textTertiary}
+                autoCapitalize="characters"
+                autoCorrect={false}
+              />
+              {certNumber.length > 0 && !certValid && (
+                <Text style={styles.certError}>{t('認證編號格式不正確')}</Text>
+              )}
+              <Text style={styles.gradeHint}>
+                {t('PSA 認證嘅卡會喺掛牌顯示 PSA 標籤，同埋帶認證編號俾買家核對。')}
+              </Text>
+            </>
+          )}
+
           <View style={styles.feeInfo}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="list-outline" size={15} color={C.textTertiary} /><Text style={styles.feeTitle}>{t('費用說明')}</Text></View>
             <Text style={styles.feeRow}>
-              平台服務費：成交金額 × {Math.round(PLATFORM_FEE_PERCENT * 100)}%
+              {t('平台服務費：成交金額 × {p0}%', { p0: Math.round(PLATFORM_FEE_PERCENT * 100) })}
             </Text>
             <Text style={styles.feeRow}>
-              Stripe 處理費：{Math.round(STRIPE_PERCENT_FEE * 100)}% + HK$ {(STRIPE_FIXED_CENTS / 100).toFixed(2)}/筆
+              {t('Stripe 處理費：{p0}% + HK$ {p1}/筆', {
+                p0: Math.round(STRIPE_PERCENT_FEE * 100),
+                p1: (STRIPE_FIXED_CENTS / 100).toFixed(2),
+              })}
             </Text>
             <Text style={styles.feeRow}>
-              最低手續費：HK$ {ORDER_MIN_FEE_HKD.toFixed(0)}/筆
+              {t('最低手續費：HK$ {p0}/筆', { p0: ORDER_MIN_FEE_HKD.toFixed(0) })}
             </Text>
             {price && Number(price) > 0 && (() => {
               const fee = calculateFee(Number(price));
               return (
                 <>
                   <Text style={styles.feeRow}>
-                    預計總費用：HK$ {fee.totalFeeHkd.toFixed(2)}
+                    {t('預計總費用：HK$ {p0}', { p0: fee.totalFeeHkd.toFixed(2) })}
                   </Text>
                   <Text style={[styles.feeRow, styles.feeRowNet]}>
-                    預計淨收款：HK$ {fee.sellerNetHkd.toFixed(2)}
+                    {t('預計淨收款：HK$ {p0}', { p0: fee.sellerNetHkd.toFixed(2) })}
                   </Text>
                 </>
               );
@@ -465,10 +535,10 @@ const SellScreen: React.FC = () => {
             <View style={styles.reviewInfo}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="list-outline" size={15} color={C.textTertiary} /><Text style={styles.reviewInfoTitle}>{t('品相審核須知')}</Text></View>
               <Text style={styles.reviewInfoText}>
-                · HK${REVIEW_THRESHOLD}+ 掛牌需上傳卡牌相片{'\n'}
-                · 有 PSA/BGS 證書可即時通過{'\n'}
-                · 無證書將由社群投票評級（3人投票）{'\n'}
-                · 審核期間掛牌仍可見，買家會看到「⏳ 評審中」標記
+                {t('· HK${p0}+ 掛牌需上傳卡牌相片', { p0: REVIEW_THRESHOLD })}{'\n'}
+                {t('· 有 PSA/BGS 證書可即時通過')}{'\n'}
+                {t('· 無證書將由社群投票評級（3人投票）')}{'\n'}
+                {t('· 審核期間掛牌仍可見，買家會看到「⏳ 評審中」標記')}
               </Text>
             </View>
           )}
@@ -499,7 +569,7 @@ const SellScreen: React.FC = () => {
             <View>
               <Text style={styles.reviewCardName}>{selectedCard.name}</Text>
               <Text style={styles.reviewCardPrice}>HK$ {Number(price).toLocaleString()}</Text>
-              <Text style={styles.reviewCardCondition}>自評：{condition}</Text>
+              <Text style={styles.reviewCardCondition}>{t('自評：{p0}', { p0: condition })}</Text>
             </View>
             <ReviewBadge status="pending" />
           </View>
@@ -761,6 +831,19 @@ const styles = themed((C) => StyleSheet.create({
   conditionChipActive: { borderColor: COLORS.accentRed, backgroundColor: 'rgba(212,175,55,0.15)' },
   conditionText: { color: C.textSecondary, fontSize: 12, fontWeight: '600' },
   conditionTextActive: { color: COLORS.accentRed },
+  certInput: {
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: C.text,
+    fontSize: 15,
+    marginBottom: 6,
+  },
+  certError: { color: C.down, fontSize: 12, fontWeight: '600', marginBottom: 4 },
+  gradeHint: { color: C.textTertiary, fontSize: 12, lineHeight: 17, marginBottom: 16 },
   feeInfo: { backgroundColor: C.card, borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: C.border },
   feeTitle: { color: C.text, fontSize: 13, fontWeight: '700', marginBottom: 10 },
   feeRow: { color: C.textSecondary, fontSize: 12, marginBottom: 4 },

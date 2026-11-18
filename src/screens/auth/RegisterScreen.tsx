@@ -143,9 +143,9 @@ const RegisterScreen: React.FC = () => {
             onChangeText={setPinConfirm}
           />
           <Text style={styles.pinHint}>
-            • 最少 {MIN_PIN_LENGTH} 位{'\n'}
-            • 只能用數字{'\n'}
-            • 避免 123456、111111 等常見組合
+            {t('• 最少 {p0} 位', { p0: MIN_PIN_LENGTH })}{'\n'}
+            {t('• 只能用數字')}{'\n'}
+            {t('• 避免 123456、111111 等常見組合')}
           </Text>
           <TouchableOpacity style={styles.primaryBtn} onPress={handleSetPin} disabled={loading}>
             {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.primaryBtnText}>{t('確認設定')}</Text>}

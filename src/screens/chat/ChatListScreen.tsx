@@ -119,7 +119,7 @@ const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} /><Text style={styles.headerTitle}>{t('我的訊息')}</Text></View>
         {totalUnread > 0 && (
           <View style={styles.totalBadge}>
-            <Text style={styles.totalBadgeText}>{totalUnread} 未讀</Text>
+            <Text style={styles.totalBadgeText}>{t('{p0} 未讀', { p0: totalUnread })}</Text>
           </View>
         )}
       </View>
@@ -138,7 +138,7 @@ const ChatListScreen: React.FC<Props> = ({ onSelectThread }) => {
             <View style={styles.empty}>
               <Ionicons name="chatbubble-ellipses-outline" size={15} color={C.textTertiary} />
               <Text style={styles.emptyTitle}>{t('尚無訊息')}</Text>
-              <Text style={styles.emptySub}>開始與賣家傾偈吧！{'\n'}去卡牌詳情頁撳「聯絡賣家」即可開始。</Text>
+              <Text style={styles.emptySub}>{t('開始與賣家傾偈吧！')}{'\n'}{t('去卡牌詳情頁撳「聯絡賣家」即可開始。')}</Text>
             </View>
           }
         />

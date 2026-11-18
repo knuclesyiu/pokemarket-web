@@ -175,7 +175,7 @@ const CheckoutScreen: React.FC = () => {
           <Ionicons name="checkmark-circle" size={14} color={C.textTertiary} />
           <Text style={styles.confirmTitle}>{t('訂單已確認！')}</Text>
           <Text style={styles.confirmSub}>
-            款項 HK$ {total.toLocaleString()} 已由平台托管
+            {t('款項 HK$ {p0} 已由平台托管', { p0: total.toLocaleString() })}
           </Text>
           <View style={styles.escrowSummary}>
             <Text style={styles.escrowIcon}>🔐</Text>
@@ -223,7 +223,7 @@ const CheckoutScreen: React.FC = () => {
           <Text style={styles.cardSummaryName}>{card.name}</Text>
           <Text style={styles.cardSummarySet}>{card.set} · {card.number}</Text>
           <Text style={styles.cardSummarySeller}>
-            賣家：{route.params.seller ?? 'CardMaster_HK'}
+            {t('賣家：{p0}', { p0: route.params.seller ?? 'CardMaster_HK' })}
           </Text>
         </View>
         <Text style={styles.cardSummaryPriceGold}>HK$ {card.price.toLocaleString()}</Text>
@@ -489,7 +489,7 @@ const CheckoutScreen: React.FC = () => {
                   <ActivityIndicator color={C.void} />
                 ) : (
                   <Text style={modalStyles.confirmAddressBtnText}>
-                    立即支付 HK$ {total.toLocaleString()}
+                    {t('立即支付 HK$ {p0}', { p0: total.toLocaleString() })}
                   </Text>
                 )}
               </TouchableOpacity>

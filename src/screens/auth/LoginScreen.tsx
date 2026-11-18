@@ -261,7 +261,7 @@ const LoginScreen: React.FC = () => {
               ) : (
                 <>
                   <Text style={styles.label}>{t('輸入驗證碼')}</Text>
-                  <Text style={styles.codeHint}>已發送至 {phone}</Text>
+                  <Text style={styles.codeHint}>{t('已發送至 {p0}', { p0: phone })}</Text>
                   <TextInput
                     style={styles.input}
                     placeholder={t('6 位數字')}
@@ -279,7 +279,7 @@ const LoginScreen: React.FC = () => {
                     )}
                   </TouchableOpacity>
                   {countdown > 0 ? (
-                    <Text style={styles.resend}>{countdown}s 後可重發</Text>
+                    <Text style={styles.resend}>{t('{p0}s 後可重發', { p0: countdown })}</Text>
                   ) : (
                     <TouchableOpacity onPress={handleSendOTP}>
                       <Text style={styles.resendLink}>{t('重發驗證碼')}</Text>
@@ -349,8 +349,8 @@ const LoginScreen: React.FC = () => {
                   <Ionicons name="phone-portrait-outline" size={22} color={C.warn} />
                   <Text style={styles.googleDisabledTitle}>{t('手機版尚未支援')}</Text>
                   <Text style={styles.googleDisabledText}>
-                    Google 登入需要安裝額外的 native SDK。{'\n'}
-                    請改用 Email 登入或到網頁版體驗。
+                    {t('Google 登入需要安裝額外的 native SDK。')}{'\n'}
+                    {t('請改用 Email 登入或到網頁版體驗。')}
                   </Text>
                   <TouchableOpacity
                     style={styles.primaryBtn}
