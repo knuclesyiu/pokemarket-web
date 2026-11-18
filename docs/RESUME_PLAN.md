@@ -342,6 +342,75 @@ App 假設 Stripe 卡費 **2.9% + HK$2.35**，但 Stripe 香港公開價係
 （HK$1000 一單 = HK$5）。要查：睇 Stripe dashboard 實際費率，或者拉
 `balance_transaction` 睇 fee。
 
+## Airwallex 出款鏈：sandbox 實測通過（2026-11-18）
+
+用 sandbox 憑證跑通咗**收款同出款兩條鏈** ✅：
+
+```
+收款：PaymentIntent 建立 → 讀回 → cancel     5/5 ✅
+出款：transfer 建立 → 讀回                    3/3 ✅
+```
+
+### 最重要嘅發現：出款唔使 Connected Accounts
+
+`POST /api/v1/accounts/create` 對個人賣家一直回
+`"This account cannot onboard individual accounts"`，但**根本唔需要呢一步** ✅：
+Airwallex 接受 **beneficiary 內嵌喺 transfer 裏面** ✅。所以：
+
+- 賣家開通 = 淨係存起姓名 + FPS 識別碼 ✅（唔使 Airwallex 帳戶、唔使審批 ✅）
+- 出款 = 每次帶住賣家嘅銀行資料 ✅
+- 之前嗰句「要問 Account Manager 開 Connected Accounts」**唔再係 blocker** ✅
+
+### 出款 request 嘅正確 shape
+
+```js
+POST /api/v1/transfers/create
+{
+  transfer_amount: 100000,      // 金額用「最小單位」：HKD 有 2 位小數 → HK$1,000.00 = 100000
+  source_currency: 'HKD',
+  transfer_currency: 'HKD',
+  transfer_method: 'LOCAL',     // enum 只有 LOCAL / SWIFT 啱（FPS / ACH / HK_FPS 全部 no enum constant）
+  request_id: 'PM-xxx',         // 係 idempotency key：同一個 reference 就係同一筆出款
+  reason: 'PokeMarket 賣家結算',
+  reference: 'PM-xxx',
+  beneficiary: {
+    entity_type: 'PERSONAL',
+    bank_details: {              // 呢啲欄位要喺 bank_details 入面，唔喺 beneficiary 層
+      account_name: '...',
+      account_currency: 'HKD',
+      bank_country_code: 'HK',
+      local_clearing_system: 'FPS',
+      account_routing_type1: 'phone_number',
+      account_routing_value1: '+852-...',
+    },
+  },
+}
+```
+
+**金額單位**：官方 supported-currencies 表寫明 **HKD → Decimal precision 2** ✅，
+即係 minor units（HK$100 = `10000`）✅。唔好靠估 —— 差 100 倍就係災難。
+
+**費用**：transfer 回應有 `fee_amount` / `fee_currency` / `fee_paid_by` ✅。
+sandbox 係固定 HK$0.2354 佔位數（真正費率要 production 睇 ✅）。
+`fee_paid_by: PAYER` → 平台食費、賣家收足 ✅。
+
+### 收款單 cancel 要 request_id
+
+`POST /api/v1/pa/payment_intents/{id}/cancel` 冇 `request_id` 會回
+`validation_error — request_id must be provided` ✅。
+
+### 仍然要問 Airwallex 嘅（得一樣）
+
+**收款（Payments）產品開通** —— production 嘅 `payment_methods` 係空 list ✅，
+所以 `payment_intents/create` 回 `configuration_error` ✅。
+自己喺 web app → **Payments** → **Get started** 申請 ✅（自動批或 1–2 工作天 review ✅）。
+出款就唔需要問 ✅（sandbox 行到，production 一樣行到 ✅）。
+
+### Sandbox 限制
+
+- Sandbox **唔支援 Connected Account API**（官方講明 ✅）—— 但我哋唔需要 ✅
+- Sandbox 收款、出款、transfer 全部行到 ✅
+
 ## Airwallex 實測結果（2026-11-16 深夜，production key）
 
 憑證已入 Secret Manager（`AIRWALLEX_CLIENT_ID` / `AIRWALLEX_API_KEY`，

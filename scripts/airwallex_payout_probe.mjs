@@ -5,9 +5,13 @@
  *   set -a && source ~/.hermes/secrets/airwallex-pokemarket.env && set +a
  *   node scripts/airwallex_payout_probe.mjs
  *
- * It creates a recipient account and a beneficiary with obviously fake
- * details, then asks for a transfer of a tiny amount. In the sandbox
- * nothing moves real money. In production it would.
+ * Airwallex takes the beneficiary with the transfer, so the probe
+ * asks for one transfer of HK$1,000 with obviously fake details and
+ * reads it back. The account cannot open a connected account for an
+ * individual seller, and none is needed.
+ *
+ * The amount is in the minor unit: HKD has two decimal places, so
+ * HK$1,000.00 is 100000.
  */
 
 const ENV = process.env.AIRWALLEX_ENV === 'production' ? 'production' : 'sandbox';
@@ -103,48 +107,20 @@ try {
   process.exit(1);
 }
 
-console.log('\n  ════ 2. 開賣家收款帳戶（recipient）════');
-const account = await call('/api/v1/accounts/create', {
-  account_details: {
-    legal_entity_type: 'INDIVIDUAL',
-    individual_details: {
-      first_name: 'Test',
-      last_name: 'Seller',
-      identification_type: 'PERSONAL_ID',
-      identification_number: 'Z00000001',
-    },
-  },
-  customer_agreements: {
-    agreed_to_biometrics_consent: true,
-    agreed_to_data_usage: true,
-    agreed_to_terms_and_conditions: true,
-    opt_in_for_marketing: false,
-    terms_and_conditions: { service_agreement_type: 'RECIPIENT' },
-  },
-  identifier: `pokemarket-probe-${Date.now()}`,
-  nickname: 'PokeMarket probe',
-  primary_contact: { email: 'probe@example.com', mobile: '+852-91234567' },
-});
-const recipientId = account.body?.id;
-check('開到收款帳戶', account.ok && Boolean(recipientId),
-  account.ok ? `id=${recipientId}` : `HTTP ${account.status} ${String(account.raw).slice(0, 260)}`);
-
-if (recipientId) {
-  const submitted = await call(`/api/v1/accounts/${recipientId}/submit`, {});
-  check('提交審批', submitted.ok || /already|invalid_state/i.test(submitted.raw),
-    submitted.ok ? '已提交' : `HTTP ${submitted.status} ${String(submitted.raw).slice(0, 200)}`);
-
-  const detail = await call(`/api/v1/accounts/${recipientId}`, undefined, 'GET');
-  check('讀到帳戶狀態', detail.ok, `status=${detail.body?.status ?? '?'}`);
-}
-
-console.log('\n  ════ 3. 收款人（beneficiary）════');
-const beneficiary = await call('/api/v1/beneficiaries/create', {
+console.log('\n  ════ 2. 出款（beneficiary 內嵌，唔使開收款帳戶）════');
+const reference = `PM-PROBE-${Date.now()}`;
+const transfer = await call('/api/v1/transfers/create', {
+  transfer_amount: 100000, // HK$1,000.00 — HKD has two decimal places
+  source_currency: 'HKD',
+  transfer_currency: 'HKD',
+  transfer_method: 'LOCAL',
+  request_id: reference,
+  reason: 'PokeMarket 賣家結算',
+  reference,
   beneficiary: {
     entity_type: 'PERSONAL',
-    account_name: 'Test Seller',
-    transfer_methods: ['FPS'],
     bank_details: {
+      account_name: 'Test Seller',
       account_currency: 'HKD',
       bank_country_code: 'HK',
       local_clearing_system: 'FPS',
@@ -153,24 +129,19 @@ const beneficiary = await call('/api/v1/beneficiaries/create', {
     },
   },
 });
-const beneficiaryId = beneficiary.body?.id;
-check('開到收款人', beneficiary.ok && Boolean(beneficiaryId),
-  beneficiary.ok ? `id=${beneficiaryId}` : `HTTP ${beneficiary.status} ${String(beneficiary.raw).slice(0, 260)}`);
+const transferId = transfer.body?.id;
+check('出款 request 被接受', transfer.ok && Boolean(transferId),
+  transfer.ok
+    ? `id=${transferId} status=${transfer.body.status} 賣家收=${transfer.body.amount_beneficiary_receives} 平台付=${transfer.body.amount_payer_pays} fee=${transfer.body.fee_amount}`
+    : `HTTP ${transfer.status} ${String(transfer.raw).slice(0, 260)}`);
 
-console.log('\n  ════ 4. 出款（transfer）════');
-if (recipientId && beneficiaryId) {
-  const transfer = await call('/api/v1/transfers/create', {
-    amount: '10.00',
-    currency: 'HKD',
-    recipient_account_id: recipientId,
-    beneficiary_id: beneficiaryId,
-    reference: `PM-PROBE-${Date.now()}`,
-    remarks: 'PokeMarket 賣家結算',
-  });
-  check('出款 request 被接受', transfer.ok && Boolean(transfer.body?.id),
-    transfer.ok ? `id=${transfer.body?.id} status=${transfer.body?.status}` : `HTTP ${transfer.status} ${String(transfer.raw).slice(0, 300)}`);
-} else {
-  check('出款 request 被接受', false, '上面步驟失敗，冇辦法出款');
+if (transferId) {
+  console.log('\n  ════ 3. 讀返出款單 ════');
+  const read = await call(`/api/v1/transfers/${transferId}`, undefined, 'GET');
+  check('讀得返出款單', read.ok,
+    read.ok ? `status=${read.body.status} date=${read.body.transfer_date} ref=${read.body.short_reference_id}`
+            : `HTTP ${read.status} ${String(read.raw).slice(0, 200)}`);
 }
 
 console.log(`\n  結果：${passed} 通過 / ${failed} 失敗\n`);
+process.exit(failed === 0 ? 0 : 1);

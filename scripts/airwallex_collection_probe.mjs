@@ -131,7 +131,7 @@ if (intentId) {
   );
 
   console.log('\n  ════ 4. 取消收款單（唔郁錢）════');
-  const cancelled = await call(`/api/v1/pa/payment_intents/${intentId}/cancel`, {});
+  const cancelled = await call(`/api/v1/pa/payment_intents/${intentId}/cancel`, { request_id: `probe-cancel-${Date.now()}` });
   check(
     '取消到收款單',
     cancelled.ok,

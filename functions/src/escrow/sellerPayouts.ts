@@ -34,11 +34,8 @@ import {
 import { airwallexClientId, airwallexApiKey } from '../payout/secrets';
 import {
   airwallexConfigured,
-  createBeneficiary,
-  createRecipient,
   createTransfer,
-  recipientStatus,
-  type SellerPayoutDetails,
+  SellerPayoutDetails,
 } from '../payout/airwallex';
 import { payoutRail } from '../payout/rail';
 
@@ -394,9 +391,8 @@ export const createWithdrawal = functions.onCall(
     // ── Airwallex / FPS ────────────────────────────────────────────
     const sellerSnap = await db.doc(`sellers/${uid}`).get();
     const sellerData = sellerSnap.data() as any;
-    const recipientAccountId = sellerData?.airwallexRecipientId as string | null;
-    const beneficiaryId = sellerData?.airwallexBeneficiaryId as string | null;
-    if (!recipientAccountId || !beneficiaryId) {
+    const payoutDetails = sellerData?.payoutDetails as any;
+    if (!payoutDetails?.accountName || !payoutDetails?.routingValue) {
       throw new functions.HttpsError(
         'failed-precondition',
         '未填寫收款資料，未能出款',
@@ -406,8 +402,10 @@ export const createWithdrawal = functions.onCall(
     let awTransfer;
     try {
       awTransfer = await createTransfer({
-        recipientAccountId,
-        beneficiaryId,
+        accountName: payoutDetails.accountName,
+        routingType: payoutDetails.routingType,
+        routingValue: payoutDetails.routingValue,
+        accountNumber: payoutDetails.accountNumber ?? null,
         amountHkd,
         reference: `PM-${uid.slice(0, 8)}-${Date.now()}`,
         description: 'PokeMarket 賣家結算',
@@ -685,37 +683,16 @@ export const setSellerPayoutDetails = functions.onCall(
         : {}),
     };
 
-    const email = request.auth.token?.email ?? '';
-
-    let recipientId: string;
-    let status: string;
-    try {
-      const created = await createRecipient(uid, email, details);
-      recipientId = created.recipientId;
-      status = created.status;
-    } catch (err: any) {
-      throw new functions.HttpsError(
-        'internal',
-        `開通收款帳戶失敗：${String(err?.message ?? '').slice(0, 200)}`,
-      );
-    }
-
-    let beneficiaryId: string;
-    try {
-      beneficiaryId = await createBeneficiary(details);
-    } catch (err: any) {
-      throw new functions.HttpsError(
-        'internal',
-        `建立收款人失敗：${String(err?.message ?? '').slice(0, 200)}`,
-      );
-    }
+    // Airwallex takes the seller's bank details with the transfer, so
+    // there is no connected account to open and nothing to submit for
+    // approval. The seller's details are stored here and sent with
+    // every payout.
+    const status = 'ACTIVE';
 
     await db.doc(`sellers/${uid}`).set(
       {
         uid,
         payoutRail: 'airwallex',
-        airwallexRecipientId: recipientId,
-        airwallexBeneficiaryId: beneficiaryId,
         payoutDetails: {
           accountName: details.accountName,
           routingType: details.routingType,
@@ -723,13 +700,13 @@ export const setSellerPayoutDetails = functions.onCall(
           accountNumber: details.accountNumber ?? '',
         },
         payoutStatus: status,
-        onboarded: String(status).toUpperCase() === 'ACTIVE',
+        onboarded: true,
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true },
     );
 
-    return { success: true, recipientId, status };
+    return { success: true, recipientId: null, status };
   },
 );
 
@@ -769,15 +746,9 @@ export const getSellerPayoutStatus = functions.onCall(
       };
     }
 
-    let status = seller.payoutStatus ?? null;
-    if (seller.airwallexRecipientId) {
-      try {
-        status = await recipientStatus(seller.airwallexRecipientId);
-      } catch {
-        // The status is a convenience, not the answer. Keep what we
-        // know rather than failing the whole call.
-      }
-    }
+    // There is no connected account to ask about: the seller's details
+    // are on file and every payout carries them.
+    const status = seller.payoutStatus ?? null;
 
     const details = seller.payoutDetails
       ? {

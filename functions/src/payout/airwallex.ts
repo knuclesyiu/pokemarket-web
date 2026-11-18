@@ -55,6 +55,10 @@ export interface RecipientResult {
 export interface PayoutResult {
   transferId: string;
   status: string;
+  /** What Airwallex charged, in the minor unit (cents). */
+  feeMinor?: number;
+  /** What the platform pays in total, in the minor unit (cents). */
+  amountPayerPaysMinor?: number;
 }
 
 /**
@@ -154,26 +158,69 @@ export async function createBeneficiary(
   return id;
 }
 
-/** Move the money. */
+/**
+ * Move the money.
+ *
+ * The beneficiary travels with the transfer. Airwallex accepts the
+ * seller's bank details inline, so the platform does not need a
+ * connected account per seller — which matters, because our account
+ * cannot create a connected account for an individual seller.
+ *
+ * The amount is in the currency's minor unit. HKD has two decimal
+ * places, so HK$100 is 10000.
+ */
+export function toMinorUnits(amountHkd: number): number {
+  return Math.round(amountHkd * 100);
+}
+
 export async function createTransfer(args: {
-  recipientAccountId: string;
-  beneficiaryId: string;
+  accountName: string;
+  routingType:
+    | 'phone_number'
+    | 'email_address'
+    | 'fps_identifier'
+    | 'bank_code'
+    | 'personal_id_number';
+  routingValue: string;
+  accountNumber?: string | null;
   amountHkd: number;
   reference: string;
   description: string;
 }): Promise<PayoutResult> {
   const transfer = await awFetch<any>('/api/v1/transfers/create', {
-    amount: args.amountHkd.toFixed(2),
-    currency: 'HKD',
-    recipient_account_id: args.recipientAccountId,
-    beneficiary_id: args.beneficiaryId,
+    transfer_amount: toMinorUnits(args.amountHkd),
+    source_currency: 'HKD',
+    transfer_currency: 'HKD',
+    transfer_method: 'LOCAL',
+    // The request id is the idempotency key: the same reference is the
+    // same transfer, so a retry cannot pay twice.
+    request_id: args.reference,
+    reason: args.description,
     reference: args.reference,
-    remarks: args.description,
-    client_data: args.reference,
+    beneficiary: {
+      entity_type: 'PERSONAL',
+      bank_details: {
+        account_name: args.accountName,
+        account_currency: 'HKD',
+        bank_country_code: 'HK',
+        local_clearing_system: 'FPS',
+        account_routing_type1: args.routingType,
+        account_routing_value1: args.routingValue,
+        ...(args.routingType === 'bank_code' && args.accountNumber
+          ? { account_number: args.accountNumber }
+          : {}),
+      },
+    },
   });
   const transferId = transfer?.id;
   if (!transferId) {
     throw new Error(`Airwallex 出款失敗：${JSON.stringify(transfer).slice(0, 300)}`);
   }
-  return { transferId, status: String(transfer?.status ?? 'unknown') };
+  return {
+    transferId,
+    status: String(transfer?.status ?? 'unknown'),
+    // What Airwallex actually charged, in the minor unit.
+    feeMinor: Number(transfer?.fee_amount ?? 0),
+    amountPayerPaysMinor: Number(transfer?.amount_payer_pays ?? 0),
+  };
 }
