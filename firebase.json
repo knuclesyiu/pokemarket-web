@@ -33,6 +33,10 @@
     ],
     "rewrites": [
       {
+        "source": "/contactInquiry",
+        "function": "contactInquiry"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

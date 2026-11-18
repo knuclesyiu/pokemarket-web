@@ -29,11 +29,25 @@ export const BUSINESS = {
    */
   address: 'TO BE CONFIRMED',
 
-  /** The address buyers and sellers write to. */
-  supportEmail: 'ken.yiu@mingtai-cpa.com',
+  /**
+   * The address buyers and sellers write to.
+   *
+   * A business address on the company's own domain, not a personal
+   * one. The alias has to exist: a payment provider may well send
+   * mail to it during the review.
+   *
+   * TODO: set up the alias and put it here.
+   */
+  supportEmail: 'contact@mingtai-cpa.com',
 
-  /** The phone number a reviewer can call. */
-  supportPhone: '+852 6032 0751',
+  /**
+   * The phone number a reviewer can call.
+   *
+   * A company line, not a personal mobile.
+   *
+   * TODO: fill in.
+   */
+  supportPhone: 'TO BE CONFIRMED',
 
   /** The marketplace itself. */
   siteUrl: 'https://pokemarket-255c6.web.app',

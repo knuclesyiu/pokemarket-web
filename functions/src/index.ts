@@ -79,3 +79,4 @@ export { getUserReviews } from './reviews/getUserReviews';
 export { sendVerificationEmail } from './auth/sendVerificationEmail';
 export { checkEmailVerified } from './auth/checkEmailVerified';
 export { verifyPinServerSide } from './auth/verifyPinServerSide';
+export { contactInquiry } from './public/contactInquiry';
