@@ -4,6 +4,7 @@ import type { MarketListing, Offer } from './trade';
 export type RootStackParamList = {
   FeatureShowcase: undefined;
   Login: undefined;
+  PublicInfo: undefined;
   Register: undefined;
   Main: undefined;
   EditProfile: undefined;

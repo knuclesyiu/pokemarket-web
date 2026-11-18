@@ -9,6 +9,7 @@
  *   - Session token is force-refreshed on screen focus
  *   - Countdown resets on OTP error so the user can immediately retry
  */
+import { BUSINESS } from '../../config/business';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { t } from '../../i18n';
 import { useAppearance } from '../../contexts/AppearanceContext';
@@ -388,7 +389,33 @@ const LoginScreen: React.FC = () => {
           )}
         </View>
 
-        <Text style={styles.legal}>{t('登入即表示同意《用戶協議》及《隱私政策》')}</Text>
+        <TouchableOpacity
+          style={styles.policyLink}
+          onPress={() => navigation.navigate('PublicInfo')}
+        >
+          <Text style={styles.legal}>{t('登入即表示同意《用戶協議》及《隱私政策》')}</Text>
+        </TouchableOpacity>
+        {/* The business details. A payment provider's review looks for
+            these on the site, and a visitor should be able to see who
+            they are dealing with before they sign in. */}
+        <View style={styles.businessBlock}>
+          <Text style={styles.businessName}>{BUSINESS.companyName}</Text>
+          <Text style={styles.businessLine}>
+            {t('商業登記號碼')}: {BUSINESS.registrationNumber}
+          </Text>
+          <Text style={styles.businessLine}>{BUSINESS.address}</Text>
+          <Text style={styles.businessLine}>
+            {BUSINESS.supportEmail} · {BUSINESS.supportPhone}
+          </Text>
+          <TouchableOpacity
+            style={styles.aboutLink}
+            onPress={() => navigation.navigate('PublicInfo')}
+          >
+            <Text style={styles.aboutLinkText}>
+              {t('關於 PokeMarket · 條款 · 私隱政策 · 運送及退貨政策 →')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -547,6 +574,19 @@ const styles = themed((C) => StyleSheet.create({
     marginTop: SP.xl,
     lineHeight: 16,
   },
+  policyLink: { alignItems: 'center' },
+  businessBlock: {
+    alignItems: 'center',
+    marginTop: SP.lg,
+    paddingTop: SP.md,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    gap: 2,
+  },
+  businessName: { ...T.caption, color: C.textSecondary, fontWeight: '700' },
+  businessLine: { ...T.caption, color: C.textDisabled, textAlign: 'center' },
+  aboutLink: { marginTop: SP.sm },
+  aboutLinkText: { ...T.caption, color: C.action },
 }))
 
 export default LoginScreen;

@@ -425,6 +425,7 @@ export const createWithdrawal = functions.onCall(
     }
 
     await recordPayout({
+      feeHkd: (awTransfer.feeMinor ?? 0) / 100,
       uid,
       amountHkd,
       transferId: awTransfer.transferId,
@@ -520,6 +521,8 @@ async function recordPayout(args: {
   sourceTransaction: string | null;
   sources: Array<{ id: string; remainingHkd: number }>;
   stripeAccountId?: string;
+  /** What the rail actually charged for this payout, in HKD. */
+  feeHkd?: number;
 }): Promise<void> {
   const { uid, amountHkd } = args;
   const walletRef = db.doc(`users/${uid}/wallet/main`);

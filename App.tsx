@@ -29,6 +29,7 @@ import OfferDetailScreen from "./src/screens/trade/OfferDetailScreen";
 import ChatListScreen from "./src/screens/chat/ChatListScreen";
 import ChatDetailScreen from "./src/screens/chat/ChatDetailScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
+import PublicInfoScreen from "./src/screens/PublicInfoScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import EditProfileScreen from "./src/screens/EditProfileScreen";
 import SellerOnboardingScreen from "./src/screens/SellerOnboardingScreen";
@@ -214,6 +215,7 @@ function RootNavigator() {
       >
         <Stack.Screen name="FeatureShowcase" component={FeatureShowcaseScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="PublicInfo" component={PublicInfoScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Main" component={HomeTabs} options={{ headerShown: false }} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
