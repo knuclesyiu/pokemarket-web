@@ -16,8 +16,12 @@ const BASE =
     ? 'https://api.airwallex.com'
     : 'https://api.sandbox.airwallex.com';
 
-const CLIENT_ID = process.env.AIRWALLEX_CLIENT_ID;
-const API_KEY = process.env.AIRWALLEX_API_KEY;
+const CLIENT_ID = (process.env.AIRWALLEX_ENV === 'sandbox'
+    ? process.env.AIRWALLEX_SANDBOX_CLIENT_ID
+    : process.env.AIRWALLEX_CLIENT_ID);
+const API_KEY = (process.env.AIRWALLEX_ENV === 'sandbox'
+    ? process.env.AIRWALLEX_SANDBOX_API_KEY
+    : process.env.AIRWALLEX_API_KEY);
 
 if (!CLIENT_ID || !API_KEY || CLIENT_ID === 'NOT_CONFIGURED') {
   console.error('✖ 未設定 AIRWALLEX_CLIENT_ID / AIRWALLEX_API_KEY');

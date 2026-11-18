@@ -34,5 +34,17 @@ for name in AIRWALLEX_CLIENT_ID AIRWALLEX_API_KEY AIRWALLEX_WEBHOOK_SECRET; do
   echo "  ✔ $name 已推上 Secret Manager"
 done
 
+# The sandbox pair is optional: it only exists once someone has
+# created a sandbox account. It is kept separately so a test never
+# reaches the production merchant.
+if [[ -n "${AIRWALLEX_SANDBOX_CLIENT_ID:-}" && -n "${AIRWALLEX_SANDBOX_API_KEY:-}" ]]; then
+  for name in AIRWALLEX_SANDBOX_CLIENT_ID AIRWALLEX_SANDBOX_API_KEY; do
+    printf '%s' "${!name}" | firebase functions:secrets:set "$name" --project "$PROJECT" >/dev/null
+    echo "  ✔ $name 已推上 Secret Manager"
+  done
+else
+  echo "  · 冇 sandbox 憑證 —— 跳過（測試可以直接行 scripts/airwallex_*_probe.mjs）"
+fi
+
 echo "  記得 deploy 一次，秘密先會綁到 function："
 echo "    cd functions && firebase deploy --only functions --project $PROJECT"
